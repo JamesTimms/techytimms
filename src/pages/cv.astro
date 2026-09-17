@@ -1,0 +1,84 @@
+---
+import BaseLayout from "~/layouts/BaseLayout.astro";
+import { cv } from "~/data/cv";
+---
+
+<BaseLayout
+  title="CV"
+  description="James Timms — experience, skills, education and certifications."
+>
+  <h1 class="text-3xl font-semibold tracking-tight">CV</h1>
+
+  <section class="mt-10">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-faint">Skills</h2>
+    <dl class="mt-4 flex flex-col gap-4">
+      {
+        cv.skills.map((group) => (
+          <div>
+            <dt class="text-sm font-medium">{group.category}</dt>
+            <dd class="mt-1 text-sm text-ink-muted">{group.skills.join(" · ")}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </section>
+
+  <section class="mt-10 border-t border-border pt-8">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-faint">
+      Experience
+    </h2>
+    <ol class="mt-4 flex flex-col gap-8">
+      {
+        cv.experience.map((role) => (
+          <li>
+            <h3 class="font-medium">
+              {role.role} <span class="text-ink-muted">· {role.company}</span>
+            </h3>
+            <p class="text-sm text-ink-faint">
+              {role.period} · {role.location}
+            </p>
+            <ul class="mt-2 flex list-disc flex-col gap-1 pl-5 text-sm text-ink-muted">
+              {role.description.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <section class="mt-10 border-t border-border pt-8">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-faint">
+      Education
+    </h2>
+    <ul class="mt-4 flex flex-col gap-2">
+      {
+        cv.education.map((entry) => (
+          <li>
+            <p class="font-medium">{entry.degree}</p>
+            <p class="text-sm text-ink-faint">
+              {entry.institution} · {entry.period}
+            </p>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="mt-10 border-t border-border pt-8">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-faint">
+      Certifications
+    </h2>
+    <ul class="mt-4 flex flex-col gap-1 text-sm">
+      {
+        cv.certifications.map((cert) => (
+          <li>
+            <span class="font-medium">{cert.name}</span>
+            <span class="text-ink-faint"> · {cert.year}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</BaseLayout>

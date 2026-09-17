@@ -1,0 +1,27 @@
+---
+import BaseLayout from "~/layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+import { excludeDrafts, featuredFirst } from "~/lib/content";
+
+const projects = featuredFirst(excludeDrafts(await getCollection("work")));
+---
+
+<BaseLayout title="Work" description="Projects and case studies by James Timms.">
+  <h1 class="text-3xl font-semibold tracking-tight">Work</h1>
+
+  <ul class="mt-8 flex flex-col gap-6">
+    {
+      projects.map((project) => (
+        <li class="border-b border-border pb-6 last:border-0">
+          <a href={`/work/${project.id}`} class="font-medium hover:text-accent-ink">
+            {project.data.title}
+          </a>
+          <p class="text-sm text-ink-faint">
+            {project.data.role} · {project.data.period}
+          </p>
+          <p class="mt-1 text-sm text-ink-muted">{project.data.outcome}</p>
+        </li>
+      ))
+    }
+  </ul>
+</BaseLayout>

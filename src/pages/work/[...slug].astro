@@ -1,0 +1,29 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { getCollection, render } from "astro:content";
+import ProseLayout from "~/layouts/ProseLayout.astro";
+import { excludeDrafts } from "~/lib/content";
+
+export async function getStaticPaths() {
+  const projects = excludeDrafts(await getCollection("work"));
+  return projects.map((project) => ({
+    params: { slug: project.id },
+    props: { project },
+  }));
+}
+
+interface Props {
+  project: CollectionEntry<"work">;
+}
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+---
+
+<ProseLayout
+  title={project.data.title}
+  summary={project.data.summary}
+  meta={`${project.data.role} · ${project.data.period}`}
+>
+  <Content />
+</ProseLayout>

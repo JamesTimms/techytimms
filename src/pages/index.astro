@@ -1,0 +1,68 @@
+---
+import BaseLayout from "~/layouts/BaseLayout.astro";
+import { site } from "~/data/site";
+import { getCollection } from "astro:content";
+import { excludeDrafts, newestFirst, featuredFirst, formatDate } from "~/lib/content";
+
+const posts = newestFirst(excludeDrafts(await getCollection("posts"))).slice(0, 3);
+const projects = featuredFirst(excludeDrafts(await getCollection("work"))).slice(0, 3);
+---
+
+<BaseLayout>
+  <section class="py-6">
+    <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">
+      {site.tagline}
+    </h1>
+    <p class="mt-4 max-w-prose text-ink-muted">
+      {/* PLACEHOLDER: two or three sentences of positioning. */}
+      Technical lead at EatPing, previously CTO and co-founder at Mappa. I work
+      across product, backend and infrastructure — usually at the point where a
+      startup needs all three at once.
+    </p>
+    <p class="mt-6 flex gap-4 text-sm">
+      <a href="/cv" class="text-accent-ink underline underline-offset-4">Read my CV</a>
+      <a href="/work" class="text-accent-ink underline underline-offset-4">See my work</a>
+    </p>
+  </section>
+
+  <section class="mt-12 border-t border-border pt-8">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-faint">
+      Recent writing
+    </h2>
+    {
+      posts.length === 0 ? (
+        <p class="mt-4 text-ink-muted">Nothing published yet.</p>
+      ) : (
+        <ul class="mt-4 flex flex-col gap-4">
+          {posts.map((post) => (
+            <li>
+              <a href={`/blog/${post.id}`} class="font-medium hover:text-accent-ink">
+                {post.data.title}
+              </a>
+              <p class="text-sm text-ink-muted">{post.data.summary}</p>
+              <p class="text-sm text-ink-faint">{formatDate(post.data.publishedAt)}</p>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </section>
+
+  <section class="mt-12 border-t border-border pt-8">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-faint">
+      Selected work
+    </h2>
+    <ul class="mt-4 flex flex-col gap-4">
+      {
+        projects.map((project) => (
+          <li>
+            <a href={`/work/${project.id}`} class="font-medium hover:text-accent-ink">
+              {project.data.title}
+            </a>
+            <p class="text-sm text-ink-muted">{project.data.outcome}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</BaseLayout>

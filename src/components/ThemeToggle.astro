@@ -1,0 +1,20 @@
+---
+// Paired with the blocking script in BaseLayout, which sets the class before
+// first paint. This only handles clicks after hydration of the inline script.
+---
+<button
+  id="theme-toggle"
+  type="button"
+  class="rounded-md border border-border px-2 py-1 text-sm text-ink-muted transition-colors hover:text-ink"
+  aria-label="Toggle colour theme"
+>
+  <span class="hidden dark:inline">Light</span>
+  <span class="inline dark:hidden">Dark</span>
+</button>
+
+<script is:inline>
+  document.getElementById("theme-toggle")?.addEventListener("click", () => {
+    const isDark = document.documentElement.classList.toggle("dark");
+    localStorage.setItem("theme", isDark ? "dark" : "light");
+  });
+</script>

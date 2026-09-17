@@ -1,0 +1,31 @@
+---
+import BaseLayout from "~/layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+import { excludeDrafts, newestFirst, formatDate, toIsoDate } from "~/lib/content";
+
+const posts = newestFirst(excludeDrafts(await getCollection("posts")));
+---
+
+<BaseLayout title="Blog" description="Writing by James Timms.">
+  <h1 class="text-3xl font-semibold tracking-tight">Blog</h1>
+
+  {
+    posts.length === 0 ? (
+      <p class="mt-6 text-ink-muted">Nothing published yet.</p>
+    ) : (
+      <ul class="mt-8 flex flex-col gap-6">
+        {posts.map((post) => (
+          <li class="border-b border-border pb-6 last:border-0">
+            <a href={`/blog/${post.id}`} class="font-medium hover:text-accent-ink">
+              {post.data.title}
+            </a>
+            <p class="mt-1 text-sm text-ink-muted">{post.data.summary}</p>
+            <time datetime={toIsoDate(post.data.publishedAt)} class="text-sm text-ink-faint">
+              {formatDate(post.data.publishedAt)}
+            </time>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</BaseLayout>

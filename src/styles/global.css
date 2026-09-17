@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Slate neutrals (hue 250) with a warm amber accent (hue 70).
+ * Retune the palette by changing the two hue angles.
+ *
+ * Two accent tokens exist because amber at full chroma does not reach 4.5:1
+ * against a light ground: --color-accent is for marks, borders and rings,
+ * --color-accent-ink is the darkened variant for text.
+ */
+@theme {
+  --color-ground: oklch(98.5% 0.004 250);
+  --color-surface: oklch(100% 0 0);
+  --color-sunk: oklch(96% 0.006 250);
+  --color-border: oklch(90% 0.01 250);
+  --color-ink-faint: oklch(62% 0.018 250);
+  --color-ink-muted: oklch(50% 0.022 250);
+  --color-ink: oklch(24% 0.026 250);
+
+  --color-accent: oklch(58% 0.13 70);
+  --color-accent-ink: oklch(45% 0.11 70);
+  --color-accent-sunk: oklch(95% 0.03 70);
+}
+
+.dark {
+  --color-ground: oklch(17% 0.016 250);
+  --color-surface: oklch(21% 0.018 250);
+  --color-sunk: oklch(14% 0.014 250);
+  --color-border: oklch(30% 0.02 250);
+  --color-ink-faint: oklch(58% 0.02 250);
+  --color-ink-muted: oklch(72% 0.018 250);
+  --color-ink: oklch(93% 0.012 250);
+
+  --color-accent: oklch(78% 0.11 70);
+  --color-accent-ink: oklch(80% 0.105 70);
+  --color-accent-sunk: oklch(24% 0.035 70);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-ground);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
