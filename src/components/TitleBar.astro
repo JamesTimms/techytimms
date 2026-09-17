@@ -1,0 +1,38 @@
+---
+interface Props {
+  title: string;
+  tone?: "default" | "accent";
+  controls?: boolean;
+}
+
+const { title, tone = "default", controls = true } = Astro.props;
+
+const toneClass = tone === "accent" ? "bg-accent-sunk" : "bg-sunk";
+---
+
+<div
+  class:list={[
+    "flex items-center justify-between gap-3 border-b border-border px-3 py-1.5",
+    toneClass,
+  ]}
+>
+  <span class="truncate font-mono text-xs uppercase tracking-widest text-ink">
+    {title}
+  </span>
+
+  {
+    /*
+     * Decorative until window management exists. Rendering these as <button>
+     * would take a tab stop and announce an action that never happens.
+     */
+    controls && (
+      <span aria-hidden="true" class="flex shrink-0 items-center gap-1">
+        {["–", "□", "×"].map((glyph) => (
+          <span class="panel panel-bevel flex h-4 w-4 items-center justify-center text-[0.6rem] leading-none text-ink-muted">
+            {glyph}
+          </span>
+        ))}
+      </span>
+    )
+  }
+</div>

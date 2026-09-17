@@ -3,39 +3,59 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * Slate neutrals (hue 250) with a warm amber accent (hue 70).
- * Retune the palette by changing the two hue angles.
+ * Warm neutrals and amber accent, both at hue 70 — the neutrals are the accent
+ * hue at very low chroma, which is what makes the greys read as warm paper.
+ * Retune the palette by changing the hue angle, not individual values.
  *
- * Two accent tokens exist because amber at full chroma does not reach 4.5:1
- * against a light ground: --color-accent is for marks, borders and rings,
- * --color-accent-ink is the darkened variant for text.
+ * Every value here is contrast-verified in both themes; see docs/design-system.md
+ * for the full table. The tightest pair is ink-faint on ground at 4.56:1, so
+ * recheck that one before darkening the ground.
  */
 @theme {
-  --color-ground: oklch(98.5% 0.004 250);
-  --color-surface: oklch(100% 0 0);
-  --color-sunk: oklch(96% 0.006 250);
-  --color-border: oklch(90% 0.01 250);
-  --color-ink-faint: oklch(62% 0.018 250);
-  --color-ink-muted: oklch(50% 0.022 250);
-  --color-ink: oklch(24% 0.026 250);
+  --color-ground: oklch(98.5% 0.006 70);
+  --color-surface: oklch(100% 0 70);
+  --color-sunk: oklch(96% 0.01 70);
+  --color-rule: oklch(88.5% 0.014 70);
+  --color-border: oklch(63% 0.016 70);
+  --color-ink-faint: oklch(55.5% 0.022 70);
+  --color-ink-muted: oklch(47% 0.026 70);
+  --color-ink: oklch(24% 0.028 70);
 
   --color-accent: oklch(58% 0.13 70);
   --color-accent-ink: oklch(45% 0.11 70);
   --color-accent-sunk: oklch(95% 0.03 70);
+
+  /* Underline hues for links. Colour varies; the underline itself never does,
+     so colour is never the only signal that something is navigable. */
+  --color-link-1: oklch(55% 0.13 25);
+  --color-link-2: oklch(55% 0.13 45);
+  --color-link-3: oklch(55% 0.13 70);
+  --color-link-4: oklch(55% 0.13 95);
+  --color-link-5: oklch(55% 0.13 125);
+
+  --radius-panel: 0px;
+  --radius-control: 2px;
 }
 
 .dark {
-  --color-ground: oklch(17% 0.016 250);
-  --color-surface: oklch(21% 0.018 250);
-  --color-sunk: oklch(14% 0.014 250);
-  --color-border: oklch(30% 0.02 250);
-  --color-ink-faint: oklch(58% 0.02 250);
-  --color-ink-muted: oklch(72% 0.018 250);
-  --color-ink: oklch(93% 0.012 250);
+  --color-ground: oklch(17% 0.012 70);
+  --color-surface: oklch(21% 0.014 70);
+  --color-sunk: oklch(14% 0.01 70);
+  --color-rule: oklch(32% 0.018 70);
+  --color-border: oklch(52% 0.018 70);
+  --color-ink-faint: oklch(62% 0.02 70);
+  --color-ink-muted: oklch(74% 0.02 70);
+  --color-ink: oklch(93% 0.014 70);
 
   --color-accent: oklch(78% 0.11 70);
   --color-accent-ink: oklch(80% 0.105 70);
   --color-accent-sunk: oklch(24% 0.035 70);
+
+  --color-link-1: oklch(76% 0.11 25);
+  --color-link-2: oklch(76% 0.11 45);
+  --color-link-3: oklch(76% 0.11 70);
+  --color-link-4: oklch(76% 0.11 95);
+  --color-link-5: oklch(76% 0.11 125);
 }
 
 @layer base {
@@ -56,6 +76,89 @@
   :focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /*
+   * One primitive. Cards, callouts, buttons and window frames are all variants.
+   * Square corners and hard borders throughout — depth comes from the bevel,
+   * never from a shadow.
+   */
+  .panel {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-panel);
+    background-color: var(--color-surface);
+  }
+
+  .panel-sunk {
+    background-color: var(--color-sunk);
+  }
+
+  .panel-accent {
+    border-color: var(--color-accent);
+    background-color: var(--color-accent-sunk);
+  }
+
+  /*
+   * Windows 9x raised controls by painting the top and left edges light and the
+   * bottom and right edges dark. It reads as three-dimensional without a shadow,
+   * which is the constraint this design already has.
+   */
+  .panel-bevel {
+    border-radius: var(--radius-control);
+    border-top-color: var(--color-surface);
+    border-left-color: var(--color-surface);
+    border-bottom-color: var(--color-ink-faint);
+    border-right-color: var(--color-ink-faint);
+    background-color: var(--color-sunk);
+  }
+
+  .panel-bevel:active {
+    border-top-color: var(--color-ink-faint);
+    border-left-color: var(--color-ink-faint);
+    border-bottom-color: var(--color-surface);
+    border-right-color: var(--color-surface);
+  }
+
+  /*
+   * The desktop wallpaper. A gradient rather than an image so it costs no
+   * request, and it only shows above the breakpoint where windows float.
+   */
+  .desktop-ground {
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent 0 6px,
+      color-mix(in oklch, var(--color-border) 9%, transparent) 6px 7px
+    );
+  }
+
+  .link {
+    text-decoration-line: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.2em;
+    transition: color 120ms ease, text-decoration-thickness 120ms ease;
+  }
+
+  .link:hover {
+    color: var(--color-accent-ink);
+    text-decoration-thickness: 3px;
+  }
+
+  .link-1 {
+    text-decoration-color: var(--color-link-1);
+  }
+  .link-2 {
+    text-decoration-color: var(--color-link-2);
+  }
+  .link-3 {
+    text-decoration-color: var(--color-link-3);
+  }
+  .link-4 {
+    text-decoration-color: var(--color-link-4);
+  }
+  .link-5 {
+    text-decoration-color: var(--color-link-5);
   }
 }
 

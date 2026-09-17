@@ -1,7 +1,10 @@
 ---
 import BaseLayout from "~/layouts/BaseLayout.astro";
+import Window from "~/components/Window.astro";
+import Panel from "~/components/Panel.astro";
 import { getCollection } from "astro:content";
 import { excludeDrafts, newestFirst, formatDate, toIsoDate } from "~/lib/content";
+import { linkClass } from "~/lib/link-accent";
 
 const posts = newestFirst(excludeDrafts(await getCollection("posts")));
 ---
@@ -9,23 +12,48 @@ const posts = newestFirst(excludeDrafts(await getCollection("posts")));
 <BaseLayout title="Blog" description="Writing by James Timms.">
   <h1 class="text-3xl font-semibold tracking-tight">Blog</h1>
 
-  {
-    posts.length === 0 ? (
-      <p class="mt-6 text-ink-muted">Nothing published yet.</p>
-    ) : (
-      <ul class="mt-8 flex flex-col gap-6">
-        {posts.map((post) => (
-          <li class="border-b border-border pb-6 last:border-0">
-            <a href={`/blog/${post.id}`} class="font-medium hover:text-accent-ink">
-              {post.data.title}
+  <Window title={posts.length === 0 ? "blog — empty" : "blog"} class="mt-8">
+    {
+      posts.length === 0 ? (
+        /*
+         * Deliberate empty state: the blog is committed but unwritten, so this
+         * has to read as "nothing here yet" rather than as a broken page.
+         */
+        <Panel tone="sunk" class="px-5 py-8 text-center">
+          <p class="font-mono text-xs uppercase tracking-widest text-ink-faint">
+            0 posts
+          </p>
+          <p class="mx-auto mt-3 max-w-sm text-sm text-ink-muted">
+            Nothing published here yet. When there is, it will be about things
+            actually built and debugged rather than surveys of the field.
+          </p>
+          <p class="mt-5 text-sm">
+            <a href="/work" class:list={[linkClass("/work"), "text-accent-ink"]}>
+              Project write-ups are over here
             </a>
-            <p class="mt-1 text-sm text-ink-muted">{post.data.summary}</p>
-            <time datetime={toIsoDate(post.data.publishedAt)} class="text-sm text-ink-faint">
-              {formatDate(post.data.publishedAt)}
-            </time>
-          </li>
-        ))}
-      </ul>
-    )
-  }
+          </p>
+        </Panel>
+      ) : (
+        <ul class="flex flex-col gap-6">
+          {posts.map((post) => (
+            <li class="border-b border-rule pb-6 last:border-0 last:pb-0">
+              <a
+                href={`/blog/${post.id}`}
+                class:list={[linkClass(`/blog/${post.id}`), "font-medium"]}
+              >
+                {post.data.title}
+              </a>
+              <p class="mt-1 text-sm text-ink-muted">{post.data.summary}</p>
+              <time
+                datetime={toIsoDate(post.data.publishedAt)}
+                class="font-mono text-xs uppercase tracking-widest text-ink-faint"
+              >
+                {formatDate(post.data.publishedAt)}
+              </time>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </Window>
 </BaseLayout>

@@ -1,6 +1,7 @@
 ---
-import BaseLayout from "~/layouts/BaseLayout.astro";
-import { cv } from "~/data/cv";
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import Window from '~/components/Window.astro';
+import { cv } from '~/data/cv';
 ---
 
 <BaseLayout
@@ -9,76 +10,62 @@ import { cv } from "~/data/cv";
 >
   <h1 class="text-3xl font-semibold tracking-tight">CV</h1>
 
-  <section class="mt-10">
-    <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-faint">Skills</h2>
-    <dl class="mt-4 flex flex-col gap-4">
-      {
-        cv.skills.map((group) => (
-          <div>
-            <dt class="text-sm font-medium">{group.category}</dt>
-            <dd class="mt-1 text-sm text-ink-muted">{group.skills.join(" · ")}</dd>
-          </div>
-        ))
-      }
+  <Window title="skills" class="mt-8">
+    <dl class="flex flex-col gap-4">
+      {cv.skills.map((group) => (
+        <div>
+          <dt class="font-mono text-xs uppercase tracking-widest text-ink-faint">
+            {group.category}
+          </dt>
+          <dd class="mt-1.5 text-sm text-ink-muted">{group.skills.join(' · ')}</dd>
+        </div>
+      ))}
     </dl>
-  </section>
+  </Window>
 
-  <section class="mt-10 border-t border-border pt-8">
-    <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-faint">
-      Experience
-    </h2>
-    <ol class="mt-4 flex flex-col gap-8">
-      {
-        cv.experience.map((role) => (
-          <li>
-            <h3 class="font-medium">
-              {role.role} <span class="text-ink-muted">· {role.company}</span>
-            </h3>
-            <p class="text-sm text-ink-faint">
-              {role.period} · {role.location}
-            </p>
-            <ul class="mt-2 flex list-disc flex-col gap-1 pl-5 text-sm text-ink-muted">
-              {role.description.map((item) => (
-                <li>{item}</li>
-              ))}
-            </ul>
-          </li>
-        ))
-      }
+  <Window title="experience" class="mt-8">
+    <ol class="flex flex-col gap-7">
+      {cv.experience.map((role) => (
+        <li class="border-b border-rule pb-7 last:border-0 last:pb-0">
+          <h2 class="font-medium">
+            {role.role} <span class="text-ink-muted">· {role.company}</span>
+          </h2>
+          <p class="font-mono text-xs uppercase tracking-widest text-ink-faint">
+            {role.period} · {role.location}
+          </p>
+          <ul class="mt-3 flex list-disc flex-col gap-1.5 pl-5 text-sm text-ink-muted">
+            {role.description.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </li>
+      ))}
     </ol>
-  </section>
+  </Window>
 
-  <section class="mt-10 border-t border-border pt-8">
-    <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-faint">
-      Education
-    </h2>
-    <ul class="mt-4 flex flex-col gap-2">
-      {
-        cv.education.map((entry) => (
+  <div class="mt-8 grid gap-8 sm:grid-cols-2">
+    <Window title="education">
+      <ul class="flex flex-col gap-3">
+        {cv.education.map((entry) => (
           <li>
             <p class="font-medium">{entry.degree}</p>
-            <p class="text-sm text-ink-faint">
+            <p class="font-mono text-xs uppercase tracking-widest text-ink-faint">
               {entry.institution} · {entry.period}
             </p>
           </li>
-        ))
-      }
-    </ul>
-  </section>
+        ))}
+      </ul>
+    </Window>
 
-  <section class="mt-10 border-t border-border pt-8">
-    <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-faint">
-      Certifications
-    </h2>
-    <ul class="mt-4 flex flex-col gap-1 text-sm">
-      {
-        cv.certifications.map((cert) => (
-          <li>
+    <Window title="certifications">
+      <ul class="flex flex-col gap-2 text-sm">
+        {cv.certifications.map((cert) => (
+          <li class="flex items-baseline justify-between gap-3">
             <span class="font-medium">{cert.name}</span>
-            <span class="text-ink-faint"> · {cert.year}</span>
+            <span class="font-mono text-xs text-ink-faint">{cert.year}</span>
           </li>
-        ))
-      }
-    </ul>
-  </section>
+        ))}
+      </ul>
+    </Window>
+  </div>
 </BaseLayout>

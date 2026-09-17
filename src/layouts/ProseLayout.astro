@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "~/layouts/BaseLayout.astro";
+import Window from "~/components/Window.astro";
 
 interface Props {
   title: string;
@@ -12,15 +13,23 @@ const { title, summary, meta } = Astro.props;
 
 <BaseLayout title={title} description={summary}>
   <article>
-    <header class="border-b border-border pb-6">
+    <header>
       <h1 class="text-3xl font-semibold tracking-tight text-balance">{title}</h1>
       <p class="mt-3 max-w-prose text-ink-muted">{summary}</p>
-      {meta && <p class="mt-2 text-sm text-ink-faint">{meta}</p>}
+      {
+        meta && (
+          <p class="mt-3 font-mono text-xs uppercase tracking-widest text-ink-faint">
+            {meta}
+          </p>
+        )
+      }
     </header>
 
-    <div class="prose-content mt-8 max-w-prose">
-      <slot />
-    </div>
+    <Window title={title} class="mt-8">
+      <div class="prose-content max-w-prose">
+        <slot />
+      </div>
+    </Window>
   </article>
 </BaseLayout>
 
@@ -47,16 +56,33 @@ const { title, summary, meta } = Astro.props;
     padding-left: 1.25rem;
     list-style: revert;
   }
+
+  /* Prose links take a single hue rather than the varied slots used in
+     navigation: the slot is derived from the href in the template, and MDX
+     content has no template to derive it in. */
   .prose-content :global(a) {
     color: var(--color-accent-ink);
-    text-decoration: underline;
+    text-decoration-line: underline;
+    text-decoration-color: var(--color-link-3);
+    text-decoration-thickness: 2px;
     text-underline-offset: 0.2em;
   }
+  .prose-content :global(a:hover) {
+    text-decoration-thickness: 3px;
+  }
+
   .prose-content :global(pre) {
     margin-top: 1rem;
     overflow-x: auto;
-    border-radius: 0.375rem;
     border: 1px solid var(--color-border);
+    border-radius: var(--radius-panel);
+    background-color: var(--color-sunk);
     padding: 1rem;
+  }
+  .prose-content :global(blockquote) {
+    margin-top: 1rem;
+    border-left: 2px solid var(--color-accent);
+    padding-left: 1rem;
+    color: var(--color-ink-muted);
   }
 </style>

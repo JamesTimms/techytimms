@@ -1,0 +1,18 @@
+---
+interface Props {
+  tone?: "default" | "sunk" | "accent";
+  class?: string;
+}
+
+const { tone = "default", class: className = "" } = Astro.props;
+
+const toneClass = {
+  default: "",
+  sunk: "panel-sunk",
+  accent: "panel-accent",
+}[tone];
+---
+
+<div class:list={["panel", toneClass, className]}>
+  <slot />
+</div>

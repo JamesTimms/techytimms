@@ -1,29 +1,30 @@
 ---
 import BaseLayout from "~/layouts/BaseLayout.astro";
+import Window from "~/components/Window.astro";
 import { cv } from "~/data/cv";
 ---
 
 <BaseLayout title="About" description="About James Timms.">
   <h1 class="text-3xl font-semibold tracking-tight">About</h1>
-  <div class="mt-6 flex max-w-prose flex-col gap-4 text-ink-muted">
-    {cv.about.map((paragraph) => <p>{paragraph}</p>)}
-  </div>
 
-  <section class="mt-10 border-t border-border pt-8">
-    <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-faint">
-      Achievements
-    </h2>
-    <ul class="mt-4 flex flex-col gap-4">
+  <Window title="about.txt" class="mt-8">
+    <div class="flex max-w-prose flex-col gap-4 text-ink-muted">
+      {cv.about.map((paragraph) => <p>{paragraph}</p>)}
+    </div>
+  </Window>
+
+  <Window title="achievements" class="mt-8">
+    <ul class="flex flex-col gap-5">
       {
         cv.achievements.map((achievement) => (
           <li>
             <p class="font-medium">
               <span aria-hidden="true">{achievement.icon}</span> {achievement.title}
             </p>
-            <p class="text-sm text-ink-muted">{achievement.description}</p>
+            <p class="mt-1 text-sm text-ink-muted">{achievement.description}</p>
           </li>
         ))
       }
     </ul>
-  </section>
+  </Window>
 </BaseLayout>
