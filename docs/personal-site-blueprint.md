@@ -41,6 +41,7 @@ You would rather not put the PDF online, but the contents are fine. So: **no dow
 |---|---|---|---|
 | **Framework** | Astro | Islands architecture: pages ship zero JS unless a component asks for it. The right tool for a content-and-credential site, and the one you are curious about. | Next.js — you already demonstrate that stack at EatPing, and `techytimms` covers React/Vite. Nothing left to prove here. |
 | **Styling** | Tailwind v4 via `@tailwindcss/vite` | Same setup you already run in `techytimms`, so no new muscle memory. CSS-first `@theme` config keeps tokens in one file. | CSS Modules and hand-written CSS — **deferred until a real use case appears**, not adopted pre-emptively. |
+| **Interactivity** | React islands via `@astrojs/react` | Needed for the window-chrome component. Hydrated per-component with `client:*`, so mobile can ship the static version and desktop the interactive one. | A framework that hydrates everything. See the note below. |
 | **Content** | MDX via `@astrojs/mdx` | Markdown simplicity, with an escape hatch to drop in a component when a post needs one. | Plain Markdown. Simpler, but you lose the escape hatch entirely. |
 | **Schema / validation** | Zod 4, via `astro/zod` | Astro validates collection frontmatter with Zod **at build time** — a malformed date or missing summary fails `astro build`, not the page. Exactly the compile-level checking you want, and it is native rather than bolted on. | Runtime checks, or no checks. Both let bad content reach production. |
 | **Code blocks** | *Undecided — see note* | Astro ships Shiki highlighting built in, and `expressive-code` is the common upgrade. Both highlight at build time with no client JS. | — |
@@ -207,6 +208,17 @@ Slate neutrals with a blue bias, one warm amber accent. Amber against cool slate
 
 **Why two accent tokens.** Amber at full chroma does not reach 4.5:1 against white, so `--color-accent` is for marks, borders, focus rings and underlines, while `--color-accent-ink` is the darkened variant for anything that is actual text. This is the single most common way a nice-looking palette fails an audit.
 
+**Direction (decided).** Warm neutrals with a subtle seasonal palette. Shift
+the neutral hue from 250 toward 60–80 at very low chroma so the ground reads as
+warm paper rather than cool slate; keep the amber accent.
+
+**Future: full custom ramps.** The intent is to drop Tailwind's default colours
+entirely in favour of hand-built OKLCH ramps — roughly **5 steps per hue**, which
+is a sensible spread for a site this size (ground / sunk / border / muted / ink,
+plus accent variants). Generating these with a ramp tool rather than by eye is
+the right call; OKLCH makes the output predictable because lightness is
+perceptual. Out of scope until the palette direction is settled — see section 9.
+
 **Alternates.** Change the hue angle on the three accent tokens and nothing else:
 
 | Direction | Hue | Reads as |
@@ -279,6 +291,23 @@ Unchanged in substance from Rev A; the Astro implementations differ.
 - [ ] Real favicon (there is a placeholder SVG)
 - [ ] Prettier + ESLint carried over from `techytimms`
 - [ ] Analytics, once hosting is decided
+
+**Design language** *(next up — see `design-blueprint.md`)*
+- [ ] Shift neutrals from cool slate to warm paper (one hue number in `global.css`)
+- [ ] Add `@astrojs/react`
+- [ ] `Window.astro` / `Window.tsx` — 2000s Windows chrome: title bar, minimise/maximise/close, border. Props for position, size, title, and whether the chrome is interactive
+- [ ] Bordered-panel primitive shared by callouts, cards and buttons (flat fills, visible borders, no soft shadows)
+- [ ] Coloured link underlines
+- [ ] Responsive shell: single full-bleed window on mobile, floating windows on desktop, via `client:media`
+
+**Sections**
+- [ ] Blog empty state — `/blog` must read as intentional with zero posts, not broken
+- [ ] Post header: read time + date; "on this page" contents
+- [ ] Library ("digital bookshelf") — books and video games in one section, games shown as PS1/PS2 disc cases
+- [ ] Hobbies — polaroid-framed photos pegged on a line (MTG, foraging, apple trees)
+- [ ] Brief timeline
+- [ ] `/colophon` — how the site is designed and built
+- [ ] MTG decks I'm playing — deck lists imported to a data file, rendered through the same MDX pipeline as posts, with card art from an API
 
 **Content** *(blocking — see section 8)*
 - [ ] Write the one-line pitch
@@ -358,3 +387,24 @@ Note that `.astro` components are awkward to unit test — Astro's Container API
 Placeholders are fine for all of the above while building. The two that genuinely block a launch are the pitch and the contact route.
 
 > **The failure mode.** Personal sites overwhelmingly die with a beautiful theme toggle and no content. The design system is the fun part and it is infinitely extensible, which is exactly why it will absorb every evening you give it. Get the pitch, the CV page, and a contact link live on the apex domain before you let yourself touch a custom cursor.
+
+---
+
+## 9. Out of scope (maybe later)
+
+Explicitly descoped. Recorded so each is a decision, not an omission.
+
+| Idea | Why it is parked | Revisit when |
+|---|---|---|
+| **MTG deck import/export tool** | This is a product, not a page — deck-list parsing, Arena/MTGO formats, matchup matrices, sideboard guides. It would eat the site's entire build budget. | As its own project, linked from the site the way the terminal is. Possibly its own subdomain. |
+| **Serial Experiments Lain references** | You want to place these deliberately rather than scatter them. | You say where and when. |
+| **Full custom OKLCH ramps** (~5 steps per hue, generated with a ramp tool) | The palette direction needs to settle first; rebuilding ramps twice is wasted effort. | After warm neutrals land and the window chrome exists to test them against. |
+| **Draggable / stackable windows** | Real window management is a large build and a mobile liability. Framed panels get most of the effect. | Once the static framing is proven and you still want it. |
+| **Live style customiser** (Miriam Suzanne) | Large build; you are not selling design services. | Probably never — a colophon covers the same instinct. |
+| **TinaCMS** | Editing MDX in git is not currently the bottleneck. | If authoring friction is what stops you writing. |
+| **utterances comments** | Nothing to comment on yet. | After there are posts worth discussing. |
+| **GitHub profile README** | Not site work — do it independently. | Any evening. It is an hour's work and high visibility. |
+| **Open-sourcing the site / blog template** | Premature. | Once it is something you would want copied. |
+| **Annual redesign, past versions kept live** (Lynn Fisher) | Year-two idea. | If the site is still fun in a year. |
+| **i18n** | English-speaking audience only. | Never — decided. |
+| **Presskit** | Sara Soueidan has one because she speaks professionally. You do not need it. | If speaking becomes a thing. |
