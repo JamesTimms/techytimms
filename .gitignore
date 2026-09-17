@@ -18,3 +18,7 @@ assets/
 .vscode/*
 !.vscode/extensions.json
 .config/
+docs/personal-site-inspiration.md
+
+# machine-specific Claude Code permissions
+.claude/settings.local.json
