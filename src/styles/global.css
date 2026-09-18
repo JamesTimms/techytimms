@@ -25,6 +25,20 @@
   --color-accent-ink: oklch(45% 0.11 70);
   --color-accent-sunk: oklch(95% 0.03 70);
 
+  /* The wallpaper the window sits on. Deliberately not `ground`: ground is the
+     contrast baseline every text pair is measured against, and the wallpaper is
+     a surface that never carries text. Keeping them separate means retuning the
+     wallpaper cannot invalidate the text contrast table. */
+  --color-desktop: oklch(72% 0.055 70);
+
+  /* Raised-edge pair. A raised object needs only ONE of its two edges to clear
+     3:1 against what surrounds it, and which one does flips with the surround:
+     on this light wallpaper the dark edge carries at 4.02 while the light edge
+     is 2.50, and on a near-white panel it is the other way round. Do not assume
+     the lighter edge is the one doing the work. */
+  --color-bevel-light: oklch(100% 0 70);
+  --color-bevel-dark: oklch(38% 0.02 70);
+
   /* Underline hues for links. Colour varies; the underline itself never does,
      so colour is never the only signal that something is navigable. */
   --color-link-1: oklch(55% 0.13 25);
@@ -51,6 +65,16 @@
   --color-accent-ink: oklch(80% 0.105 70);
   --color-accent-sunk: oklch(24% 0.035 70);
 
+  /* Stays below `sunk` (14%) on purpose. The dark theme's raised edge is carried
+     by `bevel-light`, and a bevel near 50% only clears 3:1 while the wallpaper
+     is near-black — so a mid-lightness dark wallpaper would need a dedicated
+     outline token rather than a bevel. See the design system, §5. */
+  --color-desktop: oklch(13.5% 0.018 70);
+  /* 49% is the bare minimum against the wallpaper above; 54% buys headroom and
+     also lifts the control edge on `sunk` from 3.04 to 3.92. */
+  --color-bevel-light: oklch(54% 0.02 70);
+  --color-bevel-dark: oklch(8% 0.01 70);
+
   --color-link-1: oklch(76% 0.11 25);
   --color-link-2: oklch(76% 0.11 45);
   --color-link-3: oklch(76% 0.11 70);
@@ -68,7 +92,7 @@
   }
 
   body {
-    background-color: var(--color-ground);
+    background-color: var(--color-desktop);
     color: var(--color-ink);
     -webkit-font-smoothing: antialiased;
   }
@@ -104,33 +128,348 @@
    * Windows 9x raised controls by painting the top and left edges light and the
    * bottom and right edges dark. It reads as three-dimensional without a shadow,
    * which is the constraint this design already has.
+   *
+   * The edges use the bevel tokens rather than surface/ink-faint. Those two
+   * invert in dark mode — ink-faint is lighter than surface there — which put
+   * the lit edge on the bottom right and made every control read as pressed.
+   *
+   * Two rings, not one: Win9x raised buttons are a 2px double bevel, outer
+   * light over inner light on the top left. The pseudo-element carries the
+   * inner ring so this stays a border effect rather than an inset shadow.
    */
   .panel-bevel {
+    position: relative;
     border-radius: var(--radius-control);
-    border-top-color: var(--color-surface);
-    border-left-color: var(--color-surface);
-    border-bottom-color: var(--color-ink-faint);
-    border-right-color: var(--color-ink-faint);
+    border-top-color: var(--color-bevel-light);
+    border-left-color: var(--color-bevel-light);
+    border-bottom-color: var(--color-bevel-dark);
+    border-right-color: var(--color-bevel-dark);
     background-color: var(--color-sunk);
   }
 
+  .panel-bevel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border: 1px solid transparent;
+    border-top-color: var(--color-surface);
+    border-left-color: var(--color-surface);
+    border-bottom-color: var(--color-border);
+    border-right-color: var(--color-border);
+  }
+
   .panel-bevel:active {
-    border-top-color: var(--color-ink-faint);
-    border-left-color: var(--color-ink-faint);
+    border-top-color: var(--color-bevel-dark);
+    border-left-color: var(--color-bevel-dark);
+    border-bottom-color: var(--color-bevel-light);
+    border-right-color: var(--color-bevel-light);
+  }
+
+  .panel-bevel:active::before {
+    border-top-color: var(--color-border);
+    border-left-color: var(--color-border);
     border-bottom-color: var(--color-surface);
     border-right-color: var(--color-surface);
   }
 
   /*
+   * Icons are pixel art at 16, 32 or 48px. Smoothing them on scale-up is what
+   * makes period chrome look like a screenshot of itself.
+   */
+  .pixel-icon {
+    image-rendering: pixelated;
+    flex-shrink: 0;
+  }
+
+  /*
+   * Title-bar controls. Win98 sized these to the bar rather than to their glyph,
+   * which is why they read as a set.
+   */
+  .title-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    border-top-color: var(--color-bevel-light);
+    border-left-color: var(--color-bevel-light);
+    border-bottom-color: var(--color-bevel-dark);
+    border-right-color: var(--color-bevel-dark);
+    background-color: var(--color-sunk);
+    font-size: 0.6rem;
+    line-height: 1;
+    color: var(--color-ink-muted);
+  }
+
+  /*
    * The desktop wallpaper. A gradient rather than an image so it costs no
-   * request, and it only shows above the breakpoint where windows float.
+   * request. The vignette lights it from above, which is what stops a flat fill
+   * reading as "page background" instead of "a surface with something on it".
    */
   .desktop-ground {
-    background-image: repeating-linear-gradient(
-      45deg,
-      transparent 0 6px,
-      color-mix(in oklch, var(--color-border) 9%, transparent) 6px 7px
-    );
+    background-color: var(--color-desktop);
+    background-image:
+      radial-gradient(
+        ellipse 130% 95% at 50% -10%,
+        color-mix(in oklch, var(--color-bevel-light) 16%, transparent),
+        transparent 72%
+      ),
+      repeating-linear-gradient(
+        45deg,
+        transparent 0 6px,
+        color-mix(in oklch, var(--color-bevel-dark) 14%, transparent) 6px 7px
+      );
+    background-attachment: fixed;
+  }
+
+  /*
+   * Desktop shortcuts. Hidden below `xl`: at `lg` the window leaves roughly 24px
+   * of wallpaper either side, which cannot hold a 32px icon and a label, so they
+   * would overlap the window or clip. The Start menu is the navigation below
+   * that width, and these are additive rather than the only route anywhere.
+   */
+  .desktop-shortcuts {
+    display: none;
+    /* The taskbar's height plus a margin, for shortcuts pinned to the bottom edge. */
+    --taskbar-clearance: calc(3rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (min-width: 80rem) {
+    .desktop-shortcuts {
+      position: fixed;
+      z-index: 0;
+      display: grid;
+      grid-auto-flow: column;
+      justify-items: center;
+    }
+  }
+
+  /* A grid only fills downwards, so a bottom-anchored group is flipped and each
+     shortcut flipped back. Rows then fill up from the taskbar, and a short last
+     column sits at the bottom instead of the top. */
+  .desktop-shortcuts[data-anchor="bottom"],
+  .desktop-shortcuts[data-anchor="bottom"] > * {
+    transform: scaleY(-1);
+  }
+
+  .desktop-shortcut {
+    display: flex;
+    width: 5.5rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.25rem;
+    text-align: center;
+    /* `ink`, not `accent`: the amber accent and the wallpaper are both hue 70,
+       so accent-on-wallpaper measures 1.76 in light mode. */
+    color: var(--color-ink);
+    text-decoration: none;
+    /* The press state below replaces the browser's grey tap flash, and
+       `manipulation` drops the double-tap-to-zoom delay on touch. */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .desktop-shortcut .pixel-icon {
+    transition:
+      transform 120ms ease-out,
+      filter 120ms ease-out;
+  }
+
+  /* Hover only where a pointer can hover, or a tapped icon on a tablet stays
+     lifted after the finger has gone. */
+  @media (hover: hover) {
+    .desktop-shortcut:hover .pixel-icon {
+      transform: translateY(-2px);
+    }
+  }
+
+  /* `is-pressed` is set by script because iOS Safari does not reliably apply
+     `:active` to a link; `:active` is kept for when the script has not run. */
+  .desktop-shortcut:active .pixel-icon,
+  .desktop-shortcut.is-pressed .pixel-icon {
+    transform: translateY(1px) scale(0.92);
+    filter: brightness(0.8);
+    transition-duration: 40ms;
+  }
+
+  .shortcut-label {
+    padding: 0.05rem 0.25rem;
+    font-size: 0.8125rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  .shortcut-label.is-nowrap {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+
+  /* Win98 marks the selected item by inverting its label rather than by drawing
+     a ring, which is also how this stays legible on any wallpaper. */
+  .desktop-shortcut:hover .shortcut-label,
+  .desktop-shortcut:focus-visible .shortcut-label,
+  .desktop-shortcut.is-selected .shortcut-label {
+    background-color: var(--color-ink);
+    color: var(--color-surface);
+  }
+
+  .desktop-shortcut:focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 1px;
+  }
+
+  /*
+   * The window's outer edge. Below the breakpoint it is full-bleed with no side
+   * borders; above it, it becomes a raised bevel against the wallpaper.
+   *
+   * The bevel is doing real work, not period decoration: `border` sits at a
+   * luminance close to the wallpaper's and cannot reach 3:1 against it, whereas
+   * a bevel is identified by its lighter edge and clears 3:1 in both themes.
+   */
+  .window-frame {
+    border: 1px solid var(--color-border);
+    border-left-width: 0;
+    border-right-width: 0;
+    background-color: var(--color-surface);
+  }
+
+  @media (min-width: 64rem) {
+    .window-frame {
+      border-width: 2px;
+      border-top-color: var(--color-bevel-light);
+      border-left-color: var(--color-bevel-light);
+      border-right-color: var(--color-bevel-dark);
+      border-bottom-color: var(--color-bevel-dark);
+    }
+  }
+
+  /*
+   * Screen chrome, not window chrome — it sits outside the window and outlives
+   * whatever page is open. Raised top edge for the same reason as the window.
+   */
+  .taskbar {
+    background-color: var(--color-sunk);
+    border-top: 2px solid var(--color-bevel-light);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /*
+   * The Start menu: a native <details> disclosure wearing Win98 chrome.
+   * No JavaScript, so it opens, closes, takes focus and announces its state for
+   * free. It does not close on Escape or on an outside click — both need JS,
+   * and that trade is the blueprint's call.
+   */
+  .start {
+    position: relative;
+  }
+
+  .start-button {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 100%;
+    padding-inline: 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    border-top-color: var(--color-bevel-light);
+    border-left-color: var(--color-bevel-light);
+    border-bottom-color: var(--color-bevel-dark);
+    border-right-color: var(--color-bevel-dark);
+    background-color: var(--color-sunk);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--color-ink);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  /* Both spellings are needed: WebKit still ships the shadow-DOM marker. */
+  .start-button::-webkit-details-marker {
+    display: none;
+  }
+
+  .start-button::marker {
+    content: "";
+  }
+
+  .start[open] > .start-button {
+    border-top-color: var(--color-bevel-dark);
+    border-left-color: var(--color-bevel-dark);
+    border-bottom-color: var(--color-bevel-light);
+    border-right-color: var(--color-bevel-light);
+  }
+
+  .start-panel {
+    position: absolute;
+    bottom: calc(100% + 0.375rem);
+    left: 0;
+    z-index: 30;
+    display: flex;
+    min-width: 13rem;
+    border: 2px solid var(--color-border);
+    border-top-color: var(--color-bevel-light);
+    border-left-color: var(--color-bevel-light);
+    border-bottom-color: var(--color-bevel-dark);
+    border-right-color: var(--color-bevel-dark);
+    background-color: var(--color-sunk);
+  }
+
+  /* The branding gutter, reading bottom-to-top as Win9x did. */
+  .start-gutter {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-block: 0.75rem;
+    width: 1.75rem;
+    background-color: var(--color-accent-sunk);
+    border-right: 1px solid var(--color-border);
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--color-accent-ink);
+    white-space: nowrap;
+  }
+
+  .start-items {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 0.25rem;
+  }
+
+  .start-item {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+
+  .start-item:hover,
+  .start-item:focus-visible {
+    background-color: var(--color-accent-sunk);
+    color: var(--color-ink);
+  }
+
+  .start-item[aria-current="page"] {
+    font-weight: 700;
+  }
+
+  .start-separator {
+    margin: 0.25rem 0.5rem;
+    border: 0;
+    border-top: 1px solid var(--color-rule);
   }
 
   .link {

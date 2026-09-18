@@ -1,0 +1,26 @@
+---
+import { iconAttributes, type IconName } from '~/lib/icons';
+
+/*
+ * A plain <img> rather than <Image>: astro:assets would re-encode to WebP and
+ * resample, both of which destroy the palette and the hard pixel edges.
+ */
+interface Props {
+  name: IconName;
+  alt?: string;
+  class?: string;
+}
+
+const { name, alt = '', class: className = '' } = Astro.props;
+const { src, width, height, decorative } = iconAttributes(name, alt);
+---
+
+<img
+  src={src}
+  width={width}
+  height={height}
+  alt={alt}
+  aria-hidden={decorative ? 'true' : undefined}
+  decoding="async"
+  class:list={['pixel-icon', className]}
+/>

@@ -1,0 +1,36 @@
+---
+import StartMenu from "~/components/StartMenu.astro";
+import ThemeToggle from "~/components/ThemeToggle.astro";
+
+/*
+ * The screen's chrome. It lives outside the window because it belongs to the
+ * desktop, not to the page being viewed — which is also why it is fixed above
+ * the breakpoint and static below it, where no desktop is visible to pin it to.
+ *
+ * The middle is deliberately empty. On a real taskbar that space holds task
+ * buttons, and with one window whose title bar is directly above, a task button
+ * would be a second label for the same thing.
+ */
+interface Props {
+  currentPath: string;
+}
+
+const { currentPath } = Astro.props;
+---
+
+<div
+  class="taskbar z-20 flex items-stretch gap-2 px-2 py-1.5 lg:fixed lg:inset-x-0 lg:bottom-0"
+>
+  <StartMenu currentPath={currentPath} />
+
+  <div class="flex-1"></div>
+
+  {/* The tray: system settings, which is exactly what a theme toggle is. */}
+  <div class="flex shrink-0 items-center gap-2 border-l border-rule pl-2">
+    <ThemeToggle />
+    {/* ink-muted, not ink-faint: faint on the taskbar's sunk fill is 4.24:1. */}
+    <span class="hidden text-xs text-ink-muted sm:inline">
+      &copy; {new Date().getFullYear()}
+    </span>
+  </div>
+</div>

@@ -1,0 +1,66 @@
+---
+import Icon from "~/components/Icon.astro";
+import { site } from "~/data/site";
+import { isCurrent, primaryNav, secondaryNav } from "~/lib/navigation";
+
+/*
+ * The site's entire navigation, behind the Start button.
+ *
+ * <details>/<summary> rather than an island: it is a native disclosure widget,
+ * so it opens and closes, takes focus and announces its state to a screen
+ * reader without a line of JavaScript. What it does not give is Escape-to-close
+ * or click-outside-to-close; both need JS, and the blueprint's call is to ship
+ * without them and see whether their absence actually bites.
+ */
+interface Props {
+  currentPath: string;
+}
+
+const { currentPath } = Astro.props;
+---
+
+<details class="start">
+  <summary id="start-menu" class="start-button">
+    <Icon name="start" />
+    <span>Start</span>
+  </summary>
+
+  <div class="start-panel">
+    <p class="start-gutter" aria-hidden="true">{site.name}</p>
+
+    <nav aria-label="Site" class="start-items">
+      {
+        primaryNav.map((item) => (
+          <a
+            href={item.href}
+            aria-current={isCurrent(item, currentPath) ? "page" : undefined}
+            class="start-item"
+          >
+            <Icon name={item.icon} />
+            <span>{item.label}</span>
+          </a>
+        ))
+      }
+
+      <hr class="start-separator" />
+
+      {
+        secondaryNav.map((item) => (
+          <a
+            href={item.href}
+            rel={item.external ? "me noopener" : undefined}
+            target={item.external ? "_blank" : undefined}
+            aria-current={isCurrent(item, currentPath) ? "page" : undefined}
+            class="start-item"
+          >
+            <Icon name={item.icon} />
+            <span>
+              {item.label}
+              {item.external && <span class="sr-only"> (opens in a new tab)</span>}
+            </span>
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+</details>

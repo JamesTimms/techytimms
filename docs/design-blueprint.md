@@ -217,6 +217,27 @@ Explicitly parked, so they are not forgotten.
 | **Open-sourcing the site / a blog template**, as Cassidy does | Once it is something you would want copied |
 | **A colophon page** | After the design language settles — it is the write-up of this document |
 | **Annual redesign, past versions kept live** (Lynn Fisher) | Year two, if the site is still fun |
+| **A screensaver** — idle-triggered, over the desktop ground | Once the desktop metaphor is settled and the chrome is stable |
+
+### On the screensaver
+
+The most natural flourish the desktop metaphor offers, and the one place where
+going fully period costs nothing in usability — it only runs when nobody is
+using the site.
+
+Worth knowing before it gets built:
+
+- **It needs JavaScript.** Idle detection and teardown-on-input are a few lines;
+  the animation itself can be CSS or canvas. This is a clear case for the
+  "minimal, not forbidden" stance rather than a reason to avoid it.
+- **`prefers-reduced-motion` is not optional here.** A full-viewport animation is
+  exactly what that preference exists to suppress. Respecting it means the
+  screensaver simply never runs for those users.
+- **Any input must dismiss it instantly** — pointer, key, scroll, touch. A
+  flourish that traps someone is a bug.
+- **This is the obvious home for a Lain reference**, whenever James decides to
+  place one. A screensaver is ambient, opt-out by definition, and seen only by
+  people who lingered — which is the right audience for something oblique.
 
 ---
 
@@ -237,7 +258,80 @@ Resolved from the open questions.
 4. **Library — "digital bookshelf".** Books and video games in one section, with
    games presented as PS1/PS2 disc cases. Separate MTG decks page comes later.
 5. **Warm neutrals with a subtle seasonal palette.**
-6. **Pixel icons and the annual-redesign idea: out of scope for now.**
+6. **Annual-redesign idea: out of scope.** Pixel icons are now in scope — see decision 10.
+
+7. **Full Windows 98/2000 fidelity, excluding colour.** Duplicate the geometry
+   visually — bevels, control sizing, title-bar anatomy, menu structure, icon
+   treatment. Colour does not come from Windows; it comes from our own warm
+   palette. Think of it as a custom *Plus!* theme: period-correct shapes
+   wearing our colours.
+8. **The Start menu is the site navigation.** All navigation leaves the window
+   chrome. The window shows content only.
+9. **`terminal.techytimms.com` moves out of the taskbar** and becomes a project
+   entry on `/work`, until James decides what the taskbar should carry instead.
+10. **Windows 98 icons** from [win98icons.alexmeub.com](https://win98icons.alexmeub.com/),
+   used as an icon library. Credit belongs in the colophon.
+
+11. **Desktop shortcuts duplicate the main navigation** (About, Work, Blog —
+   not CV). Built as a React shortcut component with a props-driven API, plus a
+   layout component owning placement. Win98 flow: left-aligned, filling the
+   first column vertically before starting a second.
+12. **CV sits beside GitHub at the foot of the Start menu.** Reachable, and
+   plainly not the site's headline — consistent with the reader order.
+13. **The desktop ground gets lighter**, and becomes the base the colour schemes
+   layer onto rather than a fixed backdrop.
+
+### Fidelity: the resolution question, answered
+
+James was unsure between "16, 24, 32 bit style" and a modern take. The
+distinction dissolves once you split it in two, and the thesis already says how:
+**period-authentic ornament, modern ergonomics.**
+
+- **Icons stay authentically pixelated.** The set ships 16, 32 and 48px variants
+  at period colour depth. Use them at **native size only**, never scaled to
+  fractional values, with `image-rendering: pixelated`. A 16px icon rendered at
+  17px is the single fastest way to make this look cheap.
+- **Geometry is period.** Bevel widths, border weights, control proportions,
+  the title-bar anatomy — copy these faithfully.
+- **Type, spacing and hit targets are modern.** Do not reproduce 11px MS Sans
+  Serif or 16px hit targets. Text stays at the current scale and remains AA
+  legible; interactive targets stay comfortable on touch.
+
+That split is exactly "heavily stylised flare with a core sensible and clean
+design", applied at the pixel level.
+
+### Navigation behind Start is the intent, not a compromise
+
+An earlier draft treated hiding navigation as a cost to mitigate for the
+recruiter audience. That reading is obsolete: **the site is James's first and
+recruiters' last** (build plan, section 1).
+
+The Start menu holding all navigation is the design working, not a compromise.
+What follows:
+
+- The Start button still has to be **unmistakably the way in** — not to rescue a
+  fifteen-second skim, but because navigation nobody can find is bad design for
+  every reader, James included.
+- **CV is reachable but deliberately tucked away.** It sits in the Start menu
+  like everything else. No taskbar shortcut, no home-page call to action, no
+  treatment implying it is the site's purpose.
+- The home page is free to lead with whatever is most *his* — projects,
+  collections, the desktop itself — rather than a pitch aimed at a stranger.
+
+### Zero JavaScript and a popup menu
+
+A Start menu opens and closes, which sounds like it needs an island. It does
+not: `<details>`/`<summary>` is a native disclosure widget — keyboard
+accessible, screen-reader announced, zero JavaScript.
+
+What `<details>` does not give: click-outside-to-close, and Escape to dismiss.
+Both need a few lines of JS.
+
+**Standing position: minimal JavaScript, not none.** Zero-JS is a strong default
+because it is usually achievable and keeps content pages fast — but where
+JavaScript buys genuinely better functionality, propose it with what it costs
+and James decides. Ship the CSS-only menu first; if the missing dismiss
+behaviours annoy in use, they are worth a few lines.
 
 ### Why Astro still fits
 

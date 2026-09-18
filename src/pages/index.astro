@@ -1,75 +1,63 @@
 ---
-import BaseLayout from "~/layouts/BaseLayout.astro";
-import Window from "~/components/Window.astro";
-import Panel from "~/components/Panel.astro";
-import { site } from "~/data/site";
-import { getCollection } from "astro:content";
-import { excludeDrafts, newestFirst, featuredFirst, formatDate } from "~/lib/content";
-import { linkClass } from "~/lib/link-accent";
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import Window from '~/components/Window.astro';
+import Panel from '~/components/Panel.astro';
+import { site } from '~/data/site';
+import { getCollection } from 'astro:content';
+import { excludeDrafts, newestFirst, featuredFirst, formatDate } from '~/lib/content';
+import { linkClass } from '~/lib/link-accent';
 
-const posts = newestFirst(excludeDrafts(await getCollection("posts"))).slice(0, 3);
-const projects = featuredFirst(excludeDrafts(await getCollection("work"))).slice(0, 3);
+const posts = newestFirst(excludeDrafts(await getCollection('posts'))).slice(0, 3);
+const projects = featuredFirst(excludeDrafts(await getCollection('work'))).slice(0, 3);
 ---
 
 <BaseLayout>
   <section>
-    <h1 class="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-      {site.tagline}
-    </h1>
+    <h1 class="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">{site.tagline}</h1>
     <p class="mt-4 max-w-prose text-ink-muted">
-      {/* PLACEHOLDER: two or three sentences of positioning. */}
-      Technical lead at EatPing, previously CTO and co-founder at Mappa. I work
-      across product, backend and infrastructure — usually at the point where a
-      startup needs all three at once.
-    </p>
-    <p class="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm">
-      <a href="/cv" class:list={[linkClass("/cv"), "text-accent-ink"]}>Read my CV</a>
-      <a href="/work" class:list={[linkClass("/work"), "text-accent-ink"]}>See my work</a>
+      Former technical lead at EatPing, previously CTO and co-founder at Mappa. I work across the
+      stack and enjoy building meaningful products for real people.
     </p>
   </section>
 
   <Window title="recent-writing" class="mt-10">
-    {
-      posts.length === 0 ? (
-        <Panel tone="sunk" class="px-4 py-6 text-sm text-ink-muted">
-          Nothing published yet.
-        </Panel>
-      ) : (
-        <ul class="flex flex-col gap-5">
-          {posts.map((post) => (
-            <li>
-              <a
-                href={`/blog/${post.id}`}
-                class:list={[linkClass(`/blog/${post.id}`), "font-medium"]}
-              >
-                {post.data.title}
-              </a>
-              <p class="mt-1 text-sm text-ink-muted">{post.data.summary}</p>
-              <p class="font-mono text-xs uppercase tracking-widest text-ink-faint">
-                {formatDate(post.data.publishedAt)}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )
-    }
+    {posts.length === 0 ? (
+      <Panel tone="sunk" class="px-4 py-6 text-sm text-ink-muted">
+        Nothing published yet.
+      </Panel>
+    ) : (
+      <ul class="flex flex-col gap-5">
+        {posts.map((post) => (
+          <li>
+            <a
+              href={`/blog/${post.id}`}
+              class:list={[linkClass(`/blog/${post.id}`), 'font-medium']}
+            >
+              {post.data.title}
+            </a>
+            <p class="mt-1 text-sm text-ink-muted">{post.data.summary}</p>
+            <p class="font-mono text-xs uppercase tracking-widest text-ink-faint">
+              {formatDate(post.data.publishedAt)}
+            </p>
+          </li>
+        ))}
+      </ul>
+    )}
   </Window>
 
   <Window title="selected-work" class="mt-8">
     <ul class="flex flex-col gap-5">
-      {
-        projects.map((project) => (
-          <li>
-            <a
-              href={`/work/${project.id}`}
-              class:list={[linkClass(`/work/${project.id}`), "font-medium"]}
-            >
-              {project.data.title}
-            </a>
-            <p class="mt-1 text-sm text-ink-muted">{project.data.outcome}</p>
-          </li>
-        ))
-      }
+      {projects.map((project) => (
+        <li>
+          <a
+            href={`/work/${project.id}`}
+            class:list={[linkClass(`/work/${project.id}`), 'font-medium']}
+          >
+            {project.data.title}
+          </a>
+          <p class="mt-1 text-sm text-ink-muted">{project.data.outcome}</p>
+        </li>
+      ))}
     </ul>
   </Window>
 </BaseLayout>

@@ -1,9 +1,11 @@
 ---
-import "~/styles/global.css";
-import { site } from "~/data/site";
-import { linkClass } from "~/lib/link-accent";
-import ThemeToggle from "~/components/ThemeToggle.astro";
-import TitleBar from "~/components/TitleBar.astro";
+import '~/styles/global.css';
+import { site } from '~/data/site';
+import TitleBar from '~/components/TitleBar.astro';
+import Taskbar from '~/components/Taskbar.astro';
+import Desktop from '~/components/Desktop.tsx';
+import DesktopShortcut from '~/components/DesktopShortcut.tsx';
+import { desktopRows, desktopShortcuts, isCurrent, secondaryNav } from '~/lib/navigation';
 
 interface Props {
   title?: string;
@@ -16,17 +18,10 @@ const { title, description = site.description, noindex = false } = Astro.props;
 const pageTitle = title ? `${title} — ${site.name}` : site.name;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? site.url);
 
-const nav = [
-  { href: "/about", label: "About" },
-  { href: "/cv", label: "CV" },
-  { href: "/work", label: "Work" },
-  { href: "/blog", label: "Blog" },
-];
-
-const currentPath = Astro.url.pathname.replace(/\/$/, "") || "/";
+const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 
 // The frame reads as a file being viewed, which is the whole point of the metaphor.
-const windowTitle = `${canonical.host}${currentPath === "/" ? "" : currentPath}`;
+const windowTitle = `${canonical.host}${currentPath === '/' ? '' : currentPath}`;
 ---
 
 <html lang="en-GB">
@@ -52,77 +47,61 @@ const windowTitle = `${canonical.host}${currentPath === "/" ? "" : currentPath}`
     {/* Must be inline and in <head>: bundling it would run it after first paint. */}
     <script is:inline>
       (() => {
-        const stored = localStorage.getItem("theme");
-        const prefersDark = window.matchMedia(
-          "(prefers-color-scheme: dark)",
-        ).matches;
-        if (stored === "dark" || (!stored && prefersDark)) {
-          document.documentElement.classList.add("dark");
+        const stored = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (stored === 'dark' || (!stored && prefersDark)) {
+          document.documentElement.classList.add('dark');
         }
       })();
     </script>
   </head>
 
-  <body class="desktop-ground min-h-screen font-sans antialiased">
+  <body class="desktop-ground flex min-h-screen flex-col font-sans antialiased">
     <a
-      href="#main"
-      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-10 focus:border focus:border-border focus:bg-surface focus:px-3 focus:py-2"
+      href="#start-menu"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-30 focus:border focus:border-border focus:bg-surface focus:px-3 focus:py-2"
     >
-      Skip to content
+      Skip to navigation
     </a>
+    <Desktop rows={desktopRows(desktopShortcuts)}>
+      {desktopShortcuts.map((item) => (
+        <DesktopShortcut
+          icon={item.icon}
+          label={item.label}
+          href={item.href}
+          external={item.external}
+          selected={isCurrent(item, currentPath)}
+        />
+      ))}
+    </Desktop>
+    <Desktop anchor="bottom" rows={desktopRows(secondaryNav)} label="More desktop shortcuts">
+      {secondaryNav.map((item) => (
+        <DesktopShortcut
+          icon={item.icon}
+          label={item.label}
+          href={item.href}
+          external={item.external}
+          selected={isCurrent(item, currentPath)}
+        />
+      ))}
+    </Desktop>
 
-    {/*
-      Below lg the window fills the viewport and the desktop never shows; above it
-      the window floats on the ground. Identical markup either way — only the
-      border and spacing change, so nothing shifts across the breakpoint.
-    */}
-    <div class="mx-auto min-h-screen w-full max-w-3xl lg:px-8 lg:py-12">
-      <div
-        class="panel flex min-h-screen flex-col border-x-0 lg:min-h-0 lg:border-x"
-      >
-        <TitleBar title={windowTitle} />
-
-        <header
-          class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b border-rule px-4 py-4 sm:px-6"
-        >
-          <a href="/" class="font-semibold tracking-tight">{site.name}</a>
-          <nav class="flex items-center gap-4 text-sm">
-            {
-              nav.map((item) => (
-                <a
-                  href={item.href}
-                  aria-current={currentPath === item.href ? "page" : undefined}
-                  class:list={[
-                    linkClass(item.href),
-                    "text-ink-muted hover:text-accent-ink aria-[current=page]:text-accent-ink",
-                  ]}
-                >
-                  {item.label}
-                </a>
-              ))
-            }
-            <ThemeToggle />
-          </nav>
-        </header>
+    {/* Spans the viewport to centre the window, so it would otherwise sit over the desktop shortcuts and swallow their clicks. */}
+    <div class="pointer-events-none relative z-10 flex flex-1 flex-col lg:px-10 lg:py-12 lg:pb-24">
+      <div class="window-frame pointer-events-auto mx-auto flex w-full max-w-4xl flex-1 flex-col lg:flex-none">
+        <TitleBar title={windowTitle} icon="document" />
 
         <main id="main" class="flex-1 px-4 py-8 sm:px-6">
           <slot />
         </main>
-
-        <footer
-          class="flex flex-wrap items-center justify-between gap-3 border-t border-rule px-4 py-4 text-sm text-ink-faint sm:px-6"
-        >
-          <span>&copy; {new Date().getFullYear()} {site.name}</span>
-          <span class="flex gap-4">
-            <a href={site.socials.github} class:list={[linkClass(site.socials.github), "text-ink-muted"]}>
-              GitHub
-            </a>
-            <a href={site.projects.terminal} class:list={[linkClass(site.projects.terminal), "text-ink-muted"]}>
-              Terminal
-            </a>
-          </span>
-        </footer>
       </div>
     </div>
+
+    <Taskbar currentPath={currentPath} />
+
+    <script>
+      import { enableDesktopShortcuts } from "~/lib/desktop-shortcuts";
+      enableDesktopShortcuts();
+    </script>
   </body>
 </html>
