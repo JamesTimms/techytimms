@@ -7,9 +7,18 @@ interface Props {
   tone?: "default" | "accent";
   controls?: boolean;
   icon?: IconName;
+  /* Only the window that owns the page can be put away; secondary windows keep
+   * decorative controls until there is something for them to do. */
+  minimisable?: boolean;
 }
 
-const { title, tone = "default", controls = true, icon } = Astro.props;
+const {
+  title,
+  tone = "default",
+  controls = true,
+  icon,
+  minimisable = false,
+} = Astro.props;
 
 const toneClass = tone === "accent" ? "bg-accent-sunk" : "bg-sunk";
 ---
@@ -29,14 +38,33 @@ const toneClass = tone === "accent" ? "bg-accent-sunk" : "bg-sunk";
 
   {
     /*
-     * Decorative until window management exists. Rendering these as <button>
-     * would take a tab stop and announce an action that never happens.
+     * Maximise and close stay decorative: there is nothing to maximise to and
+     * nowhere to close to, and a focusable control that does nothing announces
+     * an action that never happens. The container must not be aria-hidden —
+     * that would hide the real minimise button while leaving it focusable.
      */
     controls && (
-      <span aria-hidden="true" class="flex shrink-0 items-center gap-1">
-        {["–", "□", "×"].map((glyph) => (
-          <span class="title-control">{glyph}</span>
-        ))}
+      <span class="flex shrink-0 items-center gap-1">
+        {minimisable ? (
+          <button
+            type="button"
+            class="title-control"
+            data-window-minimise
+            aria-label="Minimise window"
+          >
+            <span aria-hidden="true">–</span>
+          </button>
+        ) : (
+          <span aria-hidden="true" class="title-control">
+            –
+          </span>
+        )}
+        <span aria-hidden="true" class="title-control">
+          □
+        </span>
+        <span aria-hidden="true" class="title-control">
+          ×
+        </span>
       </span>
     )
   }

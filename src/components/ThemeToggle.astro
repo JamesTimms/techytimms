@@ -1,7 +1,9 @@
 ---
-// Paired with the blocking script in BaseLayout, which sets the class before
-// first paint. This only handles clicks after hydration of the inline script.
+// The blocking script in BaseLayout applies the theme before first paint; the
+// click handler is delegated from `desktop-chrome`, because this button is
+// inside persisted chrome and binding per-instance would double up on it.
 ---
+
 <button
   id="theme-toggle"
   type="button"
@@ -11,10 +13,3 @@
   <span class="hidden dark:inline">Light</span>
   <span class="inline dark:hidden">Dark</span>
 </button>
-
-<script is:inline>
-  document.getElementById("theme-toggle")?.addEventListener("click", () => {
-    const isDark = document.documentElement.classList.toggle("dark");
-    localStorage.setItem("theme", isDark ? "dark" : "light");
-  });
-</script>

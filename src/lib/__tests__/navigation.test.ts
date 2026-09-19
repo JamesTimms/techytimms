@@ -4,6 +4,7 @@ import {
   desktopRows,
   desktopShortcuts,
   isCurrent,
+  normalisePath,
   opensOnPress,
   primaryNav,
   secondaryNav,
@@ -79,5 +80,25 @@ describe("desktopRows", () => {
   it("caps the rows so a long list wraps into another column", () => {
     const manyItems = Array.from({ length: 12 }, () => primaryNav[0]!);
     expect(desktopRows(manyItems)).toBe(8);
+  });
+});
+
+describe("normalisePath", () => {
+  it("strips a trailing slash so the two sides of a comparison agree", () => {
+    expect(normalisePath("/about/")).toBe("/about");
+  });
+
+  it("leaves a path without a trailing slash alone", () => {
+    expect(normalisePath("/about")).toBe("/about");
+  });
+
+  it("keeps the root as a single slash rather than emptying it", () => {
+    expect(normalisePath("/")).toBe("/");
+  });
+
+  it("matches what the nav items are written as, so current-page marking works", () => {
+    for (const item of primaryNav) {
+      expect(normalisePath(`${item.href}/`)).toBe(normalisePath(item.href));
+    }
   });
 });

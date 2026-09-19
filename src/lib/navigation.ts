@@ -36,6 +36,12 @@ export function isCurrent(item: NavItem, currentPath: string): boolean {
   return !item.external && item.href === currentPath;
 }
 
+/* Trailing slashes vary between the server render and `location.pathname`, and
+ * the two are compared against each other once the chrome is persisted. */
+export function normalisePath(pathname: string): string {
+  return pathname.replace(/\/+$/, '') || '/';
+}
+
 export type Press = Pick<
   PointerEvent,
   'pointerType' | 'button' | 'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey'

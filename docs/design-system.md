@@ -687,3 +687,122 @@ Hover, focus and selection all invert the label — `ink` fill, `surface` text �
 rather than drawing an accent ring. Two reasons, and they agree: it is what
 Win98 does, and `accent` on the light wallpaper is 1.76:1, so an accent ring
 would be invisible in light mode.
+
+---
+
+## 12. Routing and window state
+
+Blueprint decision 14. Navigation is client-side; minimise is DOM hiding rather
+than a window manager.
+
+### `<ClientRouter />`
+
+In `BaseLayout.astro`'s `<head>`. Every route remains a real URL serving a
+complete document — the router intercepts navigation, it does not replace the
+pages. Verified: each route still carries its own `<title>` and full `<main>`
+content in the built output, so crawlers and a no-JavaScript visitor are
+unaffected.
+
+**Never render more than one route's content into a single document.** That
+would publish the same content at several URLs. The window shows exactly one
+route, which is why minimise hides it rather than swapping it.
+
+### What is persisted, and the cost of persisting it
+
+| Element | Treatment | Why |
+|---|---|---|
+| Taskbar | `transition:persist="taskbar"` | Screen chrome. It outlives the document, and its listeners come with it. |
+| Desktop shortcuts | `transition:persist="desktop-top"` / `"desktop-bottom"` | Same, and the press handlers are bound to these exact elements. |
+| Window frame | `transition:name="window"` | Morphs rather than cross-fades, so it reads as one window showing new content. Deliberately **not** persisted — it must arrive un-minimised. |
+| `<main>` | `transition:animate="fade"` | The content is what changed; it should be what visibly changes. |
+
+**Transition directives apply to elements, not component tags.** Putting
+`transition:persist` on `<Taskbar />` or `<Desktop />` silently does nothing —
+it must sit on the rendered element. The taskbar carries it on its own root;
+the two desktop groups are wrapped in a bare `<div>`, which is layout-neutral
+because `.desktop-shortcuts` is `display: none` below `xl` and `position: fixed`
+above it.
+
+**Persistence makes server-rendered state stale.** The chrome kept after a
+navigation is the *previous* page's markup, so `aria-current="page"` would keep
+pointing at the page just left — a statement of fact to a screen reader, and a
+false one. `syncCurrentPage()` reconciles it on every `astro:page-load`.
+
+This is the real cost of persisting chrome: current-page marking now has two
+sources, the server render and the client fixup, and they have to agree. The
+alternative was to let the chrome rebuild, which is correct by construction but
+gives up the continuity the metaphor depends on — the desktop should not redraw
+when you open a document.
+
+The Start menu is closed on navigation for the same reason: Windows closes it
+when you pick an item, and persistence would otherwise leave it hanging open
+over the page it just opened.
+
+### Scripts under the router
+
+Bundled module scripts run **once** for the life of the session. Anything that
+must run per navigation registers an `astro:page-load` listener, which fires on
+the initial load as well as every subsequent navigation — so it is the only
+hook needed.
+
+| Script | Form | Handling |
+|---|---|---|
+| Theme | `is:inline` in `<head>` | Must stay blocking and inline, or the theme flashes before first paint. The router swaps the root element's attributes, dropping the `dark` class, so it re-applies on `astro:after-swap` — the last moment before the new page paints. |
+| Desktop chrome | bundled module | Registers one `astro:page-load` listener. |
+| Theme toggle click | delegated | Bound once on `document`, not per instance: the button sits in persisted chrome, and binding per render would stack handlers on the same element. |
+
+Anything bound to a persisted element needs an idempotency guard, since the
+element survives while the binding code may run again. `desktop-shortcuts.ts`
+marks each shortcut `data-press-wired`; without it, one press would open two
+tabs.
+
+### Minimise
+
+The window's minimise control is a real `<button>`; maximise and close remain
+decorative `aria-hidden` spans, because there is nothing to maximise to and
+nowhere to close to. The container must not be `aria-hidden` — that would hide
+the real button while leaving it focusable, which is worse than either.
+
+- **`hidden`, not offscreen.** A minimised window must leave the accessibility
+  tree, or a screen reader still reads a window the user has put away.
+- **Focus follows the window.** Hiding the focused element drops focus to
+  `<body>` and loses a keyboard user's place, so minimising moves focus to the
+  task button and restoring moves it back.
+- **The task button appears only while minimised.** Alongside a visible window
+  it would be a second label for the thing whose title bar is directly above.
+  Its accessible name is "Restore" plus the window title; the title alone reads
+  as a bare label rather than a control.
+- **Navigation restores the window.** Following a link is a request to read
+  something, so arriving minimised would hide the very thing that was asked
+  for. The frame is rebuilt each navigation and returns open by construction;
+  the persisted task button is reset explicitly.
+- **Without JavaScript the window never minimises**, so the task button never
+  shows. Nothing is lost.
+
+### Secondary windows are not built
+
+Windows that are *not* routes — an About box, a colophon, a properties dialog —
+are the natural extension, and there is no content for them yet. What exists
+already supports them: `Window.astro` takes the props a second window needs,
+and `TitleBar` gates the working control behind `minimisable`, so secondary
+windows keep decorative chrome until they have behaviour.
+
+Adding one would need: a stable id per window so the tray can address more than
+one, `setMinimised` generalised from "the window" to "a window", and the tray
+rendering a button per open window instead of the single one. The z-order
+question only arrives if two can overlap.
+
+### Cost
+
+| | Raw | Gzipped |
+|---|---|---|
+| `ClientRouter` | 16.4 KB | 5.7 KB |
+| Desktop chrome (inlined) | 2.6 KB | — |
+| Theme (inlined, blocking) | 0.7 KB | — |
+
+The React renderer (`client.*.js`, 216 KB) is still emitted and still
+referenced by nothing, because no component is hydrated.
+
+**The honest claim is now "every page loads about 6 KB of JavaScript", not
+"zero JavaScript".** The zero-JS default was traded deliberately, per blueprint
+decision 14 and the standing "minimal, not forbidden" stance.

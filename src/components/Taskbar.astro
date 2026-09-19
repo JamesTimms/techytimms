@@ -1,4 +1,5 @@
 ---
+import Icon from "~/components/Icon.astro";
 import StartMenu from "~/components/StartMenu.astro";
 import ThemeToggle from "~/components/ThemeToggle.astro";
 
@@ -7,23 +8,41 @@ import ThemeToggle from "~/components/ThemeToggle.astro";
  * desktop, not to the page being viewed — which is also why it is fixed above
  * the breakpoint and static below it, where no desktop is visible to pin it to.
  *
- * The middle is deliberately empty. On a real taskbar that space holds task
- * buttons, and with one window whose title bar is directly above, a task button
- * would be a second label for the same thing.
+ * The task button appears only while the window is minimised. A task button
+ * alongside a visible window would be a second label for the same thing; once
+ * the window is put away it is the only handle back to it.
  */
 interface Props {
   currentPath: string;
+  windowTitle: string;
 }
 
-const { currentPath } = Astro.props;
+const { currentPath, windowTitle } = Astro.props;
 ---
 
+{/* Persisted here rather than at the call site: transition directives apply to
+    elements, not to component tags. */}
 <div
+  transition:persist="taskbar"
   class="taskbar z-20 flex items-stretch gap-2 px-2 py-1.5 lg:fixed lg:inset-x-0 lg:bottom-0"
 >
   <StartMenu currentPath={currentPath} />
 
-  <div class="flex-1"></div>
+  <div class="flex min-w-0 flex-1 items-stretch">
+    {/* Hidden until minimised, and restored on navigation by the chrome script.
+        Without JavaScript the window never minimises, so this never shows. */}
+    <button
+      type="button"
+      class="task-button"
+      data-window-task
+      hidden
+    >
+      <Icon name="document" />
+      {/* The title alone reads as a bare label; the verb says what pressing it does. */}
+      <span class="sr-only">Restore</span>
+      <span class="truncate">{windowTitle}</span>
+    </button>
+  </div>
 
   {/* The tray: system settings, which is exactly what a theme toggle is. */}
   <div class="flex shrink-0 items-center gap-2 border-l border-rule pl-2">

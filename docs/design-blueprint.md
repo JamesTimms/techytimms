@@ -281,6 +281,14 @@ Resolved from the open questions.
 13. **The desktop ground gets lighter**, and becomes the base the colour schemes
    layer onto rather than a fixed backdrop.
 
+14. **Navigation becomes client-side via Astro's `<ClientRouter />`** ("Tier 1"),
+   with minimise-to-tray implemented as DOM hiding rather than a window manager.
+   Every route stays a real URL serving complete HTML, so bots and screen
+   readers are unaffected. Rejected: canvas (invisible to crawlers and assistive
+   technology alike) and a true multi-window SPA (several routes open at once
+   means fetching and injecting documents, and owning the cache, history and
+   focus model).
+
 ### Fidelity: the resolution question, answered
 
 James was unsure between "16, 24, 32 bit style" and a modern take. The

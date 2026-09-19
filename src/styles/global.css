@@ -202,6 +202,20 @@
     font-size: 0.6rem;
     line-height: 1;
     color: var(--color-ink-muted);
+    /* Minimise renders as a <button>; the rest are spans. */
+    padding: 0;
+    font-family: inherit;
+  }
+
+  button.title-control {
+    cursor: pointer;
+  }
+
+  button.title-control:active {
+    border-top-color: var(--color-bevel-dark);
+    border-left-color: var(--color-bevel-dark);
+    border-bottom-color: var(--color-bevel-light);
+    border-right-color: var(--color-bevel-light);
   }
 
   /*
@@ -387,6 +401,30 @@
     color: var(--color-ink);
     cursor: pointer;
     list-style: none;
+  }
+
+  /*
+   * The handle back to a minimised window. Pressed-in by default, because the
+   * only time it is visible is when its window is put away.
+   */
+  .task-button {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    max-width: 16rem;
+    height: 100%;
+    padding-inline: 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    border-top-color: var(--color-bevel-dark);
+    border-left-color: var(--color-bevel-dark);
+    border-bottom-color: var(--color-bevel-light);
+    border-right-color: var(--color-bevel-light);
+    background-color: var(--color-sunk);
+    font-size: 0.75rem;
+    color: var(--color-ink);
+    cursor: pointer;
   }
 
   /* Both spellings are needed: WebKit still ships the shadow-DOM marker. */
