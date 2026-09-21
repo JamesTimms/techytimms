@@ -1,37 +1,39 @@
 ---
 import Icon from "~/components/Icon.astro";
 import { type IconName } from "~/lib/icons";
+import { cn } from "~/lib/cn";
+import {
+  glyphMinimise,
+  glyphRestore,
+  minimiseControl,
+  titleBar,
+  titleControl,
+  type ChromeVariant,
+} from "~/lib/window-variants";
 
 interface Props {
   title: string;
-  tone?: "default" | "accent";
   controls?: boolean;
   icon?: IconName;
   /* Only the window that owns the page can be put away; secondary windows keep
    * decorative controls until there is something for them to do. */
   minimisable?: boolean;
+  chrome?: ChromeVariant;
 }
 
 const {
   title,
-  tone = "default",
   controls = true,
   icon,
   minimisable = false,
+  chrome = "period",
 } = Astro.props;
-
-const toneClass = tone === "accent" ? "bg-accent-sunk" : "bg-sunk";
 ---
 
-<div
-  class:list={[
-    "flex items-center justify-between gap-3 border-b border-border px-2 py-1.5",
-    toneClass,
-  ]}
->
+<div class={titleBar({ chrome })}>
   <span class="flex min-w-0 items-center gap-2">
     {icon && <Icon name={icon} />}
-    <span class="truncate font-mono text-xs uppercase tracking-widest text-ink">
+    <span class="truncate text-xs font-semibold tracking-wide">
       {title}
     </span>
   </span>
@@ -44,26 +46,32 @@ const toneClass = tone === "accent" ? "bg-accent-sunk" : "bg-sunk";
      * that would hide the real minimise button while leaving it focusable.
      */
     controls && (
-      <span class="flex shrink-0 items-center gap-1">
+      <span class="flex shrink-0 items-center gap-0.5">
         {minimisable ? (
           <button
             type="button"
-            class="title-control"
+            class={cn(
+              titleControl({ chrome, pressable: true }),
+              minimiseControl({ chrome }),
+            )}
             data-window-minimise
             aria-label="Minimise window"
           >
-            <span aria-hidden="true">–</span>
+            <span aria-hidden="true" class={glyphMinimise} />
           </button>
         ) : (
-          <span aria-hidden="true" class="title-control">
-            –
+          <span
+            aria-hidden="true"
+            class={cn(titleControl({ chrome }), minimiseControl({ chrome }))}
+          >
+            <span class={glyphMinimise} />
           </span>
         )}
-        <span aria-hidden="true" class="title-control">
-          □
+        <span aria-hidden="true" class={titleControl({ chrome })}>
+          <span class={glyphRestore} />
         </span>
-        <span aria-hidden="true" class="title-control">
-          ×
+        <span aria-hidden="true" class={titleControl({ chrome })}>
+          <span class="title-glyph-close" />
         </span>
       </span>
     )

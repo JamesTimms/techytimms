@@ -19,15 +19,21 @@ export const primaryNav: NavItem[] = [
 
 /* Below the separator, where logoff and shutdown would normally go. Acts as a footer */
 export const secondaryNav: NavItem[] = [
-  { href: '/cv', label: 'CV', icon: 'cv' },
-  { href: site.socials.github, label: 'GitHub', icon: 'external', external: true },
+  { href: '/cv', label: 'CV', icon: 'cv', onDesktop: true },
+  {
+    href: site.socials.github,
+    label: 'GitHub',
+    icon: 'external',
+    external: true,
+    onDesktop: true,
+  },
 ];
 
-export const desktopShortcuts: NavItem[] = primaryNav.filter((item) => item.onDesktop);
+export const primaryShortcuts: NavItem[] = primaryNav.filter((item) => item.onDesktop);
+export const secondaryShortcuts: NavItem[] = secondaryNav.filter((item) => item.onDesktop);
 
 const maxDesktopRows = 8;
 
-/* One row per item up to the cap. Every row in the grid takes a gap, so a spare empty row would still push the group apart. */
 export function desktopRows(items: readonly NavItem[]): number {
   return Math.min(items.length, maxDesktopRows);
 }

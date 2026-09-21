@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   desktopRows,
-  desktopShortcuts,
+  primaryShortcuts,
   isCurrent,
   normalisePath,
   opensOnPress,
@@ -10,25 +10,25 @@ import {
   secondaryNav,
 } from "~/lib/navigation";
 
-describe("desktopShortcuts", () => {
+describe("primaryShortcuts", () => {
   it("duplicates About, Work and Blog", () => {
-    expect(desktopShortcuts.map((item) => item.label)).toEqual(["About", "Work", "Blog"]);
+    expect(primaryShortcuts.map((item) => item.label)).toEqual(["About", "Work", "Blog"]);
   });
 
   it("excludes CV, which belongs below the separator only", () => {
-    const labels = desktopShortcuts.map((item) => item.label);
+    const labels = primaryShortcuts.map((item) => item.label);
     expect(labels).not.toContain("CV");
     expect(secondaryNav.map((item) => item.label)).toContain("CV");
   });
 
   it("excludes Home, since the shortcut would point at the page showing it", () => {
-    expect(desktopShortcuts.map((item) => item.href)).not.toContain("/");
+    expect(primaryShortcuts.map((item) => item.href)).not.toContain("/");
     expect(primaryNav.map((item) => item.href)).toContain("/");
   });
 
   it("only surfaces destinations the Start menu also carries", () => {
     const menuHrefs = [...primaryNav, ...secondaryNav].map((item) => item.href);
-    for (const shortcut of desktopShortcuts) {
+    for (const shortcut of primaryShortcuts) {
       expect(menuHrefs).toContain(shortcut.href);
     }
   });

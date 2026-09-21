@@ -2,42 +2,78 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/*
- * Warm neutrals and amber accent, both at hue 70 — the neutrals are the accent
- * hue at very low chroma, which is what makes the greys read as warm paper.
- * Retune the palette by changing the hue angle, not individual values.
+/* ==========================================================================
+ * PALETTE — Fallen Leaf
  *
- * Every value here is contrast-verified in both themes; see docs/design-system.md
- * for the full table. The tightest pair is ink-faint on ground at 4.56:1, so
- * recheck that one before darkening the ground.
- */
+ * Pale straw wallpaper, warm greys at hue 85, deep russet accent at hue 45.
+ * Candidate schemes live in docs/palette-exploration.md and are rendered as
+ * swatches at /styleguide. To try another, replace everything between the two
+ * PALETTE markers — nothing outside them encodes a colour.
+ *
+ * Every value is contrast-verified in both themes; docs/design-system.md holds
+ * the table. Two pairs have little headroom and should be rechecked before any
+ * retune: ink-faint on ground at 4.55, and accent on desktop at 3.68.
+ * ========================================================================== */
 @theme {
-  --color-ground: oklch(98.5% 0.006 70);
-  --color-surface: oklch(100% 0 70);
-  --color-sunk: oklch(96% 0.01 70);
-  --color-rule: oklch(88.5% 0.014 70);
-  --color-border: oklch(63% 0.016 70);
-  --color-ink-faint: oklch(55.5% 0.022 70);
-  --color-ink-muted: oklch(47% 0.026 70);
-  --color-ink: oklch(24% 0.028 70);
+  --color-ground: oklch(98.5% 0.006 85);
+  --color-surface: oklch(100% 0 85);
+  --color-sunk: oklch(95.5% 0.012 85);
+  --color-rule: oklch(88.5% 0.016 85);
+  --color-border: oklch(63% 0.018 85);
+  --color-ink-faint: oklch(55.5% 0.024 85);
+  --color-ink-muted: oklch(47% 0.028 85);
+  --color-ink: oklch(24% 0.03 85);
 
-  --color-accent: oklch(58% 0.13 70);
-  --color-accent-ink: oklch(45% 0.11 70);
-  --color-accent-sunk: oklch(95% 0.03 70);
+  /* Russet, off the neutral hue. The accent has to clear 3:1 on the wallpaper
+     for the desktop to show selection at all, and that is a lightness problem,
+     not a hue one: at 48% against an 80% wallpaper it reaches 3.68. Sweeping
+     hue moves that number by less than 0.1. */
+  --color-accent: oklch(48% 0.13 45);
+  --color-accent-ink: oklch(47% 0.11 45);
+  /* 0.028 as published clips red in sRGB; 0.024 is the most chroma that fits,
+     and costs 0.04 of contrast. */
+  --color-accent-sunk: oklch(95.5% 0.024 45);
 
   /* The wallpaper the window sits on. Deliberately not `ground`: ground is the
      contrast baseline every text pair is measured against, and the wallpaper is
-     a surface that never carries text. Keeping them separate means retuning the
-     wallpaper cannot invalidate the text contrast table. */
-  --color-desktop: oklch(72% 0.055 70);
+     a surface that never carries body text. Keeping them separate means
+     retuning the wallpaper cannot invalidate the text contrast table. */
+  --color-desktop: oklch(80% 0.034 80);
+
+  /* Flips with the theme, unlike the dark-wallpaper schemes: pale straw cannot
+     carry light text. Shortcut labels are the only text on the wallpaper. */
+  --color-desktop-ink: oklch(24% 0.022 80);
+
+  /* The window's outer edge where no bevel draws it — the `soft` and `flat`
+     variants. It cannot be `border`: that is tuned to sit on near-white panels
+     at 3.50, and the same value against this pale wallpaper is 1.87. A window
+     boundary and a panel boundary are different jobs against different grounds,
+     so they get different tokens. */
+  --color-window-edge: oklch(47% 0.018 85);
+
+  /* Win2000 ran its title bar dark at the left and light at the right. The
+     direction is load-bearing rather than decorative: the controls sit at the
+     right, and they only clear 3:1 against the light end. Reverse the gradient
+     and the controls disappear.
+
+     Chroma falls as lightness rises (0.055 -> 0.038), which is what the real
+     Windows ramp does and what a constant-chroma ramp gets wrong. The real ramp
+     is also far wider — measured off the reference screenshot it runs #101b4c
+     to #a3c8ee, putting white title text at 1.74:1 at the light end. Windows
+     got away with that because its title is short and left-aligned; ours has
+     controls on the right, so the range is compressed until both ends clear
+     4.5:1. */
+  --color-titlebar-from: oklch(34% 0.04 60);
+  --color-titlebar-to: oklch(52% 0.027 70);
+  --color-titlebar-ink: oklch(99% 0 55);
 
   /* Raised-edge pair. A raised object needs only ONE of its two edges to clear
-     3:1 against what surrounds it, and which one does flips with the surround:
-     on this light wallpaper the dark edge carries at 4.02 while the light edge
-     is 2.50, and on a near-white panel it is the other way round. Do not assume
-     the lighter edge is the one doing the work. */
-  --color-bevel-light: oklch(100% 0 70);
-  --color-bevel-dark: oklch(38% 0.02 70);
+     3:1 against what surrounds it, and which one does flips with the surround.
+     On this pale wallpaper the DARK edge carries the window at 5.34 while the
+     light edge is 1.88; in dark mode it is the other way round. Both tokens
+     must stay real colours — neither is decorative. */
+  --color-bevel-light: oklch(100% 0 85);
+  --color-bevel-dark: oklch(38% 0.02 85);
 
   /* Underline hues for links. Colour varies; the underline itself never does,
      so colour is never the only signal that something is navigable. */
@@ -46,40 +82,51 @@
   --color-link-3: oklch(55% 0.13 70);
   --color-link-4: oklch(55% 0.13 95);
   --color-link-5: oklch(55% 0.13 125);
-
-  --radius-panel: 0px;
-  --radius-control: 2px;
 }
 
 .dark {
-  --color-ground: oklch(17% 0.012 70);
-  --color-surface: oklch(21% 0.014 70);
-  --color-sunk: oklch(14% 0.01 70);
-  --color-rule: oklch(32% 0.018 70);
-  --color-border: oklch(52% 0.018 70);
-  --color-ink-faint: oklch(62% 0.02 70);
-  --color-ink-muted: oklch(74% 0.02 70);
-  --color-ink: oklch(93% 0.014 70);
+  --color-ground: oklch(17% 0.012 85);
+  --color-surface: oklch(21% 0.014 85);
+  --color-sunk: oklch(14% 0.01 85);
+  --color-rule: oklch(32% 0.018 85);
+  --color-border: oklch(52% 0.018 85);
+  --color-ink-faint: oklch(62% 0.02 85);
+  --color-ink-muted: oklch(74% 0.02 85);
+  --color-ink: oklch(93% 0.014 85);
 
-  --color-accent: oklch(78% 0.11 70);
-  --color-accent-ink: oklch(80% 0.105 70);
-  --color-accent-sunk: oklch(24% 0.035 70);
+  --color-accent: oklch(81% 0.11 60);
+  --color-accent-ink: oklch(82% 0.105 60);
+  --color-accent-sunk: oklch(26% 0.035 60);
 
-  /* Stays below `sunk` (14%) on purpose. The dark theme's raised edge is carried
-     by `bevel-light`, and a bevel near 50% only clears 3:1 while the wallpaper
-     is near-black — so a mid-lightness dark wallpaper would need a dedicated
-     outline token rather than a bevel. See the design system, §5. */
-  --color-desktop: oklch(13.5% 0.018 70);
-  /* 49% is the bare minimum against the wallpaper above; 54% buys headroom and
-     also lifts the control edge on `sunk` from 3.04 to 3.92. */
-  --color-bevel-light: oklch(54% 0.02 70);
-  --color-bevel-dark: oklch(8% 0.01 70);
+  --color-desktop: oklch(16% 0.014 60);
+  --color-desktop-ink: oklch(97% 0.006 60);
+
+  /* 52% is the boundary against the near-black wallpaper; 55% buys headroom. */
+  --color-window-edge: oklch(55% 0.018 85);
+
+  /* The title bar does not flip. It is dark in both themes because it is chrome
+     the window wears rather than a surface the page sits on, and a light title
+     bar in dark mode reads as a different component. */
+  --color-titlebar-from: oklch(34% 0.04 60);
+  --color-titlebar-to: oklch(52% 0.027 70);
+  --color-titlebar-ink: oklch(99% 0 55);
+
+  /* Here the LIGHT edge carries the window at 4.18; the dark edge is 1.07
+     against a near-black wallpaper. The reverse of light mode. */
+  --color-bevel-light: oklch(56% 0.02 85);
+  --color-bevel-dark: oklch(8% 0.01 85);
 
   --color-link-1: oklch(76% 0.11 25);
   --color-link-2: oklch(76% 0.11 45);
   --color-link-3: oklch(76% 0.11 70);
   --color-link-4: oklch(76% 0.11 95);
   --color-link-5: oklch(76% 0.11 125);
+}
+/* ========================= end PALETTE — Fallen Leaf ====================== */
+
+@theme {
+  --radius-panel: 0px;
+  --radius-control: 2px;
 }
 
 @layer base {
@@ -183,60 +230,227 @@
   }
 
   /*
-   * Title-bar controls. Win98 sized these to the bar rather than to their glyph,
-   * which is why they read as a set.
+   * The one title-bar glyph that stays CSS. Minimise and restore are single
+   * boxes and live as utilities in `window-variants.ts`; this is two bars
+   * rotated in opposite directions, which needs `::before` and `::after` with
+   * different transforms. Expressible as utilities, but the class string runs
+   * longer than the rule and reads far worse.
    */
-  .title-control {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.125rem;
-    height: 1.125rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-control);
-    border-top-color: var(--color-bevel-light);
-    border-left-color: var(--color-bevel-light);
-    border-bottom-color: var(--color-bevel-dark);
-    border-right-color: var(--color-bevel-dark);
-    background-color: var(--color-sunk);
-    font-size: 0.6rem;
-    line-height: 1;
-    color: var(--color-ink-muted);
-    /* Minimise renders as a <button>; the rest are spans. */
-    padding: 0;
-    font-family: inherit;
+  .title-glyph-close {
+    display: block;
+    position: relative;
+    width: 9px;
+    height: 9px;
+    background-color: transparent;
   }
 
-  button.title-control {
-    cursor: pointer;
+  .title-glyph-close::before,
+  .title-glyph-close::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 50%;
+    height: 2px;
+    margin-top: -1px;
+    background-color: currentColor;
   }
 
-  button.title-control:active {
-    border-top-color: var(--color-bevel-dark);
-    border-left-color: var(--color-bevel-dark);
-    border-bottom-color: var(--color-bevel-light);
-    border-right-color: var(--color-bevel-light);
+  .title-glyph-close::before {
+    transform: rotate(45deg);
+  }
+
+  .title-glyph-close::after {
+    transform: rotate(-45deg);
   }
 
   /*
-   * The desktop wallpaper. A gradient rather than an image so it costs no
-   * request. The vignette lights it from above, which is what stops a flat fill
-   * reading as "page background" instead of "a surface with something on it".
+   * The group box: how Win9x separated sections *inside* a window. An inset
+   * groove with the label breaking its top edge.
+   *
+   * This exists because a window nested in a window undermines the metaphor —
+   * a window means a page. Sections within a page get a groove instead.
+   */
+  .group-box {
+    position: relative;
+    margin-top: 2rem;
+    padding: 1.5rem 1rem 1.25rem;
+    border: 1px solid var(--color-bevel-dark);
+    border-right-color: var(--color-bevel-light);
+    border-bottom-color: var(--color-bevel-light);
+  }
+
+  @media (min-width: 40rem) {
+    .group-box {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  /* The inner ring of the groove, offset one pixel so the two lines read as a
+     carved channel rather than a doubled border. */
+  .group-box::before {
+    content: "";
+    position: absolute;
+    inset: 1px;
+    pointer-events: none;
+    border: 1px solid var(--color-bevel-light);
+    border-right-color: var(--color-bevel-dark);
+    border-bottom-color: var(--color-bevel-dark);
+  }
+
+  /* Breaks the top edge by painting over it, which is how a legend works
+     without needing <fieldset>'s layout behaviour. */
+  .group-box-label {
+    position: absolute;
+    top: 0;
+    left: 0.75rem;
+    transform: translateY(-50%);
+    z-index: 1;
+    padding-inline: 0.4rem;
+    background-color: var(--color-surface);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-ink-muted);
+  }
+
+  /*
+   * The desktop wallpaper: one flat fill, no texture. What makes it read as a
+   * desktop rather than a page background is that it is darker than everything
+   * on it — a window is lit, the surface under it is not. The vignette and
+   * weave that used to do that job were compensating for a wallpaper too close
+   * in lightness to the chrome sitting on it.
    */
   .desktop-ground {
     background-color: var(--color-desktop);
+  }
+
+  /* ------------------------------------------------------------------------
+   * Desktop pattern candidates. Not applied to the live background — they are
+   * rendered side by side at /styleguide for James to choose from, and
+   * docs/background-exploration.md holds the measurements and the reasoning.
+   *
+   * Each composes on top of `.desktop-ground` rather than replacing it, so
+   * adopting one means adding its class (or folding its rule into
+   * `.desktop-ground`) and nothing else.
+   *
+   * The pattern colour is mixed from `--color-desktop` rather than written as
+   * a literal, so these survive a palette swap. The mix percentages differ by
+   * theme because the wallpapers sit at opposite ends of the lightness range:
+   * a fixed percentage that reads on pale straw is invisible on near-black.
+   * --------------------------------------------------------------------- */
+  .desktop-ground {
+    /* Lifts the ground ~7 points of Oklab lightness in light mode, ~6 in dark. */
+    --pattern-lift: color-mix(in oklab, white 35%, var(--color-desktop));
+    /* Drops it ~4 points. Light mode has only 5 points of downward headroom
+       before `window-edge` falls under 3:1, so this is near its limit. */
+    --pattern-drop: color-mix(in oklab, black 5%, var(--color-desktop));
+  }
+
+  .dark .desktop-ground {
+    --pattern-lift: color-mix(in oklab, white 8%, var(--color-desktop));
+    --pattern-drop: color-mix(in oklab, black 30%, var(--color-desktop));
+  }
+
+  /* Monica Dinculescu's grid measured off the reference is dots, not lines:
+     13px apart, each about 1px, at 1.29:1 against her ground. 16px is the
+     nearest round value at our scale. */
+  .desktop-dots-lift {
+    background-image: radial-gradient(
+      circle at center,
+      var(--pattern-lift) 1.1px,
+      transparent 1.1px
+    );
+    background-size: 16px 16px;
+  }
+
+  /* The same geometry drawn darker — faithful to Monica's direction, which our
+     ground has far less room for than hers does. */
+  .desktop-dots-drop {
+    background-image: radial-gradient(
+      circle at center,
+      var(--pattern-drop) 1.1px,
+      transparent 1.1px
+    );
+    background-size: 16px 16px;
+  }
+
+  .desktop-grid {
     background-image:
-      radial-gradient(
-        ellipse 130% 95% at 50% -10%,
-        color-mix(in oklch, var(--color-bevel-light) 16%, transparent),
-        transparent 72%
-      ),
-      repeating-linear-gradient(
-        45deg,
-        transparent 0 6px,
-        color-mix(in oklch, var(--color-bevel-dark) 14%, transparent) 6px 7px
-      );
-    background-attachment: fixed;
+      linear-gradient(to right, var(--pattern-lift) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--pattern-lift) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* The Win9x Pattern family was an 8x8 monochrome tile. This is that geometry
+     at that size — a plausible member of the family rather than a pixel-exact
+     copy of any one of them. */
+  .desktop-weave {
+    background-image:
+      linear-gradient(to right, var(--pattern-lift) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--pattern-lift) 1px, transparent 1px);
+    background-size: 8px 8px;
+  }
+
+  /* The same 8x8 tile drawn in black, as Windows actually drew it. Kept so the
+     failure is visible rather than described: on pale straw the lines take
+     `desktop-ink` to 1.05:1 and shortcut labels crossing one disappear. */
+  .desktop-weave-authentic {
+    background-image:
+      linear-gradient(to right, #000 1px, transparent 1px),
+      linear-gradient(to bottom, #000 1px, transparent 1px);
+    background-size: 8px 8px;
+  }
+
+  .desktop-hatch {
+    background-image: repeating-linear-gradient(
+      45deg,
+      var(--pattern-lift) 0 1px,
+      transparent 1px 7px
+    );
+  }
+
+  /*
+   * Live background. Arc's technique, which is a greyscale noise tile blended
+   * with `overlay` rather than composited straight over the fill.
+   *
+   * Overlay matters for more than looks: it scales the deviation against the
+   * base instead of pulling toward an absolute black or white, so it costs less
+   * contrast. At the same strength a plain composite drops `window-edge` to
+   * 3.28 against a 3.0 floor; overlay holds it at 3.52.
+   *
+   * `saturate 0` makes the noise achromatic. Raw feTurbulence varies all four
+   * channels, which tints the wallpaper in coloured speckle; grain should vary
+   * lightness only. `stitchTiles` removes the seam where the tile repeats.
+   *
+   * The two themes carry different strengths because overlay is not symmetric:
+   * its multiply branch compresses hard on a near-black base, so the same value
+   * that reads as grain on pale straw is nearly invisible at 16% lightness.
+   *
+   * Both strengths are sized to hold their floors even if the blend mode is
+   * NOT applied. A body background propagates to the canvas, and whether
+   * `background-blend-mode` survives that is not something we can test here, so
+   * the contrast floor does not depend on it. Dark at 0.22 looks better and
+   * breaks `window-edge` to 2.07 if the blend is dropped; 0.10 holds at 3.15
+   * either way. Light 0.07 holds at 3.15 source-over, 3.47 blended.
+   */
+  .desktop-grain {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.07'/%3E%3C/svg%3E");
+    background-blend-mode: overlay;
+  }
+
+  .dark .desktop-grain {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.10'/%3E%3C/svg%3E");
+  }
+
+  .desktop-sheen {
+    background-image: linear-gradient(
+      to bottom,
+      var(--pattern-lift),
+      transparent 55%,
+      var(--pattern-drop)
+    );
   }
 
   /*
@@ -277,9 +491,10 @@
     gap: 0.35rem;
     padding: 0.35rem 0.25rem;
     text-align: center;
-    /* `ink`, not `accent`: the amber accent and the wallpaper are both hue 70,
-       so accent-on-wallpaper measures 1.76 in light mode. */
-    color: var(--color-ink);
+    /* Not `ink`: that is tuned against `ground`, and the wallpaper is a
+       different surface in both themes. `desktop-ink` flips with the theme
+       because this wallpaper does — pale straw in light, near-black in dark. */
+    color: var(--color-desktop-ink);
     text-decoration: none;
     /* The press state below replaces the browser's grey tap flash, and
        `manipulation` drops the double-tap-to-zoom delay on touch. */
@@ -329,38 +544,13 @@
   .desktop-shortcut:hover .shortcut-label,
   .desktop-shortcut:focus-visible .shortcut-label,
   .desktop-shortcut.is-selected .shortcut-label {
-    background-color: var(--color-ink);
-    color: var(--color-surface);
+    background-color: var(--color-desktop-ink);
+    color: var(--color-desktop);
   }
 
   .desktop-shortcut:focus-visible {
-    outline: 2px solid var(--color-ink);
+    outline: 2px solid var(--color-desktop-ink);
     outline-offset: 1px;
-  }
-
-  /*
-   * The window's outer edge. Below the breakpoint it is full-bleed with no side
-   * borders; above it, it becomes a raised bevel against the wallpaper.
-   *
-   * The bevel is doing real work, not period decoration: `border` sits at a
-   * luminance close to the wallpaper's and cannot reach 3:1 against it, whereas
-   * a bevel is identified by its lighter edge and clears 3:1 in both themes.
-   */
-  .window-frame {
-    border: 1px solid var(--color-border);
-    border-left-width: 0;
-    border-right-width: 0;
-    background-color: var(--color-surface);
-  }
-
-  @media (min-width: 64rem) {
-    .window-frame {
-      border-width: 2px;
-      border-top-color: var(--color-bevel-light);
-      border-left-color: var(--color-bevel-light);
-      border-right-color: var(--color-bevel-dark);
-      border-bottom-color: var(--color-bevel-dark);
-    }
   }
 
   /*

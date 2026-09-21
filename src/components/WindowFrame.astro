@@ -1,0 +1,41 @@
+---
+import TitleBar from '~/components/TitleBar.astro';
+import { cn } from '~/lib/cn';
+import { windowFrame, type ChromeVariant } from '~/lib/window-variants';
+
+/*
+ * The window that owns the page: one per document, wrapping `<main>`.
+ *
+ * It alone carries `data-window-frame`, `id="main"` and `transition:name`, so
+ * it cannot be rendered twice on a page. The styleguide composes the same
+ * variant classes onto plain markup instead.
+ */
+interface Props {
+  title: string;
+  chrome?: ChromeVariant;
+}
+
+const { title, chrome = 'period' } = Astro.props;
+---
+
+{/* pointer-events are disabled on the wrapper so the wallpaper behind it stays
+    clickable, and re-enabled on the frame itself. */}
+<div class="pointer-events-none relative z-10 flex flex-1 flex-col lg:px-10 lg:py-12 lg:pb-24">
+  {/* transition:name pairs this frame with the next page's, so the window
+      morphs rather than cross-fading and reads as one window showing new
+      content. Deliberately not persisted: it must arrive un-minimised. */}
+  <div
+    transition:name="window"
+    data-window-frame
+    class={cn(
+      windowFrame({ chrome }),
+      'pointer-events-auto mx-auto flex w-full max-w-4xl flex-1 flex-col lg:flex-none',
+    )}
+  >
+    <TitleBar title={title} icon="document" minimisable chrome={chrome} />
+
+    <main id="main" transition:animate="fade" class="flex-1 px-4 py-8 sm:px-6">
+      <slot />
+    </main>
+  </div>
+</div>

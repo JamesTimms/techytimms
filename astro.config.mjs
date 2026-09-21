@@ -12,5 +12,11 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
   },
-  integrations: [mdx(), sitemap(), react()],
+  integrations: [
+    mdx(),
+    // The styleguide is a development surface, not site content. It also
+    // carries noindex; this keeps it out of the sitemap as well.
+    sitemap({ filter: (page) => !page.endsWith('/styleguide/') }),
+    react(),
+  ],
 });

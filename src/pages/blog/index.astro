@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "~/layouts/BaseLayout.astro";
-import Window from "~/components/Window.astro";
+import GroupBox from "~/components/GroupBox.astro";
 import Panel from "~/components/Panel.astro";
 import { getCollection } from "astro:content";
 import { excludeDrafts, newestFirst, formatDate, toIsoDate } from "~/lib/content";
@@ -12,7 +12,7 @@ const posts = newestFirst(excludeDrafts(await getCollection("posts")));
 <BaseLayout title="Blog" description="Writing by James Timms.">
   <h1 class="text-3xl font-semibold tracking-tight">Blog</h1>
 
-  <Window title={posts.length === 0 ? "blog — empty" : "blog"} class="mt-8">
+  <GroupBox label={posts.length === 0 ? "posts — none yet" : "posts"}>
     {
       posts.length === 0 ? (
         /*
@@ -55,5 +55,5 @@ const posts = newestFirst(excludeDrafts(await getCollection("posts")));
         </ul>
       )
     }
-  </Window>
+  </GroupBox>
 </BaseLayout>

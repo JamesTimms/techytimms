@@ -54,6 +54,14 @@ Prettier is configured (`.prettierrc.mjs`) but is not wired into a script and ha
 
 - **No i18n.** Decided and closed; do not add scaffolding for it.
 - **Comments explain why, not what** — a non-obvious workaround or a rule the code cannot express. No comments restating the line below.
+- **Compose React components with the children pattern.** Container components take `children`; the call site does the mapping:
+  ```tsx
+  <DesktopSection rows={n}>
+    {items.map((item) => <DesktopShortcut {...item} />)}
+  </DesktopSection>
+  ```
+  Not a wrapper that takes the data and maps internally (`<DesktopGroup items={items} />`). This avoids prop drilling and global state, and keeps the composition readable in one file. Do not introduce a data-prop wrapper to shorten a call site.
+- **`key` is not a prop in `.astro` templates.** Astro has no reconciliation, so `key` is passed through as an unknown prop and fails type checking. Omit it when mapping inside `.astro` files; it is only meaningful inside `.tsx`.
 - **Names carry their use without abbreviation or padding**: `publishedPosts`, not `pp`, not `postsFilteredByPublishedStatus`. A name needing a comment is the wrong name.
 - **Tests stay deliberately small** — draft exclusion, ordering, the CV schema rejecting bad data, date and slug formatting. Do not add coverage for thin templates.
 - Deferred by decision, do not introduce unasked: hand-written CSS, a headless CMS, newsletter capture, comments, E2E tests, interactive MDX components.

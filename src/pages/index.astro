@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '~/layouts/BaseLayout.astro';
-import Window from '~/components/Window.astro';
+import GroupBox from '~/components/GroupBox.astro';
 import Panel from '~/components/Panel.astro';
 import { site } from '~/data/site';
 import { getCollection } from 'astro:content';
@@ -20,7 +20,7 @@ const projects = featuredFirst(excludeDrafts(await getCollection('work'))).slice
     </p>
   </section>
 
-  <Window title="recent-writing" class="mt-10">
+  <GroupBox label="recent-writing" class="mt-10">
     {posts.length === 0 ? (
       <Panel tone="sunk" class="px-4 py-6 text-sm text-ink-muted">
         Nothing published yet.
@@ -43,9 +43,9 @@ const projects = featuredFirst(excludeDrafts(await getCollection('work'))).slice
         ))}
       </ul>
     )}
-  </Window>
+  </GroupBox>
 
-  <Window title="selected-work" class="mt-8">
+  <GroupBox label="selected-work">
     <ul class="flex flex-col gap-5">
       {projects.map((project) => (
         <li>
@@ -59,5 +59,5 @@ const projects = featuredFirst(excludeDrafts(await getCollection('work'))).slice
         </li>
       ))}
     </ul>
-  </Window>
+  </GroupBox>
 </BaseLayout>

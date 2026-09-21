@@ -2,11 +2,10 @@
 import '~/styles/global.css';
 import { ClientRouter } from 'astro:transitions';
 import { site } from '~/data/site';
-import TitleBar from '~/components/TitleBar.astro';
 import Taskbar from '~/components/Taskbar.astro';
-import Desktop from '~/components/Desktop.tsx';
-import DesktopShortcut from '~/components/DesktopShortcut.tsx';
-import { desktopRows, desktopShortcuts, isCurrent, secondaryNav } from '~/lib/navigation';
+import WindowFrame from '~/components/WindowFrame.astro';
+import { DesktopSection, DesktopShortcut } from '~/components/Desktop.tsx';
+import { primaryShortcuts, secondaryShortcuts, desktopRows, isCurrent } from '~/lib/navigation';
 
 interface Props {
   title?: string;
@@ -74,20 +73,20 @@ const windowTitle = `${canonical.host}${currentPath === '/' ? '' : currentPath}`
     </script>
   </head>
 
-  <body class="desktop-ground flex min-h-screen flex-col font-sans antialiased">
+  <body class="desktop-ground desktop-grain flex min-h-screen flex-col font-sans antialiased">
     <a
       href="#start-menu"
       class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-30 focus:border focus:border-border focus:bg-surface focus:px-3 focus:py-2"
     >
       Skip to navigation
     </a>
-    {/* The desktop outlives whatever document is open, so it is kept rather than
-        rebuilt — which also keeps the press handlers bound to it. The wrapper
-        exists because transition directives apply to elements, not component
-        tags; it is layout-neutral because the shortcuts are fixed or hidden. */}
-    <div transition:persist="desktop-top">
-      <Desktop rows={desktopRows(desktopShortcuts)}>
-        {desktopShortcuts.map((item) => (
+
+    {/* The wrapper exists only to carry the directive; it is layout-neutral because
+        `.desktop-shortcuts` is `display: none` below `xl` and fixed above it. */}
+    {primaryShortcuts.length > 0 && (
+    <div transition:persist="persist-desktop-top">
+      <DesktopSection rows={desktopRows(primaryShortcuts)}>
+        {primaryShortcuts.map((item) => (
           <DesktopShortcut
             icon={item.icon}
             label={item.label}
@@ -96,39 +95,33 @@ const windowTitle = `${canonical.host}${currentPath === '/' ? '' : currentPath}`
             selected={isCurrent(item, currentPath)}
           />
         ))}
-      </Desktop>
+      </DesktopSection>
     </div>
+    )}
 
-    <div transition:persist="desktop-bottom">
-      <Desktop anchor="bottom" rows={desktopRows(secondaryNav)} label="More desktop shortcuts">
-        {secondaryNav.map((item) => (
-          <DesktopShortcut
-            icon={item.icon}
-            label={item.label}
-            href={item.href}
-            external={item.external}
-            selected={isCurrent(item, currentPath)}
-          />
-        ))}
-      </Desktop>
-    </div>
-
-    {/* Spans the viewport to centre the window, so it would otherwise sit over the desktop shortcuts and swallow their clicks. */}
-    <div class="pointer-events-none relative z-10 flex flex-1 flex-col lg:px-10 lg:py-12 lg:pb-24">
-      {/* Named rather than persisted: the frame should read as one window
-          showing new content, and it must arrive un-minimised. */}
-      <div
-        transition:name="window"
-        data-window-frame
-        class="window-frame pointer-events-auto mx-auto flex w-full max-w-4xl flex-1 flex-col lg:flex-none"
+    {secondaryShortcuts.length > 0 && (
+    <div transition:persist="persist-desktop-bottom">
+      <DesktopSection
+        anchor="bottom"
+        rows={desktopRows(secondaryShortcuts)}
+        label="More desktop shortcuts"
       >
-        <TitleBar title={windowTitle} icon="document" minimisable />
-
-        <main id="main" transition:animate="fade" class="flex-1 px-4 py-8 sm:px-6">
-          <slot />
-        </main>
-      </div>
+        {secondaryShortcuts.map((item) => (
+          <DesktopShortcut
+            icon={item.icon}
+            label={item.label}
+            href={item.href}
+            external={item.external}
+            selected={isCurrent(item, currentPath)}
+          />
+        ))}
+      </DesktopSection>
     </div>
+    )}
+
+    <WindowFrame title={windowTitle}>
+      <slot />
+    </WindowFrame>
 
     <Taskbar currentPath={currentPath} windowTitle={windowTitle} />
 

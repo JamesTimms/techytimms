@@ -1,0 +1,222 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import TitleBar from '~/components/TitleBar.astro';
+import {
+  chromeDescriptions,
+  chromeVariants,
+  windowFrame,
+} from '~/lib/window-variants';
+import { paletteCandidates } from '~/data/palette-candidates';
+import { backgroundCandidates } from '~/data/background-candidates';
+import { DesktopShortcut } from '~/components/Desktop.tsx';
+
+/*
+ * A development surface for comparing chrome variants, not site content:
+ * `noindex` here, and excluded from the sitemap in `astro.config.mjs`.
+ *
+ * The demos deliberately do not use `WindowFrame`. That component carries
+ * `data-window-frame`, `id="main"` and `transition:name="window"`, all of which
+ * must be unique per document — client script resolves the first match, and
+ * Astro allows a transition name only once per page. The demos compose the same
+ * variant classes onto plain markup instead.
+ */
+---
+
+<BaseLayout title="Styleguide" description="Window chrome variants." noindex>
+  <h1 class="text-2xl font-semibold tracking-tight">Window chrome variants</h1>
+  <p class="mt-3 max-w-prose text-ink-muted">
+    One axis, three stops, from full period fidelity to a panel that only hints
+    at the era. Switch with the <code class="text-ink">chrome</code> prop on
+    <code class="text-ink">WindowFrame</code>; <code class="text-ink">period</code>
+    is the default.
+  </p>
+
+  <div class="mt-10 flex flex-col gap-10">
+    {
+      chromeVariants.map((chrome) => (
+        <section>
+          <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-faint">
+            {chrome}
+          </h2>
+          <p class="mt-1 max-w-prose text-sm text-ink-muted">
+            {chromeDescriptions[chrome]}
+          </p>
+
+          <div class={`mt-4 ${windowFrame({ chrome })} lg:border-x`}>
+            <TitleBar title="techytimms.com/about" icon="document" chrome={chrome} />
+            <div class="px-4 py-5 sm:px-6">
+              <p class="max-w-prose text-sm text-ink-muted">
+                Body text sits on <code class="text-ink">surface</code> inside
+                the frame. The title bar, the control cluster and the frame edge
+                are the three things this variant changes; spacing, type and
+                reading width stay identical across all three.
+              </p>
+              <p class="mt-3 text-sm">
+                <a href="/about" class="link link-3">A link, for colour</a>
+              </p>
+            </div>
+          </div>
+        </section>
+      ))
+    }
+  </div>
+
+  <section class="mt-12 border-t border-rule pt-6">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-faint">
+      Note on the flat variant
+    </h2>
+    <p class="mt-2 max-w-prose text-sm text-ink-muted">
+      On a dark wallpaper the window's fill measures close to 1:1 against it, so
+      the face alone cannot mark the window's edge. Every variant therefore
+      keeps an explicit border — <code class="text-ink">flat</code> drops the
+      bevel, never the border.
+    </p>
+  </section>
+
+  <section class="mt-14 border-t border-rule pt-8">
+    <h2 class="text-2xl font-semibold tracking-tight">Desktop backgrounds</h2>
+    <p class="mt-3 max-w-prose text-ink-muted">
+      Each panel is the real wallpaper with a real window and shortcut on it, at
+      a realistic size. The ratios are the pattern's <em>worst</em> extreme, not
+      its average — a label that lands on the darkest pixel is the one that has
+      to stay legible. Floors are 4.5 for the label and 3.0 for the window edge.
+      Reasoning is in <code class="text-ink">docs/background-exploration.md</code>.
+    </p>
+
+    <div class="mt-8 flex flex-col gap-10">
+      {
+        backgroundCandidates.map((candidate) => (
+          <article>
+            <h3 class="font-semibold">
+              {candidate.name}
+              {candidate.live && (
+                <span class="ml-2 border border-accent bg-accent-sunk px-1.5 py-0.5 text-xs font-normal uppercase tracking-wide text-accent-ink">
+                  live
+                </span>
+              )}
+              {candidate.fails && (
+                <span class="ml-2 border border-border bg-sunk px-1.5 py-0.5 text-xs font-normal uppercase tracking-wide text-ink">
+                  fails AA
+                </span>
+              )}
+            </h3>
+            <p class="mt-1 max-w-prose text-sm text-ink-muted">{candidate.blurb}</p>
+
+            <div
+              class={`desktop-ground ${candidate.className} mt-3 flex items-start gap-4 border border-rule p-4`}
+            >
+              <DesktopShortcut icon="about" label="About" href="/about" />
+              <div class={`${windowFrame({ chrome: 'period' })} min-w-0 flex-1 border-x`}>
+                <TitleBar title="techytimms.com" icon="document" chrome="period" />
+                <p class="px-3 py-3 text-sm text-ink-muted">
+                  A window on the wallpaper, so the edge and the label can be
+                  judged against the pattern rather than in isolation.
+                </p>
+              </div>
+            </div>
+
+            <dl class="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-ink-faint">
+              <div class="flex gap-1.5">
+                <dt>label light</dt>
+                <dd class={candidate.contrast.lightInk < 4.5 ? 'text-accent-ink' : 'text-ink'}>
+                  {candidate.contrast.lightInk.toFixed(2)}
+                </dd>
+              </div>
+              <div class="flex gap-1.5">
+                <dt>edge light</dt>
+                <dd class={candidate.contrast.lightEdge < 3 ? 'text-accent-ink' : 'text-ink'}>
+                  {candidate.contrast.lightEdge.toFixed(2)}
+                </dd>
+              </div>
+              <div class="flex gap-1.5">
+                <dt>label dark</dt>
+                <dd class={candidate.contrast.darkInk < 4.5 ? 'text-accent-ink' : 'text-ink'}>
+                  {candidate.contrast.darkInk.toFixed(2)}
+                </dd>
+              </div>
+              <div class="flex gap-1.5">
+                <dt>edge dark</dt>
+                <dd class={candidate.contrast.darkEdge < 3 ? 'text-accent-ink' : 'text-ink'}>
+                  {candidate.contrast.darkEdge.toFixed(2)}
+                </dd>
+              </div>
+              <div class="flex gap-1.5">
+                <dt>cost</dt>
+                <dd class="text-ink">{candidate.cost}</dd>
+              </div>
+            </dl>
+            <p class="mt-1 max-w-prose text-xs text-ink-faint">{candidate.weakness}</p>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="mt-14 border-t border-rule pt-8">
+    <h2 class="text-2xl font-semibold tracking-tight">Palette candidates</h2>
+    <p class="mt-3 max-w-prose text-ink-muted">
+      Both columns are shown at once, so this reads the same whichever theme you
+      are in. The first four keep a dark wallpaper in both themes; the last
+      three make light mode genuinely light and warm. Reasoning and full
+      contrast tables are in <code class="text-ink">docs/palette-exploration.md</code>.
+    </p>
+
+    <div class="mt-8 flex flex-col gap-8">
+      {
+        paletteCandidates.map((candidate) => (
+          <article>
+            <h3 class="font-semibold">
+              {candidate.name}
+              <span class="ml-2 text-xs font-normal uppercase tracking-wide text-ink-faint">
+                {candidate.mode === 'light-ground' ? 'light wallpaper' : 'dark wallpaper'}
+              </span>
+              {candidate.live && (
+                <span class="ml-2 border border-accent bg-accent-sunk px-1.5 py-0.5 text-xs font-normal uppercase tracking-wide text-accent-ink">
+                  live
+                </span>
+              )}
+            </h3>
+            <p class="mt-1 max-w-prose text-sm text-ink-muted">{candidate.blurb}</p>
+
+            <div class="mt-3 overflow-x-auto">
+              <table class="w-full min-w-[34rem] border-collapse text-xs">
+                <thead>
+                  <tr class="text-left text-ink-faint">
+                    <th class="py-1 pr-3 font-medium">Token</th>
+                    <th class="py-1 pr-3 font-medium">Light</th>
+                    <th class="py-1 font-medium">Dark</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {candidate.tokens.map((swatch) => (
+                    <tr class="border-t border-rule">
+                      <td class="py-1 pr-3 font-mono text-ink-muted">{swatch.token}</td>
+                      <td class="py-1 pr-3">
+                        <span class="flex items-center gap-2">
+                          <span
+                            class="inline-block h-5 w-9 shrink-0 border border-border"
+                            style={`background-color:${swatch.light}`}
+                          />
+                          <code>{swatch.light}</code>
+                        </span>
+                      </td>
+                      <td class="py-1">
+                        <span class="flex items-center gap-2">
+                          <span
+                            class="inline-block h-5 w-9 shrink-0 border border-border"
+                            style={`background-color:${swatch.dark}`}
+                          />
+                          <code>{swatch.dark}</code>
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+</BaseLayout>
