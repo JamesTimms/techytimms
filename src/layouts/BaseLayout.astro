@@ -2,10 +2,19 @@
 import '~/styles/global.css';
 import { ClientRouter } from 'astro:transitions';
 import { site } from '~/data/site';
-import Taskbar from '~/components/Taskbar.astro';
+import Dock from '~/components/Dock.astro';
+import ThemeToggle from '~/components/ThemeToggle.astro';
 import WindowFrame from '~/components/WindowFrame.astro';
 import { DesktopSection, DesktopShortcut } from '~/components/Desktop.tsx';
-import { primaryShortcuts, secondaryShortcuts, desktopRows, isCurrent } from '~/lib/navigation';
+import { Clock, SunDial } from '~/components/Time.tsx';
+import {
+  primaryShortcuts,
+  secondaryShortcuts,
+  desktopRows,
+  isCurrent,
+  sectionLabel,
+} from '~/lib/navigation';
+import { shortcutInset, shortcutTopInset, type DockPosition } from '~/lib/dock-variants';
 
 interface Props {
   title?: string;
@@ -21,6 +30,23 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? site.url);
 const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 
 const windowTitle = `${canonical.host}${currentPath === '/' ? '' : currentPath}`;
+
+/* Two bars from the one component: the dock at the bottom, and a status bar at
+   the top carrying everything that is about the session rather than about
+   navigating — where you are, what time it is, the theme, the copyright. The
+   shortcut columns have to keep out of both, so the positions are named here
+   and the insets derived from them. */
+const dockPosition: DockPosition = 'bottom';
+const statusPosition: DockPosition = 'top';
+const barPositions = [dockPosition, statusPosition];
+
+const desktopInset = shortcutInset(barPositions);
+const desktopAnchorInset = shortcutTopInset(barPositions);
+
+/* The build's instant. Stale by definition, which is what the one piece of
+   client JavaScript on the site exists to fix — see `src/lib/time-chrome.ts`.
+   Rendering it anyway keeps the bar the right size before that runs. */
+const renderedAt = new Date();
 ---
 
 {/*
@@ -75,17 +101,44 @@ const windowTitle = `${canonical.host}${currentPath === '/' ? '' : currentPath}`
 
   <body class="desktop-ground desktop-grain flex min-h-screen flex-col font-sans antialiased">
     <a
-      href="#start-menu"
+      href="#dock-nav"
       class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-30 focus:border focus:border-border focus:bg-surface focus:px-3 focus:py-2"
     >
       Skip to navigation
     </a>
 
+    {/* No cluster: one navigation row and one task button per page, and they
+        are the bottom dock's. Its three regions are composed here for the same
+        reason the dock's are — the bar does not know what a sundial is.
+
+        `data-dock-section` is the hook the chrome script re-labels after a
+        navigation, because the bar itself is persisted and would otherwise
+        keep naming the page you just left. */}
+    {/* `step={800}`: one step lighter than the dock's fill, so it reads as
+        the quieter of the two bars — see docs/design-system.md §5. */}
+    <Dock position={statusPosition} cluster="none" persist="status-bar" step={800}>
+      <span slot="start" data-dock-section class="truncate">{sectionLabel(currentPath)}</span>
+
+      <Fragment slot="middle">
+        <SunDial now={renderedAt} />
+        <Clock now={renderedAt} />
+      </Fragment>
+
+      <Fragment slot="end">
+        <ThemeToggle />
+        <span class="hidden sm:inline">&copy; {new Date().getFullYear()}</span>
+      </Fragment>
+    </Dock>
+
     {/* The wrapper exists only to carry the directive; it is layout-neutral because
         `.desktop-shortcuts` is `display: none` below `xl` and fixed above it. */}
     {primaryShortcuts.length > 0 && (
     <div transition:persist="persist-desktop-top">
-      <DesktopSection rows={desktopRows(primaryShortcuts)}>
+      <DesktopSection
+        rows={desktopRows(primaryShortcuts)}
+        inset={desktopInset}
+        anchorInset={desktopAnchorInset}
+      >
         {primaryShortcuts.map((item) => (
           <DesktopShortcut
             icon={item.icon}
@@ -104,6 +157,7 @@ const windowTitle = `${canonical.host}${currentPath === '/' ? '' : currentPath}`
       <DesktopSection
         anchor="bottom"
         rows={desktopRows(secondaryShortcuts)}
+        inset={desktopInset}
         label="More desktop shortcuts"
       >
         {secondaryShortcuts.map((item) => (
@@ -123,11 +177,33 @@ const windowTitle = `${canonical.host}${currentPath === '/' ? '' : currentPath}`
       <slot />
     </WindowFrame>
 
-    <Taskbar currentPath={currentPath} windowTitle={windowTitle} />
+    {/* Navigation only — everything it used to carry in its side regions is on
+        the status bar. Its empty regions stay: they are the `1fr` tracks that
+        centre the cluster on the bar.
+
+        `sticky` because below `lg` this bar is in flow at the end of the
+        document, where a long page would scroll it out of reach. Sticky rather
+        than fixed so it still takes up its own height and never covers the end
+        of the page. */}
+    {/* `step={900}` (the default): the higher-contrast of the two bars, one
+        step darker/lighter than the status bar — see docs/design-system.md §5. */}
+    <Dock
+      currentPath={currentPath}
+      windowTitle={windowTitle}
+      position={dockPosition}
+      persist="dock"
+      step={900}
+      sticky
+    />
+
 
     <script>
       import { enableDesktopChrome } from '~/lib/desktop-chrome';
+      import { enableTimeChrome } from '~/lib/time-chrome';
+      import { enableWindowInteract } from '~/lib/window-interact';
       enableDesktopChrome();
+      enableTimeChrome();
+      enableWindowInteract();
     </script>
   </body>
 </html>

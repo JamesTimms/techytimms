@@ -8,6 +8,7 @@ import {
   opensOnPress,
   primaryNav,
   secondaryNav,
+  sectionLabel,
 } from "~/lib/navigation";
 
 describe("primaryShortcuts", () => {
@@ -15,7 +16,7 @@ describe("primaryShortcuts", () => {
     expect(primaryShortcuts.map((item) => item.label)).toEqual(["About", "Work", "Blog"]);
   });
 
-  it("excludes CV, which belongs below the separator only", () => {
+  it("excludes CV, which belongs after the dock separator only", () => {
     const labels = primaryShortcuts.map((item) => item.label);
     expect(labels).not.toContain("CV");
     expect(secondaryNav.map((item) => item.label)).toContain("CV");
@@ -26,10 +27,10 @@ describe("primaryShortcuts", () => {
     expect(primaryNav.map((item) => item.href)).toContain("/");
   });
 
-  it("only surfaces destinations the Start menu also carries", () => {
-    const menuHrefs = [...primaryNav, ...secondaryNav].map((item) => item.href);
+  it("only surfaces destinations the dock also carries", () => {
+    const dockHrefs = [...primaryNav, ...secondaryNav].map((item) => item.href);
     for (const shortcut of primaryShortcuts) {
-      expect(menuHrefs).toContain(shortcut.href);
+      expect(dockHrefs).toContain(shortcut.href);
     }
   });
 });
@@ -100,5 +101,23 @@ describe("normalisePath", () => {
     for (const item of primaryNav) {
       expect(normalisePath(`${item.href}/`)).toBe(normalisePath(item.href));
     }
+  });
+});
+
+describe("sectionLabel", () => {
+  it("names the section, not the page", () => {
+    expect(sectionLabel("/blog/hello-world")).toBe("Blog");
+  });
+
+  it("takes its wording from the navigation, so the two cannot drift", () => {
+    expect(sectionLabel("/cv")).toBe("CV");
+  });
+
+  it("labels the root Home", () => {
+    expect(sectionLabel("/")).toBe("Home");
+  });
+
+  it("falls back to the segment rather than leaving the region blank", () => {
+    expect(sectionLabel("/styleguide")).toBe("Styleguide");
   });
 });

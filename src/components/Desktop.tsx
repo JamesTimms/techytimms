@@ -72,7 +72,7 @@ export interface DesktopSectionProps {
   children: ReactNode;
   /** Which edge the columns grow from. */
   align?: 'left' | 'right';
-  /** Which edge the group is pinned to. `bottom` clears the fixed taskbar. */
+  /** Which edge the group is pinned to. `bottom` clears the fixed dock. */
   anchor?: 'top' | 'bottom' | undefined;
   /** Items per column before wrapping into the next one. Count the items with `desktopRows`. */
   rows: number;
@@ -80,6 +80,8 @@ export interface DesktopSectionProps {
   gap?: number | undefined;
   /** Distance from the viewport edges, in rem. */
   inset?: number | undefined;
+  /** Distance from the anchored edge alone, in rem, when a bar there needs more room. */
+  anchorInset?: number | undefined;
   label?: string | undefined;
 }
 
@@ -93,12 +95,15 @@ export function DesktopSection({
   rows,
   gap = 0.75,
   inset = 1,
+  anchorInset,
   label = 'Desktop shortcuts',
 }: DesktopSectionProps) {
+  const edgeInset = anchorInset ?? inset;
   const style: CSSProperties = {
     gridTemplateRows: `repeat(${rows}, min-content)`,
     gap: `${gap}rem`,
-    [anchor]: anchor === 'bottom' ? `calc(${inset}rem + var(--taskbar-clearance))` : `${inset}rem`,
+    [anchor]:
+      anchor === 'bottom' ? `calc(${edgeInset}rem + var(--dock-clearance))` : `${edgeInset}rem`,
     [align]: `${inset}rem`,
   };
 

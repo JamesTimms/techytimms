@@ -14,7 +14,9 @@
     "astro": "astro",
     "check": "astro check",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "contrast": "node scripts/contrast.mjs",
+    "check:invariants": "node scripts/check-invariants.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-satteri": "^0.4.1",

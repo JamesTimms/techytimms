@@ -2,42 +2,66 @@ import { describe, expect, it } from 'vitest';
 
 import { cn } from '~/lib/cn';
 import {
-  chromeVariants,
-  minimiseControl,
+  paletteDescriptions,
   titleBar,
   titleControl,
   windowFrame,
+  windowPalettes,
 } from '~/lib/window-variants';
 
+// The MAIN step is a different absolute lightness per palette (Fallen Leaf's
+// main colour sits at 80%, Pumpkin's at 70%), so it lands on a different step
+// of the shared 50–900 scale for each.
+const mainStep: Record<(typeof windowPalettes)[number], number> = {
+  'fallen-leaf': 200,
+  pumpkin: 300,
+};
+
 describe('windowFrame', () => {
-  it('defaults to the period chrome, so existing callers are unchanged', () => {
-    expect(windowFrame()).toBe(windowFrame({ chrome: 'period' }));
+  it('defaults to Fallen Leaf, the live palette', () => {
+    expect(windowFrame()).toBe(windowFrame({ palette: 'fallen-leaf' }));
   });
 
-  it('keeps an explicit border in every variant', () => {
-    // Dark mode's surface is near-identical to the wallpaper, so the fill
-    // cannot mark the window's edge — only the border and bevel can.
-    for (const chrome of chromeVariants) {
-      expect(windowFrame({ chrome })).toContain('border-border');
+  it('keeps an explicit edge in both palettes, one step for both themes', () => {
+    // The face cannot mark the window against the wallpaper in either theme,
+    // and step 500 is the one band that clears 3:1 on both wallpapers, so the
+    // edge no longer swaps.
+    for (const palette of windowPalettes) {
+      const classes = windowFrame({ palette });
+      expect(classes).toMatch(/\sborder-\w+-500\b/);
+      expect(classes).not.toMatch(/\sdark:border-/);
     }
   });
 
-  it('only the period variant carries the raised bevel', () => {
-    expect(windowFrame({ chrome: 'period' })).toContain('bevel-light');
-    expect(windowFrame({ chrome: 'soft' })).not.toContain('bevel');
-    expect(windowFrame({ chrome: 'flat' })).not.toContain('bevel');
+  it('draws the face from a light tint, never from the main colour', () => {
+    // ink-faint is 2.54 on a surface at the main colour's own lightness.
+    // Step 50 is the tint the face has to use instead.
+    for (const palette of windowPalettes) {
+      const classes = windowFrame({ palette });
+      expect(classes).toMatch(/\sbg-\w+-50\b/);
+      expect(classes).not.toMatch(new RegExp(`\\sbg-\\w+-${mainStep[palette]}\\b`));
+    }
+  });
+
+  it('carries no bevel in either palette', () => {
+    for (const palette of windowPalettes) {
+      expect(windowFrame({ palette })).not.toContain('bevel');
+    }
   });
 });
 
 describe('titleBar', () => {
-  it('gradients only in the period variant', () => {
-    expect(titleBar({ chrome: 'period' })).toContain('bg-linear-to-r');
-    expect(titleBar({ chrome: 'soft' })).not.toContain('bg-linear-to-r');
-    expect(titleBar({ chrome: 'flat' })).not.toContain('bg-linear-to-r');
+  it('does not flip with the theme, unlike the frame', () => {
+    for (const palette of windowPalettes) {
+      expect(titleBar({ palette })).not.toContain('dark:bg-');
+    }
   });
 
-  it('drops the coloured bar entirely at the flat end', () => {
-    expect(titleBar({ chrome: 'flat' })).toContain('bg-sunk');
+  it('rules off the bar in light mode and draws nothing internal in dark', () => {
+    for (const palette of windowPalettes) {
+      expect(titleBar({ palette })).toMatch(new RegExp(`\\sborder-\\w+-${mainStep[palette]}\\b`));
+      expect(titleBar({ palette })).toContain('dark:border-b-0');
+    }
   });
 });
 
@@ -47,16 +71,20 @@ describe('titleControl', () => {
     expect(titleControl({ pressable: false })).not.toContain('cursor-pointer');
   });
 
-  it('gives the period variant a pressed state only when it can be pressed', () => {
-    expect(titleControl({ chrome: 'period', pressable: true })).toContain('active:');
-    expect(titleControl({ chrome: 'period', pressable: false })).not.toContain('active:');
+  it('gives a hover and pressed fill only to the control that can be pressed', () => {
+    for (const palette of windowPalettes) {
+      expect(titleControl({ palette, pressable: true })).toContain('hover:bg-');
+      expect(titleControl({ palette, pressable: true })).toContain('active:bg-');
+      expect(titleControl({ palette, pressable: false })).not.toContain('hover:bg-');
+    }
   });
 });
 
-describe('minimiseControl', () => {
-  it('bottom-aligns the bar only in the period variant', () => {
-    expect(minimiseControl({ chrome: 'period' })).toContain('items-end');
-    expect(minimiseControl({ chrome: 'soft' })).toContain('items-center');
+describe('paletteDescriptions', () => {
+  it('describes every palette, so the styleguide cannot render a blank one', () => {
+    for (const palette of windowPalettes) {
+      expect(paletteDescriptions[palette]).toBeTruthy();
+    }
   });
 });
 

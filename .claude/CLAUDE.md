@@ -52,6 +52,8 @@ Prettier is configured (`.prettierrc.mjs`) but is not wired into a script and ha
 
 ## Conventions
 
+- **Documents and reports are extremely concise, even at the cost of accuracy.** State conclusions, not reasoning. No "considered but rejected", no restating the brief, no narration. Tables over prose. A design note is a reference, not a transcript.
+- **One element at a time.** Iterate on a single component per task rather than making sweeping changes across the site.
 - **No i18n.** Decided and closed; do not add scaffolding for it.
 - **Comments explain why, not what** — a non-obvious workaround or a rule the code cannot express. No comments restating the line below.
 - **Compose React components with the children pattern.** Container components take `children`; the call site does the mapping:

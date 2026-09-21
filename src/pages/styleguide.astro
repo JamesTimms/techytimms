@@ -2,9 +2,9 @@
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import TitleBar from '~/components/TitleBar.astro';
 import {
-  chromeDescriptions,
-  chromeVariants,
+  paletteDescriptions,
   windowFrame,
+  windowPalettes,
 } from '~/lib/window-variants';
 import { paletteCandidates } from '~/data/palette-candidates';
 import { backgroundCandidates } from '~/data/background-candidates';
@@ -25,35 +25,47 @@ import { DesktopShortcut } from '~/components/Desktop.tsx';
 <BaseLayout title="Styleguide" description="Window chrome variants." noindex>
   <h1 class="text-2xl font-semibold tracking-tight">Window chrome variants</h1>
   <p class="mt-3 max-w-prose text-ink-muted">
-    One axis, three stops, from full period fidelity to a panel that only hints
-    at the era. Switch with the <code class="text-ink">chrome</code> prop on
-    <code class="text-ink">WindowFrame</code>; <code class="text-ink">period</code>
-    is the default.
+    One axis, two stops — a palette each. The chrome itself is the same in both:
+    a thin edge, a flat title bar and flat controls, all drawn from a ten-step
+    (50–900) OKLCH ramp built out of that palette's main colour. Switch with the
+    <code class="text-ink">palette</code> prop on
+    <code class="text-ink">WindowFrame</code>;
+    <code class="text-ink">fallen-leaf</code> is the default.
   </p>
 
   <div class="mt-10 flex flex-col gap-10">
     {
-      chromeVariants.map((chrome) => (
+      windowPalettes.map((palette) => (
         <section>
           <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-faint">
-            {chrome}
+            {palette}
           </h2>
           <p class="mt-1 max-w-prose text-sm text-ink-muted">
-            {chromeDescriptions[chrome]}
+            {paletteDescriptions[palette]}
           </p>
 
-          <div class={`mt-4 ${windowFrame({ chrome })} lg:border-x`}>
-            <TitleBar title="techytimms.com/about" icon="document" chrome={chrome} />
-            <div class="px-4 py-5 sm:px-6">
-              <p class="max-w-prose text-sm text-ink-muted">
-                Body text sits on <code class="text-ink">surface</code> inside
-                the frame. The title bar, the control cluster and the frame edge
-                are the three things this variant changes; spacing, type and
-                reading width stay identical across all three.
-              </p>
-              <p class="mt-3 text-sm">
-                <a href="/about" class="link link-3">A link, for colour</a>
-              </p>
+          {/* On the wallpaper, because the edge is the one part of this that
+              cannot be judged in isolation: it has to clear 3:1 against what is
+              behind it, and what is behind it is the desktop. */}
+          <div class="desktop-ground mt-4 border border-rule p-6">
+            <div class={`${windowFrame({ palette })} border-x rounded-window`}>
+              <TitleBar
+                title="techytimms.com/about"
+                icon="document"
+                palette={palette}
+              />
+              <div class="px-4 py-5 sm:px-6">
+                <p class="max-w-prose text-sm text-ink-muted">
+                  Body text sits on the window's face, a light tint of the main
+                  colour rather than the main colour itself — at the main
+                  colour's own lightness{' '}
+                  <code class="text-ink">ink-faint</code> falls to 2.54. Spacing,
+                  type and reading width are identical across both palettes.
+                </p>
+                <p class="mt-3 text-sm">
+                  <a href="/about" class="link link-3">A link, for colour</a>
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -63,13 +75,17 @@ import { DesktopShortcut } from '~/components/Desktop.tsx';
 
   <section class="mt-12 border-t border-rule pt-6">
     <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-faint">
-      Note on the flat variant
+      Note on the edge and the rule
     </h2>
     <p class="mt-2 max-w-prose text-sm text-ink-muted">
-      On a dark wallpaper the window's fill measures close to 1:1 against it, so
-      the face alone cannot mark the window's edge. Every variant therefore
-      keeps an explicit border — <code class="text-ink">flat</code> drops the
-      bevel, never the border.
+      Two lines do all the work the bevels used to. The window edge is a
+      single step — 500 — in both themes: a 1px line has to clear 3:1 against
+      the wallpaper, and the wallpaper sits at opposite ends of the lightness
+      range in the two themes, so 500 is the narrow band that clears both
+      (3.88 light, 3.57 dark). The rule under the title bar is the main
+      colour in both — step 200 on Fallen Leaf, 300 on Pumpkin — and is
+      load-bearing in dark mode: the bar and the face are only ~1.6:1 apart
+      there, so without it the bar has no boundary.
     </p>
   </section>
 
@@ -79,8 +95,11 @@ import { DesktopShortcut } from '~/components/Desktop.tsx';
       Each panel is the real wallpaper with a real window and shortcut on it, at
       a realistic size. The ratios are the pattern's <em>worst</em> extreme, not
       its average — a label that lands on the darkest pixel is the one that has
-      to stay legible. Floors are 4.5 for the label and 3.0 for the window edge.
+      to stay legible. Floors are 4.5 for the label and 3.0 for the edge.
       Reasoning is in <code class="text-ink">docs/background-exploration.md</code>.
+      The ratios below were measured against the old 80% wallpaper and are now
+      conservative: the wallpaper moved to a lighter tint with the ramps, and
+      the edge they measure is the dock's, not the window's.
     </p>
 
     <div class="mt-8 flex flex-col gap-10">
@@ -106,8 +125,8 @@ import { DesktopShortcut } from '~/components/Desktop.tsx';
               class={`desktop-ground ${candidate.className} mt-3 flex items-start gap-4 border border-rule p-4`}
             >
               <DesktopShortcut icon="about" label="About" href="/about" />
-              <div class={`${windowFrame({ chrome: 'period' })} min-w-0 flex-1 border-x`}>
-                <TitleBar title="techytimms.com" icon="document" chrome="period" />
+              <div class={`${windowFrame()} min-w-0 flex-1 border-x rounded-window`}>
+                <TitleBar title="techytimms.com" icon="document" />
                 <p class="px-3 py-3 text-sm text-ink-muted">
                   A window on the wallpaper, so the edge and the label can be
                   judged against the pattern rather than in isolation.

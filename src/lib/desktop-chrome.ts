@@ -1,10 +1,10 @@
 import { enableDesktopShortcuts } from '~/lib/desktop-shortcuts';
-import { normalisePath } from '~/lib/navigation';
+import { normalisePath, sectionLabel } from '~/lib/navigation';
 
 /*
  * Client wiring for the desktop chrome under `<ClientRouter />`.
  *
- * The taskbar and the desktop shortcuts carry `transition:persist`, so after a
+ * The dock and the desktop shortcuts carry `transition:persist`, so after a
  * navigation they are the *previous* page's DOM: their listeners survive, and
  * so does anything the server rendered into them. Everything here exists to
  * reconcile that — either re-binding what was rebuilt, or correcting what was
@@ -27,7 +27,7 @@ function taskButton(): HTMLButtonElement | null {
 export function syncCurrentPage(pathname: string, root: ParentNode = document): void {
   const currentPath = normalisePath(pathname);
 
-  for (const link of root.querySelectorAll<HTMLAnchorElement>('.start-item, .desktop-shortcut')) {
+  for (const link of root.querySelectorAll<HTMLAnchorElement>('.dock-item, .desktop-shortcut')) {
     const opensNewTab = link.target === '_blank';
     const isCurrent = !opensNewTab && normalisePath(new URL(link.href).pathname) === currentPath;
 
@@ -39,13 +39,9 @@ export function syncCurrentPage(pathname: string, root: ParentNode = document): 
     if (isCurrent) link.dataset.selected = 'true';
     else delete link.dataset.selected;
   }
-}
 
-/* Windows closes the Start menu when you pick an item; persistence would
- * otherwise leave it hanging open over the page it just opened. */
-export function closeStartMenu(root: ParentNode = document): void {
-  for (const menu of root.querySelectorAll<HTMLDetailsElement>('details.start')) {
-    menu.open = false;
+  for (const label of root.querySelectorAll<HTMLElement>('[data-dock-section]')) {
+    label.textContent = sectionLabel(currentPath);
   }
 }
 
@@ -68,6 +64,22 @@ function setMinimised(minimised: boolean, moveFocus: boolean): void {
   else frame.querySelector<HTMLButtonElement>('[data-window-minimise]')?.focus();
 }
 
+/*
+ * Closing hides `<main>` — the page's content — rather than the whole frame:
+ * there is no task button to bring it back, so the title bar (and its close
+ * button) staying put is what lets the desktop go on making sense as
+ * something other than a blank page. `hidden`, not offscreen, for the same
+ * reason as `setMinimised`: a screen reader must not read a window the user
+ * has closed. Focus needs no help here — the close button lives in the title
+ * bar, outside `<main>`, so hiding `<main>` never hides the element the click
+ * or keypress landed on.
+ */
+function setClosed(closed: boolean): void {
+  const main = document.querySelector<HTMLElement>('#main');
+  if (!main) return;
+  main.hidden = closed;
+}
+
 export function enableWindowControls(root: ParentNode = document): void {
   // Following a link is a request to read something, so arriving minimised
   // would hide the very thing that was asked for. The frame is rebuilt each
@@ -78,6 +90,12 @@ export function enableWindowControls(root: ParentNode = document): void {
   if (minimise && !minimise.dataset.wired) {
     minimise.dataset.wired = 'true';
     minimise.addEventListener('click', () => setMinimised(true, true));
+  }
+
+  const close = root.querySelector<HTMLButtonElement>('[data-window-close]');
+  if (close && !close.dataset.wired) {
+    close.dataset.wired = 'true';
+    close.addEventListener('click', () => setClosed(true));
   }
 
   const task = taskButton();
@@ -114,6 +132,5 @@ export function enableDesktopChrome(): void {
     enableDesktopShortcuts();
     enableWindowControls();
     syncCurrentPage(window.location.pathname);
-    closeStartMenu();
   });
 }

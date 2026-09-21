@@ -1,0 +1,242 @@
+---
+import DockItem from "~/components/DockItem.astro";
+import Icon from "~/components/Icon.astro";
+import Tooltip from "~/components/Tooltip.astro";
+import {
+  dockBar,
+  dockCluster,
+  dockNav,
+  dockRegion,
+  type DockClusterPlacement,
+  type DockPosition,
+  type DockSize,
+  type DockStep,
+} from "~/lib/dock-variants";
+import { isCurrent, primaryNav, secondaryNav } from "~/lib/navigation";
+
+/*
+ * The screen's chrome. It lives outside the window because it belongs to the
+ * desktop, not to the page being viewed — which is also why it is pinned above
+ * the breakpoint and static below it, where no desktop is visible to pin it to.
+ *
+ * Three regions. The cluster is the dock proper: the navigation and the windows
+ * it has open. The two sides carry what a desktop usually puts in a *top* bar
+ * — where you are, the time, system status.
+ *
+ * One component, any number of bars. A page can run a bottom dock and a top
+ * bar from the same call; the cluster is optional so the second bar can be
+ * nothing but its side regions, and placeable so a bar that keeps it can put
+ * it at either end instead of the middle.
+ *
+ * The regions are composed by the caller. Passing their contents as data would
+ * mean this component knowing about clocks and section names, and the point of
+ * the region is that it does not.
+ *
+ * A clusterless bar takes a third region between the two sides, filling the
+ * track the cluster would have had. It is only rendered there, because on any
+ * other bar that track is the cluster's.
+ *
+ * The task button appears only while the window is minimised. A task button
+ * alongside a visible window would be a second label for the same thing; once
+ * the window is put away it is the only handle back to it.
+ *
+ * The cluster is icons only, macOS-style: every destination is its own icon in
+ * one left-to-right row, with no menu to open first. Each keeps its words as
+ * its accessible name and shows them in a tooltip on hover or focus, so
+ * nothing is carried by the picture alone.
+ *
+ * The separator is the row's one piece of hierarchy, and carries what the
+ * Start menu's separator used to — see blueprint decision 12.
+ */
+type Props = {
+  /*
+   * Unique per page. Two persisted elements sharing a name would have the
+   * router restore one of them over the other.
+   */
+  persist: string;
+  position?: DockPosition;
+  /*
+   * Holds the bar against its edge below `lg`, where it is otherwise static.
+   * Above it the bar is pinned already and this does nothing. Renders as
+   * `fixed`, not CSS `position: sticky` — see the rationale in
+   * `dock-variants.ts`. A caller passing this on `position="bottom"` must
+   * give whatever scrolls behind it clearance for the bar's height.
+   */
+  sticky?: boolean;
+  /*
+   * The bar's own fill, named by its LIGHT-mode ramp step; the dark-mode
+   * fill is derived from it (`dockDarkStep`). Defaults to `900`, the
+   * highest-contrast fill, which is what the bottom dock wants. A caller
+   * asking for a visibly quieter bar — the top status bar's job — picks the
+   * next step down, `800`, per docs/design-system.md §5.
+   */
+  step?: DockStep;
+  /* Bar thickness. `regular` matches the bar's previous fixed padding. */
+  size?: DockSize;
+} & (
+  | { cluster: "none"; currentPath?: never; windowTitle?: never }
+  | {
+      cluster?: DockClusterPlacement;
+      currentPath: string;
+      windowTitle: string;
+    }
+);
+
+const props = Astro.props;
+const {
+  persist,
+  position = "bottom",
+  cluster = "middle",
+  sticky = false,
+  step = 900,
+  size = "regular",
+} = props;
+
+const middleRegion = cluster === "none" && Astro.slots.has("middle");
+---
+
+{/* Persisted here rather than at the call site: transition directives apply to
+    elements, not to component tags. */}
+{/* `transition:name` lifts the bar into the `::view-transition` layer too.
+    Without it, the bar is ordinary DOM and that layer — which paints above
+    ALL ordinary content regardless of z-index — is free to paint the
+    in-transit window over it. `persist` already keeps the same node across
+    the swap, so old/new snapshots are identical and nothing here animates;
+    `animate="none"` just avoids paying for a morph that would show no
+    movement. See the `::view-transition-group` rule in global.css for the
+    stacking this depends on. */}
+<div
+  transition:persist={persist}
+  transition:name={persist}
+  transition:animate="none"
+  data-position={position}
+  class={dockBar({ position, cluster, middleRegion, sticky, step, size })}
+>
+  <div class={dockRegion({ position, region: "start" })}>
+    <slot name="start" />
+  </div>
+
+  {
+    middleRegion && (
+      <div class={dockRegion({ position, region: "middle" })}>
+        <slot name="middle" />
+      </div>
+    )
+  }
+
+  {
+    props.cluster !== "none" && (
+      <div class={dockCluster({ position })}>
+        {/* tabindex so the skip link can move focus here; a <nav> is not
+            focusable by itself. */}
+        <nav id="dock-nav" tabindex="-1" aria-label="Site" class={dockNav({ position })}>
+          {primaryNav.map((item) => (
+            <DockItem {...item} current={isCurrent(item, props.currentPath)} />
+          ))}
+
+          <span class="dock-separator" aria-hidden="true" />
+
+          {secondaryNav.map((item) => (
+            <DockItem {...item} current={isCurrent(item, props.currentPath)} />
+          ))}
+        </nav>
+
+        {/* Hidden until minimised, and restored on navigation by the chrome
+            script. Without JavaScript the window never minimises, so this
+            never shows. */}
+        <button
+          type="button"
+          class="task-button tooltip-anchor"
+          data-window-task
+          hidden
+        >
+          <Icon name="document" />
+          {/* The title alone reads as a bare label; the verb says what pressing it does. */}
+          <span class="sr-only">Restore</span>
+          <span class="dock-item-label sr-only">{props.windowTitle}</span>
+          <Tooltip label={props.windowTitle} />
+        </button>
+      </div>
+    )
+  }
+
+  <div class={dockRegion({ position, region: "end" })}>
+    <slot name="end" />
+  </div>
+</div>
+
+<style>
+  /*
+   * A dock item is a square target around its icon, not a text button with an
+   * icon in front of it, so the width that used to hold a label becomes room
+   * around the icon instead. Overrides `@layer components` in global.css: a
+   * component style is unlayered and so wins outright.
+   */
+  .dock-cluster :global(.task-button) {
+    justify-content: center;
+    gap: 0;
+    min-width: 2.75rem;
+    height: 2.75rem;
+    padding-inline: 0.625rem;
+  }
+
+  /* `border`, not `rule`: on the dock's own fill (bottom bar, both themes) a
+     rule would vanish where border holds 5.69 light / 5.35 dark. */
+  .dock-separator {
+    align-self: center;
+    flex: none;
+    width: 1px;
+    height: 1.75rem;
+    margin-inline: 0.25rem;
+    background-color: var(--color-border);
+  }
+
+  /*
+   * A bar on the top edge is the bottom bar's mirror: the edge facing the
+   * wallpaper swaps sides, and so does the inset it has to keep clear of.
+   */
+  .dock[data-position="top"] {
+    padding-bottom: 0;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  /*
+   * Everything that hangs off a top bar hangs downwards, at every width — that
+   * bar is at the top of the document below the breakpoint too, so unlike the
+   * vertical stops there is nothing to flip back at.
+   */
+  .dock[data-position="top"] :global(.tooltip[data-placement]) {
+    --tooltip-inset: calc(100% + 0.5rem) auto auto 50%;
+    --tooltip-shift: translateX(-50%);
+  }
+
+  /*
+   * Vertical placements only exist from the breakpoint; below it the dock is
+   * the same bottom bar and the tooltip stays above its icon. On a side bar it
+   * has to flip, or it covers the neighbouring item — and the topmost item's
+   * bubble would sit off the top of the screen.
+   *
+   * The `[data-placement]` is there for weight, not for matching: it puts this
+   * pair above the default the tooltip sets for itself.
+   */
+  @media (min-width: 64rem) {
+    /* The row turns with the bar, so the divider across it turns too. */
+    .dock[data-position="left"] .dock-separator,
+    .dock[data-position="right"] .dock-separator {
+      width: 1.75rem;
+      height: 1px;
+      margin-inline: 0;
+      margin-block: 0.25rem;
+    }
+
+    .dock[data-position="left"] :global(.tooltip[data-placement]) {
+      --tooltip-inset: 50% auto auto calc(100% + 0.5rem);
+      --tooltip-shift: translateY(-50%);
+    }
+
+    .dock[data-position="right"] :global(.tooltip[data-placement]) {
+      --tooltip-inset: 50% calc(100% + 0.5rem) auto auto;
+      --tooltip-shift: translateY(-50%);
+    }
+  }
+</style>

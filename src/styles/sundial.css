@@ -1,0 +1,72 @@
+/*
+ * The dial's art. Not in `global.css` because it belongs to one component, and
+ * not in a scoped `<style>` because React output carries no Astro scope
+ * attribute for one to hook onto.
+ */
+
+.sundial {
+  display: inline-flex;
+  align-items: center;
+}
+
+.sundial-sky {
+  /* Smaller than the theme toggle's 32px, but a real step up from the
+     previous 20px. 1.5x the 16-unit grid: crispEdges keeps every edge hard,
+     but some rects land on a 1px boundary and others on 2px, so arm widths
+     are slightly uneven at this exact size. That reads as pixel art scaled
+     to an in-between size, not as broken rendering. */
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/*
+ * `--sky-height` runs 0 at the horizon to 1 at the body's highest. Nine user
+ * units of travel puts the body's centre exactly on the horizon line at 0, so
+ * the viewBox clips its lower half as it sets.
+ *
+ * The 9px here is a `transform` on a `<g>`, an SVG element with no CSS layout
+ * box of its own — per the CSS Transforms spec, a bare px length in that case
+ * resolves against the element's local user-coordinate system (the 16-unit
+ * viewBox), not against real screen pixels. It is already proportional to
+ * `.sundial-sky`'s rendered size and needs no adjustment when that size
+ * changes; verified in Chrome at 20px and 40px renders, where the on-screen
+ * offset scaled exactly with the icon (18.75px and 37.5px — a clean 2x).
+ */
+.sky-body {
+  transform: translateY(calc((1 - var(--sky-height, 0.5)) * 9px));
+  transition: transform 600ms ease-out;
+}
+
+/* `bar-accent`/`bar-ink-muted`, not `accent`/`ink-muted`: the sundial only
+   ever sits on the top bar, whose fill runs opposite the site theme — see
+   `--color-bar-accent` in global.css. */
+.sky-sun {
+  fill: var(--color-bar-accent);
+}
+
+.sky-moon {
+  fill: var(--color-bar-ink-muted);
+}
+
+.sky-stars {
+  fill: var(--color-bar-ink-muted);
+}
+
+.sky-horizon {
+  fill: var(--color-border);
+}
+
+.sundial[data-body='sun'] .sky-moon,
+.sundial[data-body='sun'] .sky-stars {
+  display: none;
+}
+
+.sundial[data-body='moon'] .sky-sun {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sky-body {
+    transition: none;
+  }
+}

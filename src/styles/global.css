@@ -11,8 +11,9 @@
  * PALETTE markers — nothing outside them encodes a colour.
  *
  * Every value is contrast-verified in both themes; docs/design-system.md holds
- * the table. Two pairs have little headroom and should be rechecked before any
- * retune: ink-faint on ground at 4.55, and accent on desktop at 3.68.
+ * the table. The pair with least headroom is ink-faint on ground at 4.55, and
+ * it should be rechecked before any retune. The window's own colours are the
+ * ramps below, not these.
  * ========================================================================== */
 @theme {
   --color-ground: oklch(98.5% 0.006 85);
@@ -34,38 +35,101 @@
      and costs 0.04 of contrast. */
   --color-accent-sunk: oklch(95.5% 0.024 45);
 
+  /* ----------------------------------------------------------------------
+   * Window ramps. Two palettes, ten OKLCH steps each on a conventional
+   * 50–900 scale (50 lightest, 900 darkest), evenly spaced in lightness from
+   * 99% to 14% — built as tints and shades of that palette's MAIN colour, the
+   * colour its wallpaper used to be (Fallen Leaf straw at 80%, Pumpkin at
+   * 70%). The ramps do not flip with the theme; the roles pick different
+   * steps instead, which is why every step below is an absolute colour
+   * rather than a semantic one.
+   *
+   * Roles (window chrome, `window-variants.ts`):
+   *   50   window face, light mode; title text
+   *   100  wallpaper, light mode; title-bar control glyphs
+   *   200  MAIN, Fallen Leaf — the rule under the title bar, light mode only
+   *   300  MAIN, Pumpkin — same role, one step darker on this palette
+   *   500  window edge, both themes; control hover fill
+   *   700  window face, dark mode
+   *   900  title bar in both themes; wallpaper in dark mode
+   * 400/600/800 are unused by the window and free for other roles — see the
+   * dock, which spans 800–900 (light mode) and 50–100 (dark mode).
+   *
+   * Was a six-step ramp with irregular gaps (99/88/80/50/30/14%); respaced to
+   * ten even steps so a consumer can pick any step, not just the six the
+   * window happened to need. Old step 1→50, 2→100, 4→500, 5→700 and 6→900
+   * land within 3 points of their old lightness (900 and 50 are exact); old
+   * step 3 (leaf 80%, pumpkin 70%) is genuinely two different lightnesses
+   * under one role, so it lands on two different new steps — 200 for leaf,
+   * 300 for pumpkin. See docs/design-system.md §4 for the recomputed
+   * contrast table.
+   *
+   * Step 50 is a light TINT, not the main colour. On a surface at the main
+   * colour's own 80% lightness `ink-muted` measures 3.65 and `ink-faint` 2.54;
+   * ink-faint needs a surface at 99%. So the face is tinted up to 99% rather
+   * than the neutral ink scale being redefined per palette. Chroma carries the
+   * identity there — lightness is spent entirely on contrast.
+   *
+   * Chroma per step is interpolated from the old six control points and then
+   * capped to whatever sRGB allows at that lightness and hue — step 50 is
+   * still as chromatic as the gamut permits (0.008 at hue 80, 0.0055 at hue
+   * 55; hue 55 clips earlier).
+   * -------------------------------------------------------------------- */
+  --color-leaf-50: oklch(99% 0.008 80);
+  --color-leaf-100: oklch(89.6% 0.0285 80);
+  --color-leaf-200: oklch(80.1% 0.06 80);
+  --color-leaf-300: oklch(70.7% 0.057 80);
+  --color-leaf-400: oklch(61.2% 0.0537 80);
+  --color-leaf-500: oklch(51.8% 0.0506 80);
+  --color-leaf-600: oklch(42.3% 0.0461 80);
+  --color-leaf-700: oklch(32.9% 0.0415 80);
+  --color-leaf-800: oklch(23.4% 0.0338 80);
+  --color-leaf-900: oklch(14% 0.025 80);
+
+  --color-pumpkin-50: oklch(99% 0.0055 55);
+  --color-pumpkin-100: oklch(89.6% 0.041 55);
+  --color-pumpkin-200: oklch(80.1% 0.07 55);
+  --color-pumpkin-300: oklch(70.7% 0.098 55);
+  --color-pumpkin-400: oklch(61.2% 0.096 55);
+  --color-pumpkin-500: oklch(51.8% 0.091 55);
+  --color-pumpkin-600: oklch(42.3% 0.0746 55);
+  --color-pumpkin-700: oklch(32.9% 0.0558 55);
+  --color-pumpkin-800: oklch(23.4% 0.0418 55);
+  --color-pumpkin-900: oklch(14% 0.03 55);
+
+  /* The two bars (dock, status bar) sit on the wallpaper with no border, so
+     their own fill has to clear 3:1 against it unaided. The wallpaper is
+     pale in light mode and near-black in dark, so a fill that does this
+     without flipping the ramp step runs opposite to the site theme: dark
+     (ramp step 800–900) in light mode, light (step 50–100) in dark mode —
+     see `dock-variants.ts`. These two tokens carry text and icons that sit
+     directly on that inverted fill: the value that is legible on a DARK bar
+     in light mode is light mode's own `ink-muted`/`accent` used upside down.
+     Not a rename of `ink-muted`/`accent` — those still serve every normal
+     surface, which is why they cannot also serve this inverted one. */
+  --color-bar-ink-muted: oklch(82% 0.02 85);
+  --color-bar-accent: oklch(81% 0.11 60);
+
   /* The wallpaper the window sits on. Deliberately not `ground`: ground is the
      contrast baseline every text pair is measured against, and the wallpaper is
      a surface that never carries body text. Keeping them separate means
-     retuning the wallpaper cannot invalidate the text contrast table. */
-  --color-desktop: oklch(80% 0.034 80);
+     retuning the wallpaper cannot invalidate the text contrast table.
+
+     It is nearest `leaf-100` (89.6%), a quieter tint, rather than the main
+     colour itself: the main colour is now the window's identity, and a
+     wallpaper still wearing it would leave the window nothing of its own to
+     be. */
+  --color-desktop: oklch(88% 0.032 80);
 
   /* Flips with the theme, unlike the dark-wallpaper schemes: pale straw cannot
      carry light text. Shortcut labels are the only text on the wallpaper. */
   --color-desktop-ink: oklch(24% 0.022 80);
 
-  /* The window's outer edge where no bevel draws it — the `soft` and `flat`
-     variants. It cannot be `border`: that is tuned to sit on near-white panels
-     at 3.50, and the same value against this pale wallpaper is 1.87. A window
+  /* The dock's edge against the wallpaper. It cannot be `border`: that is tuned to sit on near-white panels
+     at 3.50, and the same value against this pale wallpaper is 1.87. A screen
      boundary and a panel boundary are different jobs against different grounds,
-     so they get different tokens. */
+     so they get different tokens. The window's own edge comes from its ramp. */
   --color-window-edge: oklch(47% 0.018 85);
-
-  /* Win2000 ran its title bar dark at the left and light at the right. The
-     direction is load-bearing rather than decorative: the controls sit at the
-     right, and they only clear 3:1 against the light end. Reverse the gradient
-     and the controls disappear.
-
-     Chroma falls as lightness rises (0.055 -> 0.038), which is what the real
-     Windows ramp does and what a constant-chroma ramp gets wrong. The real ramp
-     is also far wider — measured off the reference screenshot it runs #101b4c
-     to #a3c8ee, putting white title text at 1.74:1 at the light end. Windows
-     got away with that because its title is short and left-aligned; ours has
-     controls on the right, so the range is compressed until both ends clear
-     4.5:1. */
-  --color-titlebar-from: oklch(34% 0.04 60);
-  --color-titlebar-to: oklch(52% 0.027 70);
-  --color-titlebar-ink: oklch(99% 0 55);
 
   /* Raised-edge pair. A raised object needs only ONE of its two edges to clear
      3:1 against what surrounds it, and which one does flips with the surround.
@@ -90,26 +154,30 @@
   --color-sunk: oklch(14% 0.01 85);
   --color-rule: oklch(32% 0.018 85);
   --color-border: oklch(52% 0.018 85);
-  --color-ink-faint: oklch(62% 0.02 85);
-  --color-ink-muted: oklch(74% 0.02 85);
+  /* Higher than the light scale's mirror image. Dark surfaces carry less
+     apparent contrast at the same ratio, and these two sit on the window face
+     as well as on `ground`; at 62% faint measured 4.53 there, which is the AA
+     floor and reads as it. */
+  --color-ink-faint: oklch(72% 0.02 85);
+  --color-ink-muted: oklch(82% 0.02 85);
   --color-ink: oklch(93% 0.014 85);
 
   --color-accent: oklch(81% 0.11 60);
   --color-accent-ink: oklch(82% 0.105 60);
   --color-accent-sunk: oklch(26% 0.035 60);
 
-  --color-desktop: oklch(16% 0.014 60);
+  /* The bar tokens invert: in dark mode the bar's own fill is light (step
+     50–100), so it needs light mode's dark ink and accent, upside down. */
+  --color-bar-ink-muted: oklch(47% 0.028 85);
+  --color-bar-accent: oklch(48% 0.13 45);
+
+  /* `leaf-900`, exactly — the step the title bar also uses. The two only ever
+     meet at the window's top edge, where the border separates them. */
+  --color-desktop: oklch(14% 0.025 80);
   --color-desktop-ink: oklch(97% 0.006 60);
 
   /* 52% is the boundary against the near-black wallpaper; 55% buys headroom. */
   --color-window-edge: oklch(55% 0.018 85);
-
-  /* The title bar does not flip. It is dark in both themes because it is chrome
-     the window wears rather than a surface the page sits on, and a light title
-     bar in dark mode reads as a different component. */
-  --color-titlebar-from: oklch(34% 0.04 60);
-  --color-titlebar-to: oklch(52% 0.027 70);
-  --color-titlebar-ink: oklch(99% 0 55);
 
   /* Here the LIGHT edge carries the window at 4.18; the dark edge is 1.07
      against a near-black wallpaper. The reverse of light mode. */
@@ -127,6 +195,14 @@
 @theme {
   --radius-panel: 0px;
   --radius-control: 2px;
+  /* The one place the square-corner rule is relaxed. A window is the only
+     object here that reads as chrome rather than as a panel, and 6px is the
+     smallest radius that reads as deliberate rather than as a rendering
+     artefact. Applied from `lg` only — below it the window is full-bleed. */
+  --radius-window: 6px;
+  /* The frame's radius less its 1px border, for the title bar's top corners.
+     Without it the bar's square corner cuts across the frame's rounded one. */
+  --radius-window-inner: 5px;
 }
 
 @layer base {
@@ -235,6 +311,9 @@
    * rotated in opposite directions, which needs `::before` and `::after` with
    * different transforms. Expressible as utilities, but the class string runs
    * longer than the rule and reads far worse.
+   *
+   * 1.5px to match the minimise bar. The three glyphs only read as a set if
+   * their strokes agree.
    */
   .title-glyph-close {
     display: block;
@@ -250,8 +329,8 @@
     position: absolute;
     inset-inline: 0;
     top: 50%;
-    height: 2px;
-    margin-top: -1px;
+    height: 1.5px;
+    margin-top: -0.75px;
     background-color: currentColor;
   }
 
@@ -436,12 +515,12 @@
    * either way. Light 0.07 holds at 3.15 source-over, 3.47 blended.
    */
   .desktop-grain {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.07'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.08'/%3E%3C/svg%3E");
     background-blend-mode: overlay;
   }
 
   .dark .desktop-grain {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.10'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.12'/%3E%3C/svg%3E");
   }
 
   .desktop-sheen {
@@ -461,8 +540,8 @@
    */
   .desktop-shortcuts {
     display: none;
-    /* The taskbar's height plus a margin, for shortcuts pinned to the bottom edge. */
-    --taskbar-clearance: calc(3rem + env(safe-area-inset-bottom, 0px));
+    /* The dock's height plus a margin, for shortcuts pinned to the bottom edge. */
+    --dock-clearance: calc(3rem + env(safe-area-inset-bottom, 0px));
   }
 
   @media (min-width: 80rem) {
@@ -555,42 +634,110 @@
 
   /*
    * Screen chrome, not window chrome — it sits outside the window and outlives
-   * whatever page is open. Raised top edge for the same reason as the window.
+   * whatever page is open.
+   *
+   * No border. The bar's own fill is the boundary against the wallpaper —
+   * `window-edge` and the old `bevel-light` taskbar top both undershot it
+   * (1.87 and 1.88 on the pale wallpaper), which is why a border used to be
+   * needed at all. `Dock`'s `step` prop supplies a ramp fill that clears 3:1
+   * unaided in both themes by running opposite the site theme: dark
+   * (`leaf-800`/`leaf-900`) in light mode, light (`leaf-50`/`leaf-100`) in
+   * dark — see `dock-variants.ts` and docs/design-system.md §5.
    */
-  .taskbar {
-    background-color: var(--color-sunk);
-    border-top: 2px solid var(--color-bevel-light);
+  .dock {
+    position: relative;
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  /*
-   * The Start menu: a native <details> disclosure wearing Win98 chrome.
-   * No JavaScript, so it opens, closes, takes focus and announces its state for
-   * free. It does not close on Escape or on an outside click — both need JS,
-   * and that trade is the blueprint's call.
-   */
-  .start {
-    position: relative;
+  /* Vertical placements start at the breakpoint; below it every position is the
+     same static bottom bar. */
+  @media (min-width: 64rem) {
+    .dock[data-position="left"],
+    .dock[data-position="right"] {
+      padding-bottom: 0;
+    }
+
+    /* A vertical bar is as wide as its widest item, and a window title is far
+       wider than an icon. Hidden visually, not removed: the button's name has
+       to keep saying which window it restores. */
+    .dock[data-position="left"] .dock-item-label,
+    .dock[data-position="right"] .dock-item-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
   }
 
-  .start-button {
+  /*
+   * The one dock mannerism worth keeping from macOS: items answer the pointer.
+   * Scale rather than the desktop shortcuts' lift, because the same transform
+   * then reads correctly on a vertical dock.
+   */
+  .dock-cluster .dock-item,
+  .dock-cluster .task-button {
+    transition: transform 120ms ease-out;
+  }
+
+  /* Hover only where a pointer can hover, or a tapped item on a tablet stays
+     magnified after the finger has gone. */
+  @media (hover: hover) {
+    .dock-cluster .dock-item:hover,
+    .dock-cluster .task-button:hover {
+      transform: scale(1.06);
+    }
+  }
+
+  /* The global reduced-motion rule only shortens the transition; the scale
+     itself has to be withdrawn. Last, so it wins on source order. */
+  @media (prefers-reduced-motion: reduce) {
+    .dock-cluster .dock-item:hover,
+    .dock-cluster .task-button:hover {
+      transform: none;
+    }
+  }
+
+  /*
+   * A dock destination: a square target holding nothing but its icon, the way
+   * a macOS dock tile does. Flat until it is pointed at — Win98 toolbar
+   * behaviour, where the bevel appears on hover rather than sitting there.
+   */
+  .dock-item {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    height: 100%;
-    padding-inline: 0.6rem;
-    border: 1px solid var(--color-border);
+    justify-content: center;
+    min-width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid transparent;
     border-radius: var(--radius-control);
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+
+  /*
+   * Raised, then pressed in for the page you are on. A bevel identifies itself
+   * by whichever of its two edges contrasts with the surround: on the dock's
+   * sunk fill that is `bevel-dark` at 8.79 in light mode and `bevel-light` at
+   * 4.28 in dark, so the state is legible in both without a fill carrying it.
+   */
+  .dock-item:hover,
+  .dock-item:focus-visible {
+    border-color: var(--color-border);
     border-top-color: var(--color-bevel-light);
     border-left-color: var(--color-bevel-light);
     border-bottom-color: var(--color-bevel-dark);
     border-right-color: var(--color-bevel-dark);
-    background-color: var(--color-sunk);
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    color: var(--color-ink);
-    cursor: pointer;
-    list-style: none;
+  }
+
+  .dock-item[aria-current="page"] {
+    border-color: var(--color-border);
+    border-top-color: var(--color-bevel-dark);
+    border-left-color: var(--color-bevel-dark);
+    border-bottom-color: var(--color-bevel-light);
+    border-right-color: var(--color-bevel-light);
+    background-color: var(--color-accent-sunk);
   }
 
   /*
@@ -615,89 +762,6 @@
     font-size: 0.75rem;
     color: var(--color-ink);
     cursor: pointer;
-  }
-
-  /* Both spellings are needed: WebKit still ships the shadow-DOM marker. */
-  .start-button::-webkit-details-marker {
-    display: none;
-  }
-
-  .start-button::marker {
-    content: "";
-  }
-
-  .start[open] > .start-button {
-    border-top-color: var(--color-bevel-dark);
-    border-left-color: var(--color-bevel-dark);
-    border-bottom-color: var(--color-bevel-light);
-    border-right-color: var(--color-bevel-light);
-  }
-
-  .start-panel {
-    position: absolute;
-    bottom: calc(100% + 0.375rem);
-    left: 0;
-    z-index: 30;
-    display: flex;
-    min-width: 13rem;
-    border: 2px solid var(--color-border);
-    border-top-color: var(--color-bevel-light);
-    border-left-color: var(--color-bevel-light);
-    border-bottom-color: var(--color-bevel-dark);
-    border-right-color: var(--color-bevel-dark);
-    background-color: var(--color-sunk);
-  }
-
-  /* The branding gutter, reading bottom-to-top as Win9x did. */
-  .start-gutter {
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    padding-block: 0.75rem;
-    width: 1.75rem;
-    background-color: var(--color-accent-sunk);
-    border-right: 1px solid var(--color-border);
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    color: var(--color-accent-ink);
-    white-space: nowrap;
-  }
-
-  .start-items {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    padding: 0.25rem;
-  }
-
-  .start-item {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
-    color: var(--color-ink);
-    text-decoration: none;
-  }
-
-  .start-item:hover,
-  .start-item:focus-visible {
-    background-color: var(--color-accent-sunk);
-    color: var(--color-ink);
-  }
-
-  .start-item[aria-current="page"] {
-    font-weight: 700;
-  }
-
-  .start-separator {
-    margin: 0.25rem 0.5rem;
-    border: 0;
-    border-top: 1px solid var(--color-rule);
   }
 
   .link {
@@ -738,4 +802,23 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/*
+ * `::view-transition` paints above all ordinary DOM content regardless of
+ * z-index, and only elements with a `view-transition-name` are lifted into
+ * it. The window (`transition:name="window"`) is lifted; the dock and status
+ * bar (`transition:persist` only) were not, so the window briefly painted
+ * over them mid-transition on tall pages like /cv. Dock.astro now names them
+ * too (matching their persist id), so this rule can order the three groups
+ * explicitly — deliberately unlayered so it outranks Astro's `@layer astro`
+ * transition styles regardless of source order.
+ */
+::view-transition-group(dock),
+::view-transition-group(status-bar) {
+  z-index: 1;
+}
+
+::view-transition-group(window) {
+  z-index: 0;
 }

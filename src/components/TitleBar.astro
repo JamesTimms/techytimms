@@ -1,24 +1,36 @@
 ---
 import Icon from "~/components/Icon.astro";
-import { type IconName } from "~/lib/icons";
 import { cn } from "~/lib/cn";
+import { type IconName } from "~/lib/icons";
 import {
   glyphMinimise,
   glyphRestore,
-  minimiseControl,
   titleBar,
   titleControl,
-  type ChromeVariant,
+  type WindowPalette,
 } from "~/lib/window-variants";
 
 interface Props {
   title: string;
   controls?: boolean;
   icon?: IconName;
-  /* Only the window that owns the page can be put away; secondary windows keep
-   * decorative controls until there is something for them to do. */
+  /* Only the window that owns the page can be put away, filled or closed;
+   * secondary windows keep decorative controls until there is something for
+   * them to do. */
   minimisable?: boolean;
-  chrome?: ChromeVariant;
+  maximisable?: boolean;
+  closable?: boolean;
+  palette?: WindowPalette;
+  /*
+   * Only the page-owning window is draggable — the styleguide's secondary
+   * windows are decorative panels, not real chrome. `data-window-drag` marks
+   * the whole bar as the pointer's grab surface (the minimise button inside
+   * it still gets first say, via a click-target check in the wiring script);
+   * the label span alone carries the keyboard path, since it is the one
+   * child here with no interactive content of its own to nest inside a
+   * focusable/`role="button"` element.
+   */
+  draggable?: boolean;
 }
 
 const {
@@ -26,12 +38,24 @@ const {
   controls = true,
   icon,
   minimisable = false,
-  chrome = "period",
+  maximisable = false,
+  closable = false,
+  palette = "fallen-leaf",
+  draggable = false,
 } = Astro.props;
 ---
 
-<div class={titleBar({ chrome })}>
-  <span class="flex min-w-0 items-center gap-2">
+<div
+  class={cn(titleBar({ palette }), draggable && 'lg:cursor-move')}
+  data-window-drag={draggable ? true : undefined}
+>
+  <span
+    class="flex min-w-0 items-center gap-2"
+    tabindex={draggable ? 0 : undefined}
+    role={draggable ? "button" : undefined}
+    aria-label={draggable ? "Move window. Arrow keys move it, hold Shift to move further." : undefined}
+    data-window-drag-handle={draggable ? true : undefined}
+  >
     {icon && <Icon name={icon} />}
     <span class="truncate text-xs font-semibold tracking-wide">
       {title}
@@ -40,39 +64,55 @@ const {
 
   {
     /*
-     * Maximise and close stay decorative: there is nothing to maximise to and
-     * nowhere to close to, and a focusable control that does nothing announces
-     * an action that never happens. The container must not be aria-hidden —
-     * that would hide the real minimise button while leaving it focusable.
+     * A control stays decorative until its window has something for it to do
+     * (the styleguide's secondary windows). The container must not be
+     * aria-hidden — that would hide the real buttons while leaving them
+     * focusable.
      */
     controls && (
       <span class="flex shrink-0 items-center gap-0.5">
         {minimisable ? (
           <button
             type="button"
-            class={cn(
-              titleControl({ chrome, pressable: true }),
-              minimiseControl({ chrome }),
-            )}
+            class={titleControl({ palette, pressable: true })}
             data-window-minimise
             aria-label="Minimise window"
           >
             <span aria-hidden="true" class={glyphMinimise} />
           </button>
         ) : (
-          <span
-            aria-hidden="true"
-            class={cn(titleControl({ chrome }), minimiseControl({ chrome }))}
-          >
+          <span aria-hidden="true" class={titleControl({ palette })}>
             <span class={glyphMinimise} />
           </span>
         )}
-        <span aria-hidden="true" class={titleControl({ chrome })}>
-          <span class={glyphRestore} />
-        </span>
-        <span aria-hidden="true" class={titleControl({ chrome })}>
-          <span class="title-glyph-close" />
-        </span>
+        {maximisable ? (
+          <button
+            type="button"
+            class={titleControl({ palette, pressable: true })}
+            data-window-maximise
+            aria-label="Maximise window"
+          >
+            <span aria-hidden="true" class={glyphRestore} />
+          </button>
+        ) : (
+          <span aria-hidden="true" class={titleControl({ palette })}>
+            <span class={glyphRestore} />
+          </span>
+        )}
+        {closable ? (
+          <button
+            type="button"
+            class={titleControl({ palette, pressable: true })}
+            data-window-close
+            aria-label="Close window"
+          >
+            <span aria-hidden="true" class="title-glyph-close" />
+          </button>
+        ) : (
+          <span aria-hidden="true" class={titleControl({ palette })}>
+            <span class="title-glyph-close" />
+          </span>
+        )}
       </span>
     )
   }

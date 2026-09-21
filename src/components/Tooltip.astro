@@ -1,0 +1,103 @@
+---
+/*
+ * A label that appears on hover and on keyboard focus. CSS only, and not the
+ * `title` attribute: `title` is unreachable by keyboard, unstyleable, and each
+ * browser picks its own delay.
+ *
+ * Decorative by contract. The trigger must already carry these words in its
+ * accessible name, so the tooltip is aria-hidden — announcing it too would read
+ * the label twice.
+ *
+ * The trigger is the anchor: it has to be this element's parent and carry
+ * `tooltip-anchor`. A wrapper element would be tidier but cannot do the job —
+ * the Start button is a <summary>, which must stay a direct child of <details>,
+ * and hover on a wrapper inside the summary would miss the button's padding.
+ */
+interface Props {
+  label: string;
+  placement?: "top" | "bottom" | "left" | "right";
+  class?: string;
+}
+
+const { label, placement = "top", class: className } = Astro.props;
+---
+
+<span class:list={["tooltip", className]} data-placement={placement} aria-hidden="true">{label}</span>
+
+<style>
+  /* The anchor is the caller's element, so it is outside this component's scope. */
+  :global(.tooltip-anchor) {
+    position: relative;
+  }
+
+  .tooltip {
+    position: absolute;
+    /* Placement is two custom properties rather than four rule sets, so a
+       caller can flip the bubble at a breakpoint by setting the pair — see the
+       vertical dock — without restating any of the styling. */
+    inset: var(--tooltip-inset);
+    transform: var(--tooltip-shift);
+    z-index: 40;
+    width: max-content;
+    max-width: 14rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    font-size: 0.75rem;
+    line-height: 1.3;
+    text-align: center;
+    /* It must never eat a press meant for the thing it is labelling. */
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 120ms ease-out,
+      visibility 120ms;
+  }
+
+  .tooltip[data-placement="top"] {
+    --tooltip-inset: auto auto calc(100% + 0.5rem) 50%;
+    --tooltip-shift: translateX(-50%);
+  }
+
+  .tooltip[data-placement="bottom"] {
+    --tooltip-inset: calc(100% + 0.5rem) auto auto 50%;
+    --tooltip-shift: translateX(-50%);
+  }
+
+  .tooltip[data-placement="right"] {
+    --tooltip-inset: 50% auto auto calc(100% + 0.5rem);
+    --tooltip-shift: translateY(-50%);
+  }
+
+  .tooltip[data-placement="left"] {
+    --tooltip-inset: 50% calc(100% + 0.5rem) auto auto;
+    --tooltip-shift: translateY(-50%);
+  }
+
+  /* :focus-visible, not :focus — a pointer press should not leave the bubble
+     stuck open behind the pointer. :has covers an anchor that wraps its own
+     focusable element rather than being one. */
+  :global(.tooltip-anchor:focus-visible) > .tooltip,
+  :global(.tooltip-anchor:has(:focus-visible)) > .tooltip {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* Hover only where a pointer can hover, or a tap on a tablet leaves the
+     tooltip showing after the finger has gone. */
+  @media (hover: hover) {
+    :global(.tooltip-anchor:hover) > .tooltip {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tooltip {
+      transition: none;
+    }
+  }
+</style>

@@ -300,6 +300,8 @@ Resolved from the open questions.
    wearing our colours.
 8. **The Start menu is the site navigation.** All navigation leaves the window
    chrome. The window shows content only.
+   *Superseded, 21 Sep 2026: the menu is gone — every destination is now its own
+   dock icon, laid out left to right. Navigation still leaves the window.*
 9. **`terminal.techytimms.com` moves out of the taskbar** and becomes a project
    entry on `/work`, until James decides what the taskbar should carry instead.
 10. **Windows 98 icons** from [win98icons.alexmeub.com](https://win98icons.alexmeub.com/),

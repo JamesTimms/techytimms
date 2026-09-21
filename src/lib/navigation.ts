@@ -9,7 +9,7 @@ export type NavItem = {
   onDesktop?: boolean;
 };
 
-/* The Start menu's main group. Acts as a header. */
+/* The dock row's leading group. */
 export const primaryNav: NavItem[] = [
   { href: '/', label: 'Home', icon: 'home' },
   { href: '/about', label: 'About', icon: 'about', onDesktop: true },
@@ -17,7 +17,8 @@ export const primaryNav: NavItem[] = [
   { href: '/blog', label: 'Blog', icon: 'blog', onDesktop: true },
 ];
 
-/* Below the separator, where logoff and shutdown would normally go. Acts as a footer */
+/* After the dock's separator, where logoff and shutdown used to sit: reachable,
+ * and plainly not the headline — see blueprint decision 12. */
 export const secondaryNav: NavItem[] = [
   { href: '/cv', label: 'CV', icon: 'cv', onDesktop: true },
   {
@@ -68,4 +69,19 @@ export function opensOnPress(press: Press): boolean {
     !press.shiftKey &&
     !press.altKey
   );
+}
+
+/*
+ * What the dock's side region names: the section, not the page. `/blog/hello`
+ * is still Blog, because the first segment is what the navigation is keyed on.
+ * A path with no nav entry falls back to its own segment rather than to a
+ * blank region.
+ */
+export function sectionLabel(currentPath: string): string {
+  const [segment = ''] = normalisePath(currentPath).slice(1).split('/');
+  const entry = [...primaryNav, ...secondaryNav].find(
+    (item) => !item.external && item.href === `/${segment}`,
+  );
+
+  return entry?.label ?? segment.replace(/-/g, ' ').replace(/\b[a-z]/g, (c) => c.toUpperCase());
 }

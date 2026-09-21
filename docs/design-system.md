@@ -37,17 +37,14 @@ two `PALETTE` markers.
 | `rule` | `oklch(88.5% 0.016 85)` | `oklch(32% 0.018 85)` | Decorative dividers only |
 | `border` | `oklch(63% 0.018 85)` | `oklch(52% 0.018 85)` | Panel borders. **Not** the window's outer edge |
 | `window-edge` | `oklch(47% 0.018 85)` | `oklch(55% 0.018 85)` | Window outer edge on the wallpaper, where no bevel draws it |
-| `ink-faint` | `oklch(55.5% 0.024 85)` | `oklch(62% 0.020 85)` | Tertiary text: dates, metadata |
-| `ink-muted` | `oklch(47% 0.028 85)` | `oklch(74% 0.020 85)` | Secondary body text |
+| `ink-faint` | `oklch(55.5% 0.024 85)` | `oklch(72% 0.020 85)` | Tertiary text: dates, metadata |
+| `ink-muted` | `oklch(47% 0.028 85)` | `oklch(82% 0.020 85)` | Secondary body text |
 | `ink` | `oklch(24% 0.030 85)` | `oklch(93% 0.014 85)` | Primary text |
 | `accent` | `oklch(48% 0.130 45)` | `oklch(81% 0.110 60)` | Marks, rings, borders — **never text** |
 | `accent-ink` | `oklch(47% 0.110 45)` | `oklch(82% 0.105 60)` | Accent **text** |
 | `accent-sunk` | `oklch(95.5% 0.024 45)` | `oklch(26% 0.035 60)` | Tinted panel fill |
-| `desktop` | `oklch(80% 0.034 80)` | `oklch(16% 0.014 60)` | The wallpaper — **pale** in light, near-black in dark. Muted per decision 15 |
+| `desktop` | `oklch(88% 0.032 80)` | `oklch(14% 0.025 80)` | The wallpaper — nearest `leaf-100` in light, exactly `leaf-900` in dark. See §4 |
 | `desktop-ink` | `oklch(24% 0.022 80)` | `oklch(97% 0.006 60)` | Shortcut labels. **Flips** |
-| `titlebar-from` | `oklch(34% 0.04 60)` | *same* | Title bar gradient, left/dark end |
-| `titlebar-to` | `oklch(52% 0.027 70)` | *same* | Title bar gradient, right/light end |
-| `titlebar-ink` | `oklch(99% 0 55)` | *same* | Title text. Does not flip |
 | `bevel-light` | `oklch(100% 0 85)` | `oklch(56% 0.020 85)` | Raised top/left edge |
 | `bevel-dark` | `oklch(38% 0.020 85)` | `oklch(8% 0.010 85)` | Raised bottom/right edge |
 
@@ -115,11 +112,11 @@ Dark theme:
 | `ink` on `ground` | 15.55 | 4.5 | ✅ |
 | `ink` on `surface` | 14.41 | 4.5 | ✅ |
 | `ink` on `sunk` | 16.18 | 4.5 | ✅ |
-| `ink-muted` on `ground` | 8.28 | 4.5 | ✅ |
-| `ink-muted` on `surface` | 7.67 | 4.5 | ✅ |
-| `ink-muted` on `sunk` | 8.61 | 4.5 | ✅ |
-| `ink-faint` on `ground` | 5.24 | 4.5 | ✅ |
-| `ink-faint` on `surface` | 4.86 | 4.5 | ✅ |
+| `ink-muted` on `ground` | 10.95 | 4.5 | ✅ |
+| `ink-muted` on `surface` | 10.15 | 4.5 | ✅ |
+| `ink-muted` on `sunk` | 11.40 | 4.5 | ✅ |
+| `ink-faint` on `ground` | 7.71 | 4.5 | ✅ |
+| `ink-faint` on `surface` | 7.14 | 4.5 | ✅ |
 | `accent-ink` on `ground` | 10.08 | 4.5 | ✅ |
 | `accent-ink` on `surface` | 9.34 | 4.5 | ✅ |
 | `accent-ink` on `accent-sunk` | 8.70 | 4.5 | ✅ |
@@ -130,7 +127,7 @@ Dark theme:
 | `accent` on `ground` | 9.39 | 3.0 | ✅ |
 | `accent` on `surface` | 8.71 | 3.0 | ✅ |
 
-Wallpaper and taskbar pairs:
+Wallpaper and dock pairs:
 
 | Pair | Light | Dark | Min | |
 |---|---|---|---|---|
@@ -141,7 +138,7 @@ Wallpaper and taskbar pairs:
 | `bevel-light` on `sunk` | 1.12 | 3.92 | 3.0 | one edge |
 | `bevel-dark` on `sunk` | 8.93 | 1.04 | 3.0 | one edge |
 | `ink` on `sunk` | 14.68 | 16.18 | 4.5 | ✅ |
-| `ink-muted` on `sunk` | 6.10 | 8.61 | 4.5 | ✅ |
+| `ink-muted` on `sunk` | 6.10 | 11.40 | 4.5 | ✅ |
 | `border` on `sunk` | 3.12 | 3.61 | 3.0 | ✅ |
 
 `ink-faint` on `ground` at 4.56 (light) is the tightest pair in the system. If
@@ -172,7 +169,7 @@ worst case**, too light to carry light text and too dark to carry dark text. The
 workable regions are genuinely pale or genuinely dark, not the middle.
 
 **`ink-faint` is not usable on `sunk` in light mode** — it lands at 4.24. The
-taskbar's secondary text uses `ink-muted` for that reason. `sunk` is a darker
+dock's side regions use `ink-muted` for that reason. `sunk` is a darker
 fill than `ground`, so any pair verified only against `ground` needs rechecking
 before it moves onto a sunk surface.
 
@@ -285,6 +282,63 @@ explicit note from the blueprint about Sara Soueidan's callouts.
 
 The signature element. A panel with a title bar.
 
+### Palette ramps
+
+Modern chrome, period anatomy: thin edge, flat bar, flat controls. Two CVA
+stops in `window-variants.ts`, one per palette; each is a ten-step (50–900)
+OKLCH ramp of tints and shades of that palette's main colour — the colour the
+wallpaper used to be, evenly spaced in lightness from 99% to 14%. Neither ramp
+flips; the roles pick different steps. Both are rendered on the wallpaper at
+`/styleguide`. Only six of the ten steps are used by the window; the dock
+(§5) uses 800–900 and their mirrors, 100–50.
+
+Respaced from an earlier six-step ramp with irregular gaps (99/88/80/50/30/14%
+lightness). Old steps 1, 2, 4, 5 and 6 land within 3 points of their old
+lightness (900 and 50 are exact); old step 3 was two different lightnesses
+under one role (leaf 80%, pumpkin 70%) and so lands on two different new
+steps.
+
+| Step | `leaf` (hue 80) | `pumpkin` (hue 55) | Role |
+|---|---|---|---|
+| 50 | `oklch(99% 0.008 80)` | `oklch(99% 0.0055 55)` | Face, light; title text |
+| 100 | `oklch(89.6% 0.0285 80)` | `oklch(89.6% 0.041 55)` | Wallpaper, light; glyphs |
+| 200 | `oklch(80.1% 0.06 80)` | — | **Main, leaf.** Rule under bar, light only |
+| 300 | — | `oklch(70.7% 0.098 55)` | **Main, pumpkin.** Same role, one step darker |
+| 500 | `oklch(51.8% 0.0506 80)` | `oklch(51.8% 0.091 55)` | Edge, both themes; control hover fill |
+| 700 | `oklch(32.9% 0.0415 80)` | `oklch(32.9% 0.0558 55)` | Face, dark |
+| 900 | `oklch(14% 0.025 80)` | `oklch(14% 0.03 55)` | Bar, both themes; wallpaper, dark |
+
+400/600/800 are defined (evenly spaced, gamut-checked) but unused by the
+window — see `global.css` for the full ten-step values of both ramps.
+
+**The face is step 50, not the main colour.** At the main colour's own
+lightness `ink-muted` is 3.65 and `ink-faint` 2.54; ink-faint needs 99%. The
+alternative, a muted and faint step per palette, makes the neutral ink scale
+palette-dependent for one surface.
+
+**One edge step, both themes.** A 1px edge must clear 3:1 against a wallpaper
+that is pale in light and near-black in dark; ~52% is the band that clears
+both, and the nearest tint to the bar the dark wallpaper allows. The bar stays
+at step 900 in both, because a light bar in dark mode reads as a different
+component. Its rule (200 leaf, 300 pumpkin) is light-mode only: in dark the
+window draws one border, on its outside edge, and the bar's own colour
+separates it from the face at ~1.6 — no dark bar reaches 3:1 against any dark
+face, and the bar is chrome, not a control boundary.
+
+| Pair (light · dark) | Leaf | Pumpkin | Min |
+|---|---|---|---|
+| `ink` / face | 16.00 · 10.02 | 15.99 · 10.14 | 4.5 |
+| `ink-muted` / face | 6.64 · 7.05 | 6.63 · 7.14 | 4.5 |
+| `ink-faint` / face | 4.62 · 4.96 | 4.61 · 5.02 | 4.5 |
+| Title text · glyph / bar | 19.36 · 14.58 | 19.38 · 14.50 | 4.5 |
+| Edge / wallpaper | 3.88 · 3.57 | 3.98 · 3.48 | 3.0 |
+| Edge / bar · bar / face (dark) | 3.57 · 1.62 | 3.49 · 1.60 | — |
+| Bar rule / bar (light) · focus ring / face | 10.66 · 6.71 | 7.46 · 6.71 | 3.0 |
+
+All recomputed from the OKLCH values after respacing; no pair lost headroom
+against its floor (dark-face `ink` dropped the most, from 11.13 to 10.02 on
+leaf, still 2.2× the 4.5 floor).
+
 ### One window per page
 
 `WindowFrame.astro` is the only window. One per document, rendered by
@@ -307,31 +361,17 @@ same time. Sections now use the group box — see §13. A window means a page.
 └──────────────────────────────────────┘
 ```
 
-- **Title bar.** A horizontal gradient, `titlebar-from` at the left to `titlebar-to` at the right, `border` bottom edge, a 16px pixel icon, then the title in `titlebar-ink`.
-- **Controls.** Minimise, restore and close at the right, in bevel panels.
-- **Body.** `surface` fill, padding on Tailwind's scale.
+- **Title bar.** Flat, ramp step 900, a rule (200 leaf / 300 pumpkin) along its bottom edge, a 16px pixel icon, then the title in step 50.
+- **Controls.** Minimise, restore and close at the right: 24px hit areas, step-100 glyphs, no box of their own.
+- **Body.** Ramp step 50 in light, step 700 in dark; padding on Tailwind's scale.
 
-### The gradient, and why it is narrower than Windows'
+### The gradient is gone
 
-Sampled from the reference screenshot, the Windows 2000 title bar runs
-`#101b4c` to `#a3c8ee`. White text on the left end is 16.37:1; on the right end
-it is **1.74:1**. Windows got away with that because its title is short and
-left-aligned, so the text never reaches the pale end.
-
-Ours cannot: titles are full paths and the controls sit at the right. The ramp
-is therefore compressed to fourteen lightness points, solved so both ends clear
-4.5:1 with `titlebar-ink`:
-
-| End | Light | Dark | Min | |
-|---|---|---|---|---|
-| `titlebar-ink` on `titlebar-from` | 10.74 | 9.90 | 4.5 | ✅ |
-| `titlebar-ink` on `titlebar-to` | 5.96 | 5.45 | 4.5 | ✅ |
-
-**The direction is load-bearing, not decorative.** The controls sit at the right,
-which is the light end. In dark mode a control clears 3:1 against that end
-(3.70 via its dark edge) but *not* against the dark end (2.04). Reverse the
-gradient and the controls disappear in dark mode. Windows' gradient direction
-and its control placement are not independent choices.
+Superseded by the ramps above. The Win2000 bar ran `#101b4c` to `#a3c8ee`,
+putting white text at 1.74:1 at its pale end; ours had to be compressed to
+fourteen lightness points to clear 4.5:1 at both ends, and its direction was
+load-bearing because the controls sit at the light end. A flat bar at step 900
+removes the constraint rather than solving it.
 
 ### Glyphs are drawn, not typed
 
@@ -353,7 +393,7 @@ what makes them read as a set.
 Navigation lives in the Start menu (blueprint decision 8), so the window has no
 header row, no menu bar and no in-window nav. What remains is content identity:
 icon, title, decorative controls. A window that also carried navigation would be
-competing with the taskbar for the same job.
+competing with the dock for the same job.
 
 ### Controls are decorative, and must be marked as such
 
@@ -375,9 +415,11 @@ that is the moment the component needs to become a React island.
 | `icon` | `IconName` | — | 16px pixel icon at the left of the title bar |
 | `controls` | `boolean` | `true` | Decorative chrome on/off |
 | `minimisable` | `boolean` | `false` | Turns minimise into a real button |
+| `palette` | `WindowPalette` | `'fallen-leaf'` | `'fallen-leaf'` or `'pumpkin'` |
 
-`tone` is gone: it tinted the bar `accent-sunk` for `Window.astro`, and the bar
-now carries a gradient that is not a per-instance choice.
+`tone` is gone: it tinted the bar `accent-sunk` for `Window.astro`. `chrome`
+(`period` / `soft` / `flat`) is gone too — the chrome is now modern in both
+stops, and the axis carries the palette instead.
 
 Position and size are **not** props. On a static component they would be
 inline styles that break the responsive model. They arrive with the React
@@ -401,7 +443,7 @@ imported directly into a `.astro` file. A `.astro` component cannot take
 
 ---
 
-## 5. The desktop and the taskbar
+## 5. The desktop and the dock
 
 ### The wallpaper
 
@@ -470,10 +512,11 @@ on the darkest speck is the one that has to stay legible.
 | window edge, carrying side | 5.09 (dark) | 4.14 (light) | 3.0 | ✅ |
 | `window-edge` on `desktop` | 3.47 | 3.97 | 3.0 | ✅ |
 
-### Why the window's outer edge is a bevel
+### Why an edge flips with the theme
 
-Above the breakpoint the window frame switches from a 1px `border` to a 2px
-raised bevel. This is not period decoration — it is load-bearing.
+The window no longer uses a bevel — it uses a 1px edge off its own ramp, which
+flips step for the same reason the bevel flipped side. The argument below is
+retained because it still governs the dock, the controls and the group box.
 
 `border` is tuned to sit on near-white panels and reaches only 1.87 against the
 pale wallpaper. A bevel does reach it, because it has two edges and only needs
@@ -498,46 +541,99 @@ The same rule governs controls and grooves, where the surround is a light panel
 rather than the wallpaper — there `bevel-dark` carries in light mode at 8.79 and
 `bevel-light` in dark at 4.28.
 
-### The `soft` and `flat` variants need `window-edge`
+### The two bars mark themselves with fill, not a border
 
-Only `period` draws a bevel. `soft` and `flat` mark the window with a single
-flat border, and `border` at 1.87 cannot do it on the pale wallpaper.
+Both bars — the bottom dock and the top status bar — used to mark themselves
+against the wallpaper with a single flat `window-edge` border (47% light, 55%
+dark; `border` alone measures 1.87 on the pale wallpaper and cannot). They no
+longer carry a border at all: the fill itself is now the boundary, and it has
+to clear 3:1 against the wallpaper unaided in both themes.
 
-`window-edge` exists for exactly that: **47% in light, 55% in dark, clearing 3.64
-and 4.01.** A panel boundary on near-white and a window boundary on the wallpaper
-are different jobs against different grounds, so they get different tokens —
-the same reasoning that keeps `desktop` separate from `ground`.
+No single ramp step does that in both themes at once, so the fill runs
+**opposite the site theme** — dark in light mode, light in dark mode, via
+`Dock`'s `step` prop (`dock-variants.ts`). `step` names the light-mode ramp
+step; the dark-mode fill is that step's mirror across the 50–900 scale
+(`dockDarkStep`), always one step further from whichever wallpaper it sits
+near. Text and icons that sit directly on this inverted fill use the inverted
+tokens `--color-bar-ink-muted` / `--color-bar-accent`, not the ordinary
+`ink-muted` / `accent`, which assume a surface that matches the current theme.
 
-Below the `lg` breakpoint the window fills the viewport, no wallpaper is visible,
-and plain `border` is sufficient.
+| Bar | `step` | Fill (light · dark) | vs wallpaper (light · dark) |
+|---|---|---|---|
+| Bottom dock | `900` (default) | `leaf-900` · `leaf-50` | 13.86 · 19.36 |
+| Top status bar | `800` | `leaf-800` · `leaf-100` | 11.65 · 14.58 |
 
-### Taskbar
+The dock is always the higher-contrast bar, one ramp step apart from the
+status bar, in both themes. `Dock` also takes a `size` prop
+(`compact` / `regular` / `spacious`) for the bar's padding; `regular` matches
+the old fixed `px-3 py-2`.
+
+Below the `lg` breakpoint the window fills the viewport and no wallpaper is
+visible, so this boundary is moot there.
+
+### Dock
 
 Screen chrome, not window chrome. It sits outside the window in the DOM,
 because it belongs to the desktop and outlives whatever page is open.
 
-| Region | Contents | Rationale |
+Three regions on a three-track grid — `1fr auto 1fr` — so the centre cluster is
+centred on the *bar*, not between its neighbours.
+
+| Bar | Regions | Contents |
 |---|---|---|
-| Start | The Start button and its menu | Carries the entire site navigation — see section 9 |
-| Task area | Empty | On a real taskbar this holds task buttons. With one window whose title bar is directly above, a task button would be a second label for the same thing |
-| Tray | Theme toggle, `©` year | A theme toggle *is* a system setting, which is what a tray holds |
+| Bottom dock | Cluster only | Navigation icons and the task button: the launcher, and the windows it has open |
+| Top status bar | `start` / `middle` / `end` | Section name; sundial and clock; theme toggle and `©` year — what a desktop puts in its top bar |
 
-The pinned strip is gone. CV, GitHub and Terminal were there; all navigation now
-sits in the Start menu, and Terminal moved to `/work` as a project entry
-(blueprint decision 9).
+**The regions are slots, not props** (`start`, `middle`, `end`). A dock that
+took a clock as a prop would have to know what a clock is. `middle` is only
+rendered on a `cluster="none"` bar; elsewhere that track is the cluster's.
 
-**Position.** Fixed above 64rem, static below it. On a desktop the bar is
-screen furniture and must be pinned; on a phone there is no visible desktop to
-pin it to, and a fixed bottom bar there fights browser chrome, the home
-indicator and `100vh`. Below the breakpoint the body is a flex column and the
-window takes the remaining height, so the bar still lands at the bottom of the
-first screen without being fixed.
+**Position.** `position="bottom" | "left" | "right"`, pinned from 64rem and a
+bottom bar in flow below it — on a phone there is no visible desktop to pin to.
+`sticky` then holds it at the bottom edge while the page scrolls under it.
+Sticky, not fixed: it keeps its height in flow, so it cannot cover the end of
+the page the way the old fixed bar would have.
+Vertical placements centre the cluster on the y-axis, put the sides at its ends,
+open the Start menu sideways and flip the tooltips to the side.
+`shortcutInset()` stands the desktop shortcut columns off a left-hand dock.
 
-`padding-bottom: env(safe-area-inset-bottom)` covers the one case where it *is*
-fixed on a device with a home indicator — a landscape tablet at exactly 1024px.
+**Edges.** No border — see "The two bars mark themselves with fill" above. The
+fill itself carries the 3:1 boundary against the wallpaper in both themes.
 
-**Clearance.** The desktop wrapper carries `lg:pb-24` so a full-height window's
-lower edge stays clear of the fixed bar rather than sliding under it.
+| Pair | Light | Dark | Min | |
+|---|---|---|---|---|
+| Dock fill (`leaf-900`/`leaf-50`) on `desktop` | 13.86 | 19.36 | 3.0 | ✅ |
+| Status bar fill (`leaf-800`/`leaf-100`) on `desktop` | 11.65 | 14.58 | 3.0 | ✅ |
+| `ink` on `surface` (tooltip text) | 16.47 | 14.42 | 4.5 | ✅ |
+| `bar-ink-muted` on dock fill (side regions, worst case) | 9.59 | 5.00 | 4.5 | ✅ |
+| `border` on dock fill (item boundary) | 5.69 | 5.35 | 3.0 | ✅ |
+
+**Icons only.** Cluster items are square targets around a native-size icon —
+no visible text. The words survive as the accessible name (`sr-only`), so the
+picture is never the only carrier.
+
+**Tooltips** (`Tooltip.astro`) supply the label on hover and on
+`:focus-visible`, CSS only. `aria-hidden`, because the accessible name already
+says it and a screen reader must not read it twice. Not the `title` attribute:
+unreachable by keyboard, unstyleable, inconsistent delay.
+
+| Prop | Values | |
+|---|---|---|
+| `label` | string | The words. Must match the trigger's accessible name |
+| `placement` | `top` (default), `bottom`, `left`, `right` | Sets `--tooltip-inset` / `--tooltip-shift` |
+
+The trigger is the anchor: the tooltip's parent, carrying `.tooltip-anchor`. A
+wrapper cannot do it — the Start button is a `<summary>` and must stay a direct
+child of `<details>`. Callers reposition it responsively by overriding the two
+custom properties rather than restating the styling; that is how a vertical
+dock flips the bubble sideways at `lg` instead of over its neighbour.
+
+**Magnification.** Items scale to 1.06 on hover, `(hover: hover)` only, and the
+scale is withdrawn under `prefers-reduced-motion` — the global rule shortens the
+transition but cannot undo the transform.
+
+**Clearance.** `--dock-clearance` keeps a bottom-anchored shortcut column and a
+full-height window clear of the bar.
 
 ### Rejected, and why
 
@@ -597,9 +693,9 @@ Above it, windows float on the desktop ground.
 | | Below 64rem | 64rem and up |
 |---|---|---|
 | Wallpaper | Not visible — the window covers it | Visible: one flat fill |
-| Window | Single, full-bleed, fills height above the taskbar | Inset, `max-w-4xl`, sized to content |
+| Window | Single, full-bleed, fills height above the dock | Inset, `max-w-4xl`, sized to content |
 | Window edge | 1px `border`, top and bottom only | 2px raised bevel, all four sides |
-| Taskbar | Static, after the window in flow | Fixed to the bottom of the viewport |
+| Dock | Sticky to the bottom edge, in flow after the window | Pinned to the edge given by `position` |
 | Layout | One column | One column, centred, wallpaper either side |
 
 **Wallpaper margin is guaranteed**, not incidental: the outer wrapper carries
@@ -623,7 +719,7 @@ Deliberately absent, so their absence is a decision:
 - **A second accent hue.** The five underline hues are one family at one lightness, not competing accents.
 - **Animation**, beyond state transitions under 150ms. All of it sits behind `prefers-reduced-motion`.
 - **Draggable windows**, deferred in plan §9.
-- **A taskbar clock or task buttons** — see section 5.
+- **A clock.** The dock has a region for one; a live clock needs client JavaScript and a built one would be stale.
 - **Escape-to-close and click-outside-to-close** on the Start menu — both need JavaScript; see section 9.
 - **Icons outside the curated set.** The source library is 2393 files; only what is used is committed.
 
@@ -659,15 +755,15 @@ Both need JavaScript. The menu ships without them.
 │  │  🌐  GitHub            │
 └──┴────────────────────────┘
    ▲ branding gutter, reading bottom-to-top
-┌────────┐
-│ ▣ Start│  ← summary, raised bevel; pressed while open
-└────────┘
+┌────┐
+│ ▣  │  ← summary, raised bevel; pressed while open. Icon only,
+└────┘     named "Start" for assistive tech, tooltip on hover/focus
 ```
 
 - **Gutter.** `accent-sunk` fill, `accent-ink` text, `writing-mode: vertical-rl` plus a 180° rotation so it reads bottom-to-top as Win9x did. `aria-hidden` — it is the site name repeated, not information.
 - **Items.** 32px pixel icon, label, `accent-sunk` fill on hover and focus.
 - **Separator.** Groups places within this site from somewhere else entirely.
-- **Position.** `bottom: calc(100% + 0.375rem)` on the button, so it opens upward from the taskbar.
+- **Position.** `bottom: calc(100% + 0.375rem)` on the button, so it opens upward from a bottom dock; a vertical dock opens it sideways.
 
 ### Prominence, and why
 
@@ -678,14 +774,14 @@ because navigation nobody can find is bad design for every reader.
 ### Skip link
 
 "Skip to **navigation**", targeting the summary, not "skip to content". With
-nav in the taskbar, content already comes first in the DOM; the navigation is
+nav in the dock, content already comes first in the DOM; the navigation is
 what is far away.
 
 ### CV placement
 
 `/cv` sits **below the separator, beside GitHub**, in the group Win98 reserves
 for entries that are not places on this machine in the same sense as the pages
-above. It appears there and nowhere else: no taskbar shortcut, no desktop
+above. It appears there and nowhere else: no dock shortcut, no desktop
 shortcut, no home-page call to action. Reachable, not foregrounded — build
 plan §1.
 
@@ -802,7 +898,7 @@ native CSS, nothing measured at runtime, nothing hand-positioned.
 | Prop | Default | |
 |---|---|---|
 | `align` | `"left"` | Which edge the columns grow from |
-| `anchor` | `"top"` | Edge the group is pinned to; `"bottom"` clears the taskbar and fills upwards |
+| `anchor` | `"top"` | Edge the group is pinned to; `"bottom"` clears the dock and fills upwards |
 | `rows` | — | Items per column before wrapping; pass `desktopRows(items)` |
 | `gap` | `0.75` | Gap between shortcuts, rem |
 | `inset` | `1` | Distance from the viewport edges, rem |
@@ -863,14 +959,14 @@ route, which is why minimise hides it rather than swapping it.
 
 | Element | Treatment | Why |
 |---|---|---|
-| Taskbar | `transition:persist="taskbar"` | Screen chrome. It outlives the document, and its listeners come with it. |
+| Dock | `transition:persist="dock"` | Screen chrome. It outlives the document, and its listeners come with it. |
 | Desktop shortcuts | `transition:persist="persist-desktop-top"` / `"persist-desktop-bottom"` | Same, and the press handlers are bound to these exact elements. |
 | Window frame | `transition:name="window"` | Morphs rather than cross-fades, so it reads as one window showing new content. Deliberately **not** persisted — it must arrive un-minimised. |
 | `<main>` | `transition:animate="fade"` | The content is what changed; it should be what visibly changes. |
 
 **Transition directives apply to elements, not component tags.** Putting
-`transition:persist` on `<Taskbar />` or `<Desktop />` silently does nothing —
-it must sit on the rendered element. The taskbar carries it on its own root;
+`transition:persist` on `<Dock />` or `<Desktop />` silently does nothing —
+it must sit on the rendered element. The dock carries it on its own root;
 the two desktop groups are wrapped in a bare `<div>` inside `Desktop.astro`,
 which is layout-neutral because `.desktop-shortcuts` is `display: none` below
 `xl` and `position: fixed` above it.
