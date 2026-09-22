@@ -29,19 +29,21 @@ const { title, palette = 'fallen-leaf' } = Astro.props;
       content. Deliberately not persisted: it must arrive un-minimised. */}
   {/* `lg:relative` gives the resize handles a positioning context without
       affecting flow (an offsetless `relative` behaves like `static`). The
-      `data-[positioned=true]:*` utilities are what `window-interact.ts`
-      switches on once the user first drags or resizes: they lift the frame
-      out of the centred, `max-w-4xl` flow and onto explicit pixel geometry
-      set inline (`left`/`top`/`width`/`height`), which `max-w-4xl` would
-      otherwise continue to cap. Gated to `lg` because that JS never runs
-      below it — the frame fills the viewport there instead. */}
+      `positioned:*` variant (global.css) is what `window-interact.ts` — and
+      the pre-paint script in BaseLayout.astro — switch on via `<html
+      data-positioned>`: it lifts the frame out of the centred, `max-w-4xl`
+      flow and onto explicit geometry read from the `--window-*` custom
+      properties on `<html>`, which `max-w-4xl` would otherwise continue to
+      cap. Gated to `lg` because that JS never runs below it — the frame
+      fills the viewport there instead. */}
   <div
     transition:name="window"
     data-window-frame
     class={cn(
       windowFrame({ palette }),
-      'group/window pointer-events-auto mx-auto flex w-full max-w-4xl flex-1 flex-col lg:relative lg:flex-none',
-      'lg:data-[positioned=true]:fixed lg:data-[positioned=true]:m-0 lg:data-[positioned=true]:max-w-none lg:data-[positioned=true]:min-w-80',
+      'pointer-events-auto mx-auto flex w-full flex-1 flex-col lg:relative lg:max-w-4xl lg:flex-none',
+      'lg:positioned:fixed lg:positioned:m-0 lg:positioned:max-w-none lg:positioned:min-w-80',
+      'lg:positioned:left-[var(--window-left)] lg:positioned:top-[var(--window-top)] lg:positioned:w-[var(--window-width)] lg:positioned:h-[var(--window-height)]',
     )}
   >
     <TitleBar
@@ -71,7 +73,7 @@ const { title, palette = 'fallen-leaf' } = Astro.props;
     <main
       id="main"
       transition:animate="fade"
-      class="min-w-0 flex-1 px-4 py-8 sm:px-6 lg:mx-auto lg:w-full lg:max-w-4xl lg:group-data-[positioned=true]/window:min-h-0 lg:group-data-[positioned=true]/window:overflow-y-auto"
+      class="min-w-0 flex-1 px-4 py-8 sm:px-6 lg:mx-auto lg:w-full lg:max-w-4xl lg:positioned:min-h-0 lg:positioned:overflow-y-auto"
     >
       <slot />
     </main>

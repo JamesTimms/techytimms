@@ -2,6 +2,11 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* True whenever the window frame has an explicit rect (from drag/resize/maximise, or the
+   pre-paint restore in BaseLayout.astro) — flag lives on <html>, not the frame, so both the
+   blocking head script and the runtime module agree on the same source. */
+@custom-variant positioned (html[data-positioned=true] &);
+
 /* ==========================================================================
  * PALETTE — Fallen Leaf
  *
@@ -208,6 +213,19 @@
 @layer base {
   html {
     color-scheme: light;
+    /* A tooltip centred on its anchor (see Tooltip.astro) can sit close enough
+       to the viewport edge — the status bar's theme toggle, below `lg` — that
+       its `max-content` box pokes past it even while `visibility: hidden`.
+       That still counts toward scrollable overflow, so the page gained a
+       horizontal scrollbar and the in-flow (below `lg`, non-fixed) status bar
+       fell short of the true edge once scrolled. Decorative overflow like
+       this is expected to bleed past its container; the page just should
+       never grow to accommodate it. `hidden`, not `clip`: `clip` is specced to
+       block programmatic/gesture scroll the same way, but did not in testing.
+       Set on both `html` and `body` — overflow set on the root propagates to
+       the viewport and the root itself reverts to `visible`, so `body` carries
+       the real clip. */
+    overflow-x: hidden;
   }
 
   html.dark {
@@ -218,6 +236,7 @@
     background-color: var(--color-desktop);
     color: var(--color-ink);
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 
   :focus-visible {

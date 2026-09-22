@@ -55,7 +55,7 @@ Prettier is configured (`.prettierrc.mjs`) but is not wired into a script and ha
 - **Documents and reports are extremely concise, even at the cost of accuracy.** State conclusions, not reasoning. No "considered but rejected", no restating the brief, no narration. Tables over prose. A design note is a reference, not a transcript.
 - **One element at a time.** Iterate on a single component per task rather than making sweeping changes across the site.
 - **No i18n.** Decided and closed; do not add scaffolding for it.
-- **Comments explain why, not what** — a non-obvious workaround or a rule the code cannot express. No comments restating the line below.
+- **Default to no comment.** If the code can be self-documenting — better names, a smaller function — do that instead. Comment only for an unintuitive or overly complex implementation, and then keep it **extremely brief, even at the cost of accuracy**. One line beats three; a comment restating the code is worse than none.
 - **Compose React components with the children pattern.** Container components take `children`; the call site does the mapping:
   ```tsx
   <DesktopSection rows={n}>
@@ -70,7 +70,16 @@ Prettier is configured (`.prettierrc.mjs`) but is not wired into a script and ha
 
 ## Status
 
-Scaffolded, with placeholder copy on several pages. `docs/personal-site-blueprint.md` §6 tracks the todo list; §8 lists the content still missing. The two items that genuinely block a launch are the home-page pitch and a contact route.
+Working desktop-metaphor UI: framed window, icon dock, status bar, desktop shortcuts,
+client-side routing, draggable/resizable windows. Build passes, 92 tests, ~9.1 KB gz JS.
+
+`.claude/handover.md` is the current-state summary — read it first. `docs/personal-site-blueprint.md`
+§6 tracks the todo list and §9 what is out of scope; `docs/design-blueprint.md` holds the
+numbered design decisions. The two items blocking a launch are the home-page pitch and a
+contact route.
+
+**Nothing has been verified in a browser.** Contrast is computed and markup asserted;
+appearance is not.
 
 ## Notes from James
 

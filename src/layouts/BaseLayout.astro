@@ -31,11 +31,6 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 
 const windowTitle = `${canonical.host}${currentPath === '/' ? '' : currentPath}`;
 
-/* Two bars from the one component: the dock at the bottom, and a status bar at
-   the top carrying everything that is about the session rather than about
-   navigating — where you are, what time it is, the theme, the copyright. The
-   shortcut columns have to keep out of both, so the positions are named here
-   and the insets derived from them. */
 const dockPosition: DockPosition = 'bottom';
 const statusPosition: DockPosition = 'top';
 const barPositions = [dockPosition, statusPosition];
@@ -87,37 +82,61 @@ const renderedAt = new Date();
           );
         }
 
-        applyTheme();
+        // Desktop only (matches window-interact.ts's lg gate) — mirrors its
+        // `applyRect`, but unclamped: the bars aren't in the DOM yet here, so
+        // bar-aware clamping stays on `astro:page-load`, which re-clamps and
+        // rewrites both this and sessionStorage once they exist.
+        function applyWindowRect() {
+          const html = document.documentElement;
+          if (!window.matchMedia('(min-width: 64rem)').matches) return;
+          let rect = null;
+          try {
+            rect = JSON.parse(sessionStorage.getItem('window-rect'));
+          } catch {}
+          if (
+            !rect ||
+            typeof rect.left !== 'number' ||
+            typeof rect.top !== 'number' ||
+            typeof rect.width !== 'number' ||
+            typeof rect.height !== 'number'
+          ) {
+            return;
+          }
+          html.dataset.positioned = 'true';
+          html.style.setProperty('--window-left', `${rect.left}px`);
+          html.style.setProperty('--window-top', `${rect.top}px`);
+          html.style.setProperty('--window-width', `${rect.width}px`);
+          html.style.setProperty('--window-height', `${rect.height}px`);
+        }
 
-        if (!window.themeSwapBound) {
-          // The router swaps the root element's attributes, which drops the class.
+        applyTheme();
+        applyWindowRect();
+
+        if (!window.preRenderSwapBound) {
+          // The router swaps the root element's attributes, which drops both
+          // the theme class and the window-rect flag/properties above.
           // after-swap is the last moment before the new page paints.
-          window.themeSwapBound = true;
-          document.addEventListener('astro:after-swap', applyTheme);
+          window.preRenderSwapBound = true;
+          document.addEventListener('astro:after-swap', () => {
+            applyTheme();
+            applyWindowRect();
+          });
         }
       })();
     </script>
   </head>
 
-  <body class="desktop-ground desktop-grain flex min-h-screen flex-col font-sans antialiased">
+  <body class="desktop-ground desktop-grain flex min-h-dvh flex-col font-sans antialiased">
     <a
       href="#dock-nav"
       class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-30 focus:border focus:border-border focus:bg-surface focus:px-3 focus:py-2"
     >
       Skip to navigation
     </a>
-
-    {/* No cluster: one navigation row and one task button per page, and they
-        are the bottom dock's. Its three regions are composed here for the same
-        reason the dock's are — the bar does not know what a sundial is.
-
-        `data-dock-section` is the hook the chrome script re-labels after a
-        navigation, because the bar itself is persisted and would otherwise
-        keep naming the page you just left. */}
-    {/* `step={800}`: one step lighter than the dock's fill, so it reads as
-        the quieter of the two bars — see docs/design-system.md §5. */}
     <Dock position={statusPosition} cluster="none" persist="status-bar" step={800}>
-      <span slot="start" data-dock-section class="truncate">{sectionLabel(currentPath)}</span>
+      <span slot="start" data-dock-section class="truncate">
+        {sectionLabel(currentPath)}
+      </span>
 
       <Fragment slot="middle">
         <SunDial now={renderedAt} />
@@ -130,63 +149,51 @@ const renderedAt = new Date();
       </Fragment>
     </Dock>
 
-    {/* The wrapper exists only to carry the directive; it is layout-neutral because
-        `.desktop-shortcuts` is `display: none` below `xl` and fixed above it. */}
     {primaryShortcuts.length > 0 && (
-    <div transition:persist="persist-desktop-top">
-      <DesktopSection
-        rows={desktopRows(primaryShortcuts)}
-        inset={desktopInset}
-        anchorInset={desktopAnchorInset}
-      >
-        {primaryShortcuts.map((item) => (
-          <DesktopShortcut
-            icon={item.icon}
-            label={item.label}
-            href={item.href}
-            external={item.external}
-            selected={isCurrent(item, currentPath)}
-          />
-        ))}
-      </DesktopSection>
-    </div>
+      <div transition:persist="persist-desktop-top">
+        <DesktopSection
+          rows={desktopRows(primaryShortcuts)}
+          inset={desktopInset}
+          anchorInset={desktopAnchorInset}
+        >
+          {primaryShortcuts.map((item) => (
+            <DesktopShortcut
+              icon={item.icon}
+              label={item.label}
+              href={item.href}
+              external={item.external}
+              selected={isCurrent(item, currentPath)}
+            />
+          ))}
+        </DesktopSection>
+      </div>
     )}
 
     {secondaryShortcuts.length > 0 && (
-    <div transition:persist="persist-desktop-bottom">
-      <DesktopSection
-        anchor="bottom"
-        rows={desktopRows(secondaryShortcuts)}
-        inset={desktopInset}
-        label="More desktop shortcuts"
-      >
-        {secondaryShortcuts.map((item) => (
-          <DesktopShortcut
-            icon={item.icon}
-            label={item.label}
-            href={item.href}
-            external={item.external}
-            selected={isCurrent(item, currentPath)}
-          />
-        ))}
-      </DesktopSection>
-    </div>
+      <div transition:persist="persist-desktop-bottom">
+        <DesktopSection
+          anchor="bottom"
+          rows={desktopRows(secondaryShortcuts)}
+          inset={desktopInset}
+          label="More desktop shortcuts"
+        >
+          {secondaryShortcuts.map((item) => (
+            <DesktopShortcut
+              icon={item.icon}
+              label={item.label}
+              href={item.href}
+              external={item.external}
+              selected={isCurrent(item, currentPath)}
+            />
+          ))}
+        </DesktopSection>
+      </div>
     )}
 
     <WindowFrame title={windowTitle}>
       <slot />
     </WindowFrame>
 
-    {/* Navigation only — everything it used to carry in its side regions is on
-        the status bar. Its empty regions stay: they are the `1fr` tracks that
-        centre the cluster on the bar.
-
-        `sticky` because below `lg` this bar is in flow at the end of the
-        document, where a long page would scroll it out of reach. Sticky rather
-        than fixed so it still takes up its own height and never covers the end
-        of the page. */}
-    {/* `step={900}` (the default): the higher-contrast of the two bars, one
-        step darker/lighter than the status bar — see docs/design-system.md §5. */}
     <Dock
       currentPath={currentPath}
       windowTitle={windowTitle}
@@ -195,7 +202,6 @@ const renderedAt = new Date();
       step={900}
       sticky
     />
-
 
     <script>
       import { enableDesktopChrome } from '~/lib/desktop-chrome';

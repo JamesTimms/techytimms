@@ -41,7 +41,7 @@ export interface Constraints {
 }
 
 /* `minWidth` doubles as the readable-content floor — see the matching
- * `lg:data-[positioned=true]:min-w-80` on the frame in WindowFrame.astro,
+ * `lg:positioned:min-w-80` on the frame in WindowFrame.astro,
  * which holds the line even if this module fails to load. */
 export const defaultConstraints: Constraints = {
   minWidth: 320,
@@ -184,6 +184,8 @@ export function resizeRect(
  * `desktop-chrome.ts`.
  * ------------------------------------------------------------------------ */
 
+// Duplicated as literals in the pre-paint script in BaseLayout.astro, which
+// can't import this module — keep both in sync by hand.
 const DESKTOP_QUERY = '(min-width: 64rem)';
 const STORAGE_KEY = 'window-rect';
 const MOVE_STEP = 16;
@@ -259,12 +261,17 @@ function currentRect(frame: HTMLElement): Rect {
   return { left: box.left, top: box.top, width: box.width, height: box.height };
 }
 
-function applyRect(frame: HTMLElement, rect: Rect): void {
-  frame.dataset.positioned = 'true';
-  frame.style.left = `${rect.left}px`;
-  frame.style.top = `${rect.top}px`;
-  frame.style.width = `${rect.width}px`;
-  frame.style.height = `${rect.height}px`;
+/* Geometry lives on <html> — as `data-positioned` plus `--window-*` custom
+ * properties, consumed by the `positioned:` variant in global.css — rather
+ * than inline styles on the frame, so this is the same mechanism the
+ * pre-paint script in BaseLayout.astro uses before the frame even exists. */
+function applyRect(rect: Rect): void {
+  const root = document.documentElement;
+  root.dataset.positioned = 'true';
+  root.style.setProperty('--window-left', `${rect.left}px`);
+  root.style.setProperty('--window-top', `${rect.top}px`);
+  root.style.setProperty('--window-width', `${rect.width}px`);
+  root.style.setProperty('--window-height', `${rect.height}px`);
 }
 
 function maximiseButton(frame: HTMLElement): HTMLButtonElement | null {
@@ -284,20 +291,21 @@ function exitMaximised(frame: HTMLElement): void {
 }
 
 function resetRect(frame: HTMLElement): void {
-  delete frame.dataset.positioned;
+  const root = document.documentElement;
+  delete root.dataset.positioned;
+  root.style.removeProperty('--window-left');
+  root.style.removeProperty('--window-top');
+  root.style.removeProperty('--window-width');
+  root.style.removeProperty('--window-height');
   exitMaximised(frame);
-  frame.style.removeProperty('left');
-  frame.style.removeProperty('top');
-  frame.style.removeProperty('width');
-  frame.style.removeProperty('height');
 }
 
 /* Double-clicking the title bar. Unlike the Windows convention (toggle
  * maximise), this always returns the frame to its original flow state —
- * `resetRect` already clears the inline rect, `data-positioned` and any
+ * `resetRect` already clears the geometry, `data-positioned` and any
  * maximised state; the only thing it doesn't own is the persisted rect,
  * which must go too or the old position reapplies on the next navigation. */
-function resetWindow(frame: HTMLElement): void {
+export function resetWindow(frame: HTMLElement): void {
   resetRect(frame);
   clearStoredRect();
 }
@@ -320,7 +328,7 @@ function beginPointerInteraction(
 
   exitMaximised(frame);
   const base = currentRect(frame);
-  applyRect(frame, base);
+  applyRect(base);
   const startX = event.clientX;
   const startY = event.clientY;
   const pointerId = event.pointerId;
@@ -330,7 +338,7 @@ function beginPointerInteraction(
 
   function move(e: PointerEvent): void {
     if (e.pointerId !== pointerId) return;
-    applyRect(frame, compute(e.clientX - startX, e.clientY - startY, base));
+    applyRect(compute(e.clientX - startX, e.clientY - startY, base));
   }
 
   function stop(e: PointerEvent): void {
@@ -384,7 +392,7 @@ function wireDrag(frame: HTMLElement): void {
       const step = event.shiftKey ? MOVE_STEP_LARGE : MOVE_STEP;
       exitMaximised(frame);
       const base = currentRect(frame);
-      applyRect(frame, base);
+      applyRect(base);
       const next = clampRect(
         {
           left: base.left + delta[0] * step,
@@ -395,7 +403,7 @@ function wireDrag(frame: HTMLElement): void {
         viewportSize(),
         currentBarClearance(),
       );
-      applyRect(frame, next);
+      applyRect(next);
       writeStoredRect(next);
     });
   }
@@ -420,7 +428,7 @@ function wireResize(frame: HTMLElement): void {
       const step = event.shiftKey ? RESIZE_STEP_LARGE : RESIZE_STEP;
       exitMaximised(frame);
       const base = currentRect(frame);
-      applyRect(frame, base);
+      applyRect(base);
       const next = resizeRect(
         base,
         direction,
@@ -429,7 +437,7 @@ function wireResize(frame: HTMLElement): void {
         viewportSize(),
         currentBarClearance(),
       );
-      applyRect(frame, next);
+      applyRect(next);
       writeStoredRect(next);
     });
   }
@@ -450,7 +458,7 @@ const MAXIMISE_TRANSITION = `left ${MAXIMISE_TRANSITION_MS}ms ease, top ${MAXIMI
 
 function animateRect(frame: HTMLElement, rect: Rect): void {
   frame.style.transition = MAXIMISE_TRANSITION;
-  applyRect(frame, rect);
+  applyRect(rect);
   setTimeout(() => {
     frame.style.transition = '';
   }, MAXIMISE_TRANSITION_MS + 20);
@@ -483,7 +491,7 @@ function wireMaximise(frame: HTMLElement): void {
       return;
     }
 
-    if (frame.dataset.positioned === 'true') {
+    if (document.documentElement.dataset.positioned === 'true') {
       frame.dataset.preMaximiseRect = JSON.stringify(currentRect(frame));
     }
     frame.dataset.maximised = 'true';
@@ -506,7 +514,7 @@ export function enableWindowInteract(): void {
     if (!frame) return;
 
     // Wired at every breakpoint, like minimise/close: below `lg` the CSS this
-    // toggles (`lg:data-[positioned=true]:fixed`) does not apply, so it is an
+    // toggles (`lg:positioned:fixed`) does not apply, so it is an
     // inert no-op rather than something that needs excluding.
     wireMaximise(frame);
 
@@ -518,7 +526,7 @@ export function enableWindowInteract(): void {
     const stored = readStoredRect();
     if (stored) {
       const clamped = clampRect(stored, viewportSize(), currentBarClearance());
-      applyRect(frame, clamped);
+      applyRect(clamped);
       writeStoredRect(clamped);
     }
 
@@ -539,12 +547,12 @@ export function enableWindowInteract(): void {
     const frame = frameElement();
     if (!frame) return;
     if (frame.dataset.maximised === 'true') {
-      applyRect(frame, maximisedRect(viewportSize(), currentBarClearance()));
+      applyRect(maximisedRect(viewportSize(), currentBarClearance()));
       return;
     }
-    if (!frame.dataset.positioned) return;
+    if (document.documentElement.dataset.positioned !== 'true') return;
     const clamped = clampRect(currentRect(frame), viewportSize(), currentBarClearance());
-    applyRect(frame, clamped);
+    applyRect(clamped);
     writeStoredRect(clamped);
   });
 

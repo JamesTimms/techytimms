@@ -1,5 +1,6 @@
 import { enableDesktopShortcuts } from '~/lib/desktop-shortcuts';
 import { normalisePath, sectionLabel } from '~/lib/navigation';
+import { resetWindow } from '~/lib/window-interact';
 
 /*
  * Client wiring for the desktop chrome under `<ClientRouter />`.
@@ -65,19 +66,24 @@ function setMinimised(minimised: boolean, moveFocus: boolean): void {
 }
 
 /*
- * Closing hides `<main>` — the page's content — rather than the whole frame:
- * there is no task button to bring it back, so the title bar (and its close
- * button) staying put is what lets the desktop go on making sense as
- * something other than a blank page. `hidden`, not offscreen, for the same
- * reason as `setMinimised`: a screen reader must not read a window the user
- * has closed. Focus needs no help here — the close button lives in the title
- * bar, outside `<main>`, so hiding `<main>` never hides the element the click
- * or keypress landed on.
+ * Closing hides the whole frame, title bar included — there is no task
+ * button to bring it back, so the close button goes with it. `hidden`, not
+ * offscreen, for the same reason as `setMinimised`. Unlike minimise, that
+ * takes focus with it: the dock nav is the nearest sensible landing spot,
+ * and already a deliberate focus target (see the skip link in
+ * BaseLayout.astro). The frame is rebuilt fresh on every navigation (it is
+ * not `transition:persist`ed), so it always reopens on its own — nothing
+ * about "closed" is written anywhere. Closing also forgets the stored
+ * position so the window returns to default size/position on next navigation.
  */
 function setClosed(closed: boolean): void {
-  const main = document.querySelector<HTMLElement>('#main');
-  if (!main) return;
-  main.hidden = closed;
+  const frame = windowFrame();
+  if (!frame) return;
+  if (closed) {
+    resetWindow(frame);
+    document.querySelector<HTMLElement>('#dock-nav')?.focus();
+  }
+  frame.hidden = closed;
 }
 
 export function enableWindowControls(root: ParentNode = document): void {
