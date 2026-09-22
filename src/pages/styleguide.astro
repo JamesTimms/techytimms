@@ -5,10 +5,10 @@ import {
   paletteDescriptions,
   windowFrame,
   windowPalettes,
-} from '~/lib/window-variants';
+} from '~/lib/window';
 import { paletteCandidates } from '~/data/palette-candidates';
 import { backgroundCandidates } from '~/data/background-candidates';
-import { DesktopShortcut } from '~/components/Desktop.tsx';
+import { DesktopShortcut } from '~/components/ui/Desktop.tsx';
 
 /*
  * A development surface for comparing chrome variants, not site content:
@@ -92,14 +92,11 @@ import { DesktopShortcut } from '~/components/Desktop.tsx';
   <section class="mt-14 border-t border-rule pt-8">
     <h2 class="text-2xl font-semibold tracking-tight">Desktop backgrounds</h2>
     <p class="mt-3 max-w-prose text-ink-muted">
-      Each panel is the real wallpaper with a real window and shortcut on it, at
-      a realistic size. The ratios are the pattern's <em>worst</em> extreme, not
-      its average — a label that lands on the darkest pixel is the one that has
-      to stay legible. Floors are 4.5 for the label and 3.0 for the edge.
-      Reasoning is in <code class="text-ink">docs/background-exploration.md</code>.
-      The ratios below were measured against the old 80% wallpaper and are now
-      conservative: the wallpaper moved to a lighter tint with the ramps, and
-      the edge they measure is the dock's, not the window's.
+      The live background: a real wallpaper with a real window and shortcut on
+      it, at a realistic size. The ratios are the pattern's <em>worst</em>
+      extreme, not its average — a label that lands on the darkest pixel is
+      the one that has to stay legible. Floors are 4.5 for the label and 3.0
+      for the edge.
     </p>
 
     <div class="mt-8 flex flex-col gap-10">
@@ -174,10 +171,11 @@ import { DesktopShortcut } from '~/components/Desktop.tsx';
   <section class="mt-14 border-t border-rule pt-8">
     <h2 class="text-2xl font-semibold tracking-tight">Palette candidates</h2>
     <p class="mt-3 max-w-prose text-ink-muted">
-      Both columns are shown at once, so this reads the same whichever theme you
-      are in. The first four keep a dark wallpaper in both themes; the last
-      three make light mode genuinely light and warm. Reasoning and full
-      contrast tables are in <code class="text-ink">docs/palette-exploration.md</code>.
+      Both columns are shown at once, so this reads the same whichever theme
+      you are in. Fallen Leaf is live; Pumpkin is the other real variant,
+      selectable via the <code class="text-ink">palette</code> prop above.
+      Full reasoning, including the candidates that were not chosen, is in
+      <code class="text-ink">docs/palette-exploration.md</code>.
     </p>
 
     <div class="mt-8 flex flex-col gap-8">

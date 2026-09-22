@@ -48,9 +48,9 @@ for (const needle of AT_LEAST_ONE) {
 const cssText = readFileSync('src/styles/global.css', 'utf8');
 const defined = new Set([...cssText.matchAll(/--color-([a-z0-9-]+)\s*:/g)].map((m) => m[1]));
 const used = new Set(
-  [...readFileSync('src/components/ThemeToggle.astro', 'utf8').matchAll(/var\(--color-([a-z0-9-]+)\)/g)].map(
-    (m) => m[1],
-  ),
+  ['src/components/ui/Bar.ThemeToggle.tsx', 'src/components/ui/Bar.tsx', 'src/components/ui/Tooltip.tsx']
+    .filter((f) => existsSync(f))
+    .flatMap((f) => [...readFileSync(f, 'utf8').matchAll(/var\(--color-([a-z0-9-]+)\)/g)].map((m) => m[1])),
 );
 for (const name of used) {
   if (!defined.has(name)) {

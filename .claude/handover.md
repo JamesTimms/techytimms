@@ -1,6 +1,6 @@
 # Handover
 
-Session bootstrap. State as of 22 Sep 2026. Read `CLAUDE.md` alongside this for conventions and gotchas.
+Session bootstrap. **Read `.claude/coding-guide.md` before writing any code.** State as of 22 Sep 2026. Read `CLAUDE.md` alongside this for conventions and gotchas.
 
 Agent-facing: kept out of `docs/`, which is for James.
 
@@ -37,6 +37,24 @@ hand-rolled greps or a one-off colour converter.
 | Ramps | `--color-leaf-*` / `--color-pumpkin-*`, 10 steps (50–900), even lightness |
 | Window | Thin border, flat title bar, `period`/`soft`/`flat` chrome variants |
 | Bars | Fill runs *opposite* the site theme; no borders |
+
+## Architecture: `.astro` is the data layer, `.tsx` is the UI layer
+
+- **`.astro`** — pages, layouts, and thin wrappers. Owns data access (`getCollection`,
+  `Astro.url`, `Astro.site`), Astro directives (`transition:*`, `is:inline`, `client:*`),
+  `<head>`, and inline scripts. A component-level `.astro` file should be a wrapper, not
+  a component.
+- **`.tsx`** — the component library. Grouped, reusable, composable components in shared
+  files, with CVA variants. Renders to static HTML; **no `client:*` unless interaction
+  genuinely requires it.**
+- **`src/lib/*.ts`** — pure logic with tests.
+
+Directives do not exist in `.tsx` and silently do nothing on a component tag, so anything
+carrying one needs an `.astro` element to own it. That is what the thin wrappers are for.
+
+React's renderer is currently loaded by **zero** pages. The first `client:*` directive
+changes that for every page containing that component — a bundle-level decision, not a
+component-level one.
 
 ## Outstanding
 

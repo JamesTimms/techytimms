@@ -2,16 +2,6 @@ import { type CSSProperties, type ReactNode } from 'react';
 
 import { iconAttributes, type IconName } from '~/lib/icons';
 
-/*
- * The desktop's React parts: a shortcut, and the grid that places a group of
- * them. Composition lives in `Desktop.astro`, which owns the pieces these
- * cannot express — `transition:persist` is an Astro template directive with no
- * JSX equivalent.
- *
- * Nothing here hydrates. React is the authoring API; no `client:*` directive is
- * applied, so this renders to static HTML.
- */
-
 export interface DesktopShortcutProps {
   icon: IconName;
   label: string;
@@ -68,43 +58,35 @@ export function DesktopShortcut({
   );
 }
 
+// The distance from the align edge, and the baseline before an anchored bar's own clearance (added in global.css, keyed off data-anchor).
+const EDGE_INSET = 1;
+
 export interface DesktopSectionProps {
   children: ReactNode;
   /** Which edge the columns grow from. */
   align?: 'left' | 'right';
-  /** Which edge the group is pinned to. `bottom` clears the fixed dock. */
+  /** Which edge the group is pinned to, and which fixed bar it clears. */
   anchor?: 'top' | 'bottom' | undefined;
   /** Items per column before wrapping into the next one. Count the items with `desktopRows`. */
   rows: number;
   /** Gap between shortcuts, in rem. */
   gap?: number | undefined;
-  /** Distance from the viewport edges, in rem. */
-  inset?: number | undefined;
-  /** Distance from the anchored edge alone, in rem, when a bar there needs more room. */
-  anchorInset?: number | undefined;
   label?: string | undefined;
 }
 
-/*
- * Placement for a group of shortcuts. Only shows on large screens.
- */
+// Placement for a group of shortcuts. Only shows on large screens.
 export function DesktopSection({
   children,
   align = 'left',
   anchor = 'top',
   rows,
   gap = 0.75,
-  inset = 1,
-  anchorInset,
   label = 'Desktop shortcuts',
 }: DesktopSectionProps) {
-  const edgeInset = anchorInset ?? inset;
   const style: CSSProperties = {
     gridTemplateRows: `repeat(${rows}, min-content)`,
     gap: `${gap}rem`,
-    [anchor]:
-      anchor === 'bottom' ? `calc(${edgeInset}rem + var(--dock-clearance))` : `${edgeInset}rem`,
-    [align]: `${inset}rem`,
+    [align]: `${EDGE_INSET}rem`,
   };
 
   return (

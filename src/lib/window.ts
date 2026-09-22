@@ -1,14 +1,80 @@
-/*
- * Drag and resize for the window that owns the page (`[data-window-frame]`).
- *
- * Pure geometry lives here and is unit tested; the DOM wiring below it is not
- * — it is thin glue over Pointer Events, same as `desktop-chrome.ts`.
- *
- * Desktop-only by decision: below `lg` the frame fills the viewport and there
- * is nothing to drag it around on, so `enableWindowInteract` no-ops there
- * (checked live, via `matchMedia`, not just at load — a viewport that crosses
- * the breakpoint after load is put back into flow either way).
- */
+import { cva, type VariantProps } from 'class-variance-authority';
+
+// Window chrome: palette variants (CVA) below, the page-owning frame's drag/resize/maximise geometry and DOM wiring further down.
+
+// One palette axis, two stops — each a 10-step (50–900) OKLCH ramp off that palette's main colour. Chrome is modern and flat, but keeps Win9x anatomy: icon+title left, minimise/restore/close right.
+export const windowPalettes = ['fallen-leaf', 'pumpkin'] as const;
+
+export type WindowPalette = (typeof windowPalettes)[number];
+
+// Face is a light tint (step 50), not the main colour, so ink-faint clears contrast; side border/radius drop below lg since there's no wallpaper there to sit against.
+export const windowFrame = cva('border border-x-0 lg:border-x lg:rounded-window', {
+  variants: {
+    palette: {
+      'fallen-leaf': 'bg-leaf-50 border-leaf-500 dark:bg-leaf-700',
+      pumpkin: 'bg-pumpkin-50 border-pumpkin-500 dark:bg-pumpkin-700',
+    },
+  },
+  defaultVariants: { palette: 'fallen-leaf' },
+});
+
+// The bottom rule is the main colour in light mode only — dark mode draws no internal rule (bar-to-face is only ~1.6:1, but the bar is chrome, not a boundary). Corners use radius-window-inner to nest inside the frame's own.
+export const titleBar = cva(
+  'flex items-center justify-between gap-3 border-b px-3 py-1.5 lg:rounded-t-window-inner dark:border-b-0',
+  {
+    variants: {
+      palette: {
+        'fallen-leaf': 'bg-leaf-900 text-leaf-50 border-leaf-200',
+        pumpkin: 'bg-pumpkin-900 text-pumpkin-50 border-pumpkin-300',
+      },
+    },
+    defaultVariants: { palette: 'fallen-leaf' },
+  },
+);
+
+// 24px touch target (not Win9x's 16x14) around a glyph at step 100, one below the title text; hover brings the fill up and the glyph to step 50.
+export const titleControl = cva(
+  'flex size-6 shrink-0 items-center justify-center rounded-control p-0',
+  {
+    variants: {
+      palette: {
+        'fallen-leaf': 'text-leaf-100',
+        pumpkin: 'text-pumpkin-100',
+      },
+      pressable: { true: 'cursor-pointer', false: '' },
+    },
+    compoundVariants: [
+      {
+        palette: 'fallen-leaf',
+        pressable: true,
+        class: 'hover:bg-leaf-500 hover:text-leaf-50 active:bg-leaf-200 active:text-leaf-900',
+      },
+      {
+        palette: 'pumpkin',
+        pressable: true,
+        class:
+          'hover:bg-pumpkin-500 hover:text-pumpkin-50 active:bg-pumpkin-300 active:text-pumpkin-900',
+      },
+    ],
+    defaultVariants: { palette: 'fallen-leaf', pressable: false },
+  },
+);
+
+// 1.5px boxes, not font glyphs, so all three controls align identically.
+export const glyphMinimise = 'block h-[1.5px] w-[10px] bg-current';
+// The heavier top edge reads as a title bar — the one period detail worth keeping.
+export const glyphRestore = 'block h-[9px] w-[9px] border border-current border-t-2';
+
+export const paletteDescriptions: Record<WindowPalette, string> = {
+  'fallen-leaf':
+    'Straw at 80% as the main colour. The calmest of the two: the face is barely tinted and the edge is a warm brown rather than a line of colour.',
+  pumpkin:
+    'Pumpkin at 70% as the main colour. Higher chroma at every step, so the edge and the rule under the title bar read as orange rather than as brown.',
+};
+
+export type PaletteVariantProps = VariantProps<typeof windowFrame>;
+
+// Geometry below is unit tested; the DOM wiring is thin glue, untested — desktop-only, gated live via matchMedia so crossing the breakpoint mid-session still resets flow.
 
 export interface Rect {
   left: number;
@@ -22,10 +88,7 @@ export interface Viewport {
   height: number;
 }
 
-/* The two fixed bars' rendered heights, above and below. The frame must not
- * be dragged so far that its own bar becomes unreachable behind them — they
- * would still WIN the stacking order (`z-20` beats the frame's `z-10`), so
- * "unreachable" here means unusable, not visually covered. */
+// The two fixed bars' heights — the frame must stay clear of them since they win the stacking order (z-20 over z-10) regardless.
 export interface BarClearance {
   top: number;
   bottom: number;
@@ -40,9 +103,7 @@ export interface Constraints {
   visibleEdge: number;
 }
 
-/* `minWidth` doubles as the readable-content floor — see the matching
- * `lg:positioned:min-w-80` on the frame in WindowFrame.astro,
- * which holds the line even if this module fails to load. */
+// minWidth doubles as the readable-content floor; WindowFrame.astro's lg:positioned:min-w-80 holds it even if this module fails to load.
 export const defaultConstraints: Constraints = {
   minWidth: 320,
   minHeight: 240,
@@ -117,10 +178,7 @@ export function clampRect(
   return { left, top, width, height };
 }
 
-/* The rect a maximised frame fills: the full viewport width, less whatever
- * height the two bars claim. Unlike `clampSize`, this ignores `constraints` —
- * maximise means "all the available area", not "the largest allowed size",
- * so it is not capped at `maxWidth`/`maxHeight` on a large screen. */
+// Unlike clampSize, ignores constraints — maximise means all available area, not the largest allowed size.
 export function maximisedRect(viewport: Viewport, barClearance: BarClearance): Rect {
   return {
     left: 0,
@@ -143,8 +201,7 @@ export const handleDirections: readonly HandleDirection[] = [
   'sw',
 ];
 
-/* Which edges a handle owns. `-1` (grows left/up) keeps the OPPOSITE edge
- * anchored — see `resizeRect` — the way every OS resize handle behaves. */
+// -1 grows left/up while anchoring the opposite edge, as resizeRect uses below — standard OS resize-handle behaviour.
 const HANDLE_AXES: Record<HandleDirection, { x: -1 | 0 | 1; y: -1 | 0 | 1 }> = {
   n: { x: 0, y: -1 },
   s: { x: 0, y: 1 },
@@ -170,8 +227,7 @@ export function resizeRect(
   const rawHeight = base.height + axis.y * dy;
   const { width, height } = clampSize(rawWidth, rawHeight, viewport, barClearance, constraints);
 
-  // Growing/shrinking from the left or top edge moves that edge; the other
-  // two stay put — a `w` drag pushes `left`, not the whole frame.
+  // A w/n drag moves that edge only — left/top shift, the other edge doesn't.
   const left = axis.x === -1 ? base.left + (base.width - width) : base.left;
   const top = axis.y === -1 ? base.top + (base.height - height) : base.top;
 
@@ -179,13 +235,9 @@ export function resizeRect(
   return { left: position.left, top: position.top, width, height };
 }
 
-/* ------------------------------------------------------------------------
- * DOM wiring. Not unit tested — thin glue, same convention as
- * `desktop-chrome.ts`.
- * ------------------------------------------------------------------------ */
+// DOM wiring below — not unit tested, same convention as desktop.ts.
 
-// Duplicated as literals in the pre-paint script in BaseLayout.astro, which
-// can't import this module — keep both in sync by hand.
+// Duplicated as literals in BaseLayout.astro's pre-paint script (which can't import this) — keep in sync by hand.
 const DESKTOP_QUERY = '(min-width: 64rem)';
 const STORAGE_KEY = 'window-rect';
 const MOVE_STEP = 16;
@@ -208,8 +260,7 @@ function viewportSize(): Viewport {
   return { width: window.innerWidth, height: window.innerHeight };
 }
 
-/* Read live, not cached: the bars' own height can change (e.g. a status bar
- * label wrapping), and this runs once per drag/keypress, not per frame. */
+// Read live, not cached — a bar's height can change (e.g. a label wrapping), and this runs once per drag/keypress, not per frame.
 function currentBarClearance(): BarClearance {
   const top = document.querySelector<HTMLElement>('.dock[data-position="top"]');
   const bottom = document.querySelector<HTMLElement>('.dock[data-position="bottom"]');
@@ -261,10 +312,7 @@ function currentRect(frame: HTMLElement): Rect {
   return { left: box.left, top: box.top, width: box.width, height: box.height };
 }
 
-/* Geometry lives on <html> — as `data-positioned` plus `--window-*` custom
- * properties, consumed by the `positioned:` variant in global.css — rather
- * than inline styles on the frame, so this is the same mechanism the
- * pre-paint script in BaseLayout.astro uses before the frame even exists. */
+// Geometry lives on <html> (data-positioned + --window-* vars, consumed by the positioned: variant in global.css) — the same mechanism BaseLayout's pre-paint script uses before the frame exists.
 function applyRect(rect: Rect): void {
   const root = document.documentElement;
   root.dataset.positioned = 'true';
@@ -278,11 +326,7 @@ function maximiseButton(frame: HTMLElement): HTMLButtonElement | null {
   return frame.querySelector<HTMLButtonElement>('[data-window-maximise]');
 }
 
-/* A manual drag/resize (pointer or keyboard) always leaves the frame at an
- * explicit, non-maximised rect, so any earlier maximise is stale the moment
- * one starts — otherwise restoring later would snap back to a size the user
- * has since abandoned, and the button's label would keep claiming "Restore"
- * for a window that no longer is one. */
+// Any drag/resize invalidates an existing maximise — otherwise restore would snap back to a size the user has since abandoned.
 function exitMaximised(frame: HTMLElement): void {
   if (frame.dataset.maximised !== 'true') return;
   delete frame.dataset.maximised;
@@ -300,23 +344,13 @@ function resetRect(frame: HTMLElement): void {
   exitMaximised(frame);
 }
 
-/* Double-clicking the title bar. Unlike the Windows convention (toggle
- * maximise), this always returns the frame to its original flow state —
- * `resetRect` already clears the geometry, `data-positioned` and any
- * maximised state; the only thing it doesn't own is the persisted rect,
- * which must go too or the old position reapplies on the next navigation. */
+// Double-click on the title bar: unlike Windows, always returns to flow rather than toggling maximise — also clears the persisted rect.
 export function resetWindow(frame: HTMLElement): void {
   resetRect(frame);
   clearStoredRect();
 }
 
-/*
- * Shared by drag and resize: locks the frame into explicit pixel geometry (so
- * the first move has a stable `base` to add deltas to), tracks one pointer via
- * capture, and turns the transition off for the duration regardless of
- * `prefers-reduced-motion` — the frame carries none, but a future one must not
- * lag a drag either way.
- */
+// Shared by drag and resize: locks the frame into a stable base rect, captures one pointer, and disables the transition for the duration.
 function beginPointerInteraction(
   frame: HTMLElement,
   target: HTMLElement,
@@ -372,9 +406,7 @@ function wireDrag(frame: HTMLElement): void {
       );
     });
 
-    // Each click of the double-click has already run its own harmless
-    // no-movement drag (pointerdown/pointerup fire, and resolve, before
-    // `dblclick` does) — this fires last and resets on top of that.
+    // Each click already ran its own harmless no-op drag; dblclick fires last and resets on top of that.
     surface.addEventListener('dblclick', (event) => {
       if ((event.target as Element).closest('button')) return;
       event.preventDefault();
@@ -443,16 +475,7 @@ function wireResize(frame: HTMLElement): void {
   }
 }
 
-/* Only this animates: drag/resize set `transition: none` for the duration of
- * a pointer/keyboard move because those track a live position, one frame at a
- * time, and a transition would make them lag. Maximise/restore jump straight
- * to a target rect, so it is the one geometry change with something to
- * animate between. `prefers-reduced-motion: reduce` needs no extra check here
- * — the sitewide rule in global.css already forces every transition's
- * duration to ~0 under that query, so this collapses to an instant snap for
- * free. The timeout (rather than a `transitionend` listener) always clears
- * the inline style, even if the source and target rects are identical and no
- * transition actually fires. */
+// Only maximise/restore animate (drag/resize disable transition to avoid lag); reduced-motion is handled by global.css's blanket rule, and a timeout — not transitionend — always clears the inline style.
 const MAXIMISE_TRANSITION_MS = 200;
 const MAXIMISE_TRANSITION = `left ${MAXIMISE_TRANSITION_MS}ms ease, top ${MAXIMISE_TRANSITION_MS}ms ease, width ${MAXIMISE_TRANSITION_MS}ms ease, height ${MAXIMISE_TRANSITION_MS}ms ease`;
 
@@ -464,17 +487,7 @@ function animateRect(frame: HTMLElement, rect: Rect): void {
   }, MAXIMISE_TRANSITION_MS + 20);
 }
 
-/*
- * Maximise fills the available area (`maximisedRect`) and remembers exactly
- * what to put back: the frame's own explicit rect if drag/resize had already
- * pulled it out of flow, or nothing at all if it had not — restoring then
- * means `resetRect`, back to the centred flow layout, rather than a rect that
- * was never real. Neither direction touches `sessionStorage`: maximise is a
- * view of the current page, not a stored position, so a drag/resize made
- * before maximising is exactly what the next navigation reapplies (a
- * maximised frame always arrives un-maximised, the same as it arrives
- * un-minimised — see WindowFrame.astro).
- */
+// Remembers the pre-maximise rect only if one existed (otherwise restore is resetRect); never touches sessionStorage — a maximised frame always arrives un-maximised.
 function wireMaximise(frame: HTMLElement): void {
   const button = maximiseButton(frame);
   if (!button || button.dataset.wired) return;
@@ -500,12 +513,7 @@ function wireMaximise(frame: HTMLElement): void {
   });
 }
 
-/*
- * Called once, at module init (see BaseLayout.astro) — same convention as
- * `enableDesktopChrome`. The frame is rebuilt every navigation, so re-wiring
- * happens inside the `astro:page-load` handler registered here, not at the
- * top level.
- */
+// Called once at module init (see BaseLayout.astro); re-wiring happens inside the astro:page-load handler since the frame rebuilds every navigation.
 export function enableWindowInteract(): void {
   const desktop = window.matchMedia(DESKTOP_QUERY);
 
@@ -513,9 +521,7 @@ export function enableWindowInteract(): void {
     const frame = frameElement();
     if (!frame) return;
 
-    // Wired at every breakpoint, like minimise/close: below `lg` the CSS this
-    // toggles (`lg:positioned:fixed`) does not apply, so it is an
-    // inert no-op rather than something that needs excluding.
+    // Wired at every breakpoint, like minimise/close — below lg the CSS this toggles doesn't apply, so it's an inert no-op.
     wireMaximise(frame);
 
     if (!desktop.matches) {
@@ -536,12 +542,7 @@ export function enableWindowInteract(): void {
 
   desktop.addEventListener('change', sync);
 
-  // A viewport resize that stays above the breakpoint can still leave a
-  // dragged/resized frame off-screen or oversized; re-clamp in place. A
-  // maximised frame instead just re-fills the (possibly changed) available
-  // area — clamping it against `defaultConstraints` would cap it at
-  // `maxWidth`/`maxHeight` on a large screen, and it has no stored rect to
-  // update since it was never written to one.
+  // Re-clamp a drag/resize rect in place on viewport resize; a maximised frame just re-fills instead (clamping would cap it at maxWidth/maxHeight on a large screen).
   window.addEventListener('resize', () => {
     if (!desktop.matches) return;
     const frame = frameElement();

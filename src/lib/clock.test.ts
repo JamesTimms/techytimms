@@ -3,13 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { clockDateTime, formatClockTime } from '~/lib/clock';
 
 describe('formatClockTime', () => {
-  it('is 24-hour and two digits wide, so the bar never reflows', () => {
-    expect(formatClockTime(new Date(2026, 8, 21, 9, 5))).toBe('09:05');
-    expect(formatClockTime(new Date(2026, 8, 21, 17, 40))).toBe('17:40');
+  it('reads as a full date and 12-hour time', () => {
+    expect(formatClockTime(new Date(2026, 6, 25, 13, 0))).toBe('Jul 25, 1:00 PM');
+    expect(formatClockTime(new Date(2026, 8, 21, 17, 40))).toBe('Sep 21, 5:40 PM');
   });
 
-  it('calls midnight 00:00, not 24:00', () => {
-    expect(formatClockTime(new Date(2026, 8, 21, 0, 0))).toBe('00:00');
+  it('calls midnight 12:00 AM, not 00:00', () => {
+    expect(formatClockTime(new Date(2026, 8, 21, 0, 0))).toBe('Sep 21, 12:00 AM');
   });
 });
 

@@ -107,7 +107,7 @@
      pale in light mode and near-black in dark, so a fill that does this
      without flipping the ramp step runs opposite to the site theme: dark
      (ramp step 800–900) in light mode, light (step 50–100) in dark mode —
-     see `dock-variants.ts`. These two tokens carry text and icons that sit
+     see `Bar.tsx`. These two tokens carry text and icons that sit
      directly on that inverted fill: the value that is legible on a DARK bar
      in light mode is light mode's own `ink-muted`/`accent` used upside down.
      Not a rename of `ink-muted`/`accent` — those still serve every normal
@@ -212,6 +212,9 @@
 
 @layer base {
   html {
+    /* No scrollbar: its width narrows the content box on tall pages only, so the
+       centred window drifts left of the bars. Scrolling itself is unaffected. */
+    scrollbar-width: none;
     color-scheme: light;
     /* A tooltip centred on its anchor (see Tooltip.astro) can sit close enough
        to the viewport edge — the status bar's theme toggle, below `lg` — that
@@ -246,6 +249,95 @@
 }
 
 @layer components {
+  /* Base rules lived in Tooltip.astro's scoped block; the component is now
+     .tsx, which has no scoped styles, so they belong here. Dock.astro keeps
+     only the per-position overrides. */
+  .tooltip-anchor {
+    position: relative;
+  }
+
+  .tooltip {
+    position: absolute;
+    inset: var(--tooltip-inset, auto auto calc(100% + 0.5rem) 50%);
+    transform: var(--tooltip-shift, translateX(-50%));
+    z-index: 30;
+    width: max-content;
+    max-width: 12rem;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.12s ease-out,
+      visibility 0.12s;
+  }
+
+  .tooltip-anchor:hover > .tooltip,
+  .tooltip-anchor:focus-visible > .tooltip,
+  .tooltip-anchor:has(:focus-visible) > .tooltip {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* Base rules lived in ThemeToggle.astro's scoped block; the component is
+     now .tsx, which has no scoped styles, so they belong here. Sizing and
+     layout move to Tailwind utilities on the component; only the
+     custom-property plumbing and colour states stay here. */
+  .theme-toggle {
+    --toggle-hover-ink: var(--color-leaf-50);
+    transition: background-color 0.15s ease-in-out;
+  }
+
+  .dark .theme-toggle {
+    --toggle-hover-ink: var(--color-leaf-900);
+  }
+
+  .theme-toggle-sun,
+  .theme-toggle-moon {
+    transition: fill 0.15s ease-in-out;
+  }
+
+  .theme-toggle-sun {
+    fill: var(--color-bar-accent);
+  }
+
+  .theme-toggle-moon {
+    fill: var(--color-bar-ink-muted);
+  }
+
+  .theme-toggle:hover,
+  .theme-toggle:focus-visible,
+  .theme-toggle:active {
+    background-color: color-mix(in oklab, var(--toggle-hover-ink) 12%, transparent);
+  }
+
+  .theme-toggle:focus-visible {
+    outline: 2px solid var(--color-bar-accent);
+    outline-offset: 2px;
+  }
+
+  .theme-toggle:hover .theme-toggle-sun,
+  .theme-toggle:hover .theme-toggle-moon {
+    fill: var(--toggle-hover-ink);
+  }
+
+  .theme-toggle:focus-visible .theme-toggle-sun,
+  .theme-toggle:active .theme-toggle-sun {
+    fill: var(--color-accent);
+  }
+
+  .theme-toggle:focus-visible .theme-toggle-moon,
+  .theme-toggle:active .theme-toggle-moon {
+    fill: var(--color-ink);
+  }
+
   /*
    * One primitive. Cards, callouts, buttons and window frames are all variants.
    * Square corners and hard borders throughout — depth comes from the bevel,
@@ -454,60 +546,17 @@
   /* Monica Dinculescu's grid measured off the reference is dots, not lines:
      13px apart, each about 1px, at 1.29:1 against her ground. 16px is the
      nearest round value at our scale. */
-  .desktop-dots-lift {
-    background-image: radial-gradient(
-      circle at center,
-      var(--pattern-lift) 1.1px,
-      transparent 1.1px
-    );
-    background-size: 16px 16px;
-  }
 
   /* The same geometry drawn darker — faithful to Monica's direction, which our
      ground has far less room for than hers does. */
-  .desktop-dots-drop {
-    background-image: radial-gradient(
-      circle at center,
-      var(--pattern-drop) 1.1px,
-      transparent 1.1px
-    );
-    background-size: 16px 16px;
-  }
-
-  .desktop-grid {
-    background-image:
-      linear-gradient(to right, var(--pattern-lift) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--pattern-lift) 1px, transparent 1px);
-    background-size: 24px 24px;
-  }
 
   /* The Win9x Pattern family was an 8x8 monochrome tile. This is that geometry
      at that size — a plausible member of the family rather than a pixel-exact
      copy of any one of them. */
-  .desktop-weave {
-    background-image:
-      linear-gradient(to right, var(--pattern-lift) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--pattern-lift) 1px, transparent 1px);
-    background-size: 8px 8px;
-  }
 
   /* The same 8x8 tile drawn in black, as Windows actually drew it. Kept so the
      failure is visible rather than described: on pale straw the lines take
      `desktop-ink` to 1.05:1 and shortcut labels crossing one disappear. */
-  .desktop-weave-authentic {
-    background-image:
-      linear-gradient(to right, #000 1px, transparent 1px),
-      linear-gradient(to bottom, #000 1px, transparent 1px);
-    background-size: 8px 8px;
-  }
-
-  .desktop-hatch {
-    background-image: repeating-linear-gradient(
-      45deg,
-      var(--pattern-lift) 0 1px,
-      transparent 1px 7px
-    );
-  }
 
   /*
    * Live background. Arc's technique, which is a greyscale noise tile blended
@@ -542,15 +591,6 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.12'/%3E%3C/svg%3E");
   }
 
-  .desktop-sheen {
-    background-image: linear-gradient(
-      to bottom,
-      var(--pattern-lift),
-      transparent 55%,
-      var(--pattern-drop)
-    );
-  }
-
   /*
    * Desktop shortcuts. Hidden below `xl`: at `lg` the window leaves roughly 24px
    * of wallpaper either side, which cannot hold a 32px icon and a label, so they
@@ -559,8 +599,9 @@
    */
   .desktop-shortcuts {
     display: none;
-    /* The dock's height plus a margin, for shortcuts pinned to the bottom edge. */
+    /* Each fixed bar's height plus a margin, for shortcuts anchored to that edge. */
     --dock-clearance: calc(3rem + env(safe-area-inset-bottom, 0px));
+    --status-clearance: calc(3rem + env(safe-area-inset-top, 0px));
   }
 
   @media (min-width: 80rem) {
@@ -570,6 +611,14 @@
       display: grid;
       grid-auto-flow: column;
       justify-items: center;
+    }
+
+    .desktop-shortcuts[data-anchor="top"] {
+      top: calc(1rem + var(--status-clearance));
+    }
+
+    .desktop-shortcuts[data-anchor="bottom"] {
+      bottom: calc(1rem + var(--dock-clearance));
     }
   }
 
@@ -658,14 +707,34 @@
    * No border. The bar's own fill is the boundary against the wallpaper —
    * `window-edge` and the old `bevel-light` taskbar top both undershot it
    * (1.87 and 1.88 on the pale wallpaper), which is why a border used to be
-   * needed at all. `Dock`'s `step` prop supplies a ramp fill that clears 3:1
-   * unaided in both themes by running opposite the site theme: dark
+   * needed at all. `Bar`'s `variant` prop supplies a ramp fill that clears
+   * 3:1 unaided in both themes by running opposite the site theme: dark
    * (`leaf-800`/`leaf-900`) in light mode, light (`leaf-50`/`leaf-100`) in
-   * dark — see `dock-variants.ts` and docs/design-system.md §5.
+   * dark — see `Bar.tsx` and docs/design-system.md §5.
    */
   .dock {
     position: relative;
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /*
+   * A bar on the top edge is the bottom bar's mirror: the edge facing the
+   * wallpaper swaps sides, and so does the inset it has to keep clear of.
+   * Rendered by StatusBar.astro, but a bar-wide concern rather than a
+   * per-component one, so it lives here rather than in that file's own
+   * styles.
+   */
+  .dock[data-position="top"] {
+    padding-bottom: 0;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  /* Everything that hangs off a top bar hangs downwards, at every width —
+     that bar is at the top of the document below the breakpoint too, so
+     unlike the vertical stops there is nothing to flip back at. */
+  .dock[data-position="top"] .tooltip[data-placement] {
+    --tooltip-inset: calc(100% + 0.5rem) auto auto 50%;
+    --tooltip-shift: translateX(-50%);
   }
 
   /* Vertical placements start at the breakpoint; below it every position is the
@@ -840,4 +909,8 @@
 
 ::view-transition-group(window) {
   z-index: 0;
+}
+
+html::-webkit-scrollbar {
+  display: none;
 }

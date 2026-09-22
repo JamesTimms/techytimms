@@ -30,6 +30,8 @@ Prettier is configured (`.prettierrc.mjs`) but is not wired into a script and ha
 
 **Content is files, not a CMS.** MDX under `src/content/posts/` and `src/content/work/`, loaded by glob loaders in `src/content.config.ts`. Slugs come from filenames. Frontmatter is validated by Zod at build time, so a malformed date or an over-long `summary` fails `pnpm build` rather than reaching a page. The `summary` cap of 160 chars is deliberate — it feeds the meta description, RSS and social cards.
 
+**`.astro` is the data layer, `.tsx` is the UI layer.** `.astro` owns data access (`getCollection`, `Astro.url`), Astro directives (`transition:*`, `is:inline`, `client:*`) and `<head>`; a component-level `.astro` file should be a thin wrapper, not a component. `.tsx` holds the grouped, composable component library with CVA variants, rendered to static HTML — **no `client:*` unless interaction genuinely requires it**, because the first one loads React's renderer on every page containing that component. Directives do not exist in `.tsx` and silently do nothing on a component tag, which is what the wrappers are for.
+
 **Logic lives in `src/lib/`, not in components.** `.astro` files are awkward to unit test, so filtering, sorting and formatting are pure functions in `src/lib/content.ts` and the page templates stay thin. Tests target `src/lib/` only. New page logic belongs in a lib function with a test, not inline in the template.
 
 **Draft handling is a correctness concern.** `excludeDrafts()` passes drafts through in dev and filters them in production (`import.meta.env.PROD`). A bug here silently publishes unfinished work, which is why it is tested. It takes the production flag as an injectable argument so tests can drive both branches.
@@ -51,6 +53,8 @@ Prettier is configured (`.prettierrc.mjs`) but is not wired into a script and ha
 - `tsconfig.json` sets `paths` with no `baseUrl` (deprecated in TS 6, removed in 7), so alias targets are written relative to the config file: `"~/*": ["./src/*"]`. Vitest resolves `~` separately in `vitest.config.ts` — changing one alias means changing both.
 
 ## Conventions
+
+**Read `.claude/coding-guide.md` before writing code.** It is the full statement of how code is written here; what follows is the short form.
 
 - **Documents and reports are extremely concise, even at the cost of accuracy.** State conclusions, not reasoning. No "considered but rejected", no restating the brief, no narration. Tables over prose. A design note is a reference, not a transcript.
 - **One element at a time.** Iterate on a single component per task rather than making sweeping changes across the site.

@@ -3,18 +3,11 @@ import '~/styles/global.css';
 import { ClientRouter } from 'astro:transitions';
 import { site } from '~/data/site';
 import Dock from '~/components/Dock.astro';
-import ThemeToggle from '~/components/ThemeToggle.astro';
+import StatusBar from '~/components/StatusBar.astro';
 import WindowFrame from '~/components/WindowFrame.astro';
-import { DesktopSection, DesktopShortcut } from '~/components/Desktop.tsx';
-import { Clock, SunDial } from '~/components/Time.tsx';
-import {
-  primaryShortcuts,
-  secondaryShortcuts,
-  desktopRows,
-  isCurrent,
-  sectionLabel,
-} from '~/lib/navigation';
-import { shortcutInset, shortcutTopInset, type DockPosition } from '~/lib/dock-variants';
+import { DesktopSection, DesktopShortcut } from '~/components/ui/Desktop.tsx';
+import { primaryShortcuts, secondaryShortcuts, desktopRows, isCurrent } from '~/lib/navigation';
+import { type BarPosition } from '~/components/ui/Bar.tsx';
 
 interface Props {
   title?: string;
@@ -31,17 +24,8 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 
 const windowTitle = `${canonical.host}${currentPath === '/' ? '' : currentPath}`;
 
-const dockPosition: DockPosition = 'bottom';
-const statusPosition: DockPosition = 'top';
-const barPositions = [dockPosition, statusPosition];
-
-const desktopInset = shortcutInset(barPositions);
-const desktopAnchorInset = shortcutTopInset(barPositions);
-
-/* The build's instant. Stale by definition, which is what the one piece of
-   client JavaScript on the site exists to fix — see `src/lib/time-chrome.ts`.
-   Rendering it anyway keeps the bar the right size before that runs. */
-const renderedAt = new Date();
+const dockPosition: BarPosition = 'bottom';
+const statusPosition: BarPosition = 'top';
 ---
 
 {/*
@@ -133,29 +117,11 @@ const renderedAt = new Date();
     >
       Skip to navigation
     </a>
-    <Dock position={statusPosition} cluster="none" persist="status-bar" step={800}>
-      <span slot="start" data-dock-section class="truncate">
-        {sectionLabel(currentPath)}
-      </span>
-
-      <Fragment slot="middle">
-        <SunDial now={renderedAt} />
-        <Clock now={renderedAt} />
-      </Fragment>
-
-      <Fragment slot="end">
-        <ThemeToggle />
-        <span class="hidden sm:inline">&copy; {new Date().getFullYear()}</span>
-      </Fragment>
-    </Dock>
+    <StatusBar currentPath={currentPath} position={statusPosition} />
 
     {primaryShortcuts.length > 0 && (
       <div transition:persist="persist-desktop-top">
-        <DesktopSection
-          rows={desktopRows(primaryShortcuts)}
-          inset={desktopInset}
-          anchorInset={desktopAnchorInset}
-        >
+        <DesktopSection rows={desktopRows(primaryShortcuts)}>
           {primaryShortcuts.map((item) => (
             <DesktopShortcut
               icon={item.icon}
@@ -174,7 +140,6 @@ const renderedAt = new Date();
         <DesktopSection
           anchor="bottom"
           rows={desktopRows(secondaryShortcuts)}
-          inset={desktopInset}
           label="More desktop shortcuts"
         >
           {secondaryShortcuts.map((item) => (
@@ -198,17 +163,15 @@ const renderedAt = new Date();
       currentPath={currentPath}
       windowTitle={windowTitle}
       position={dockPosition}
-      persist="dock"
-      step={900}
       sticky
     />
 
     <script>
-      import { enableDesktopChrome } from '~/lib/desktop-chrome';
-      import { enableTimeChrome } from '~/lib/time-chrome';
-      import { enableWindowInteract } from '~/lib/window-interact';
-      enableDesktopChrome();
-      enableTimeChrome();
+      import { enableDesktop } from '~/lib/desktop';
+      import { enableClock } from '~/lib/clock';
+      import { enableWindowInteract } from '~/lib/window';
+      enableDesktop();
+      enableClock();
       enableWindowInteract();
     </script>
   </body>

@@ -1,16 +1,37 @@
-import { enableDesktopShortcuts } from '~/lib/desktop-shortcuts';
-import { normalisePath, sectionLabel } from '~/lib/navigation';
-import { resetWindow } from '~/lib/window-interact';
+import { navigate } from 'astro:transitions/client';
+import { normalisePath, opensOnPress, sectionLabel } from '~/lib/navigation';
+import { resetWindow } from '~/lib/window';
 
-/*
- * Client wiring for the desktop chrome under `<ClientRouter />`.
- *
- * The dock and the desktop shortcuts carry `transition:persist`, so after a
- * navigation they are the *previous* page's DOM: their listeners survive, and
- * so does anything the server rendered into them. Everything here exists to
- * reconcile that — either re-binding what was rebuilt, or correcting what was
- * kept.
- */
+export function enableDesktopShortcuts(root: ParentNode = document): void {
+  for (const shortcut of root.querySelectorAll<HTMLAnchorElement>('.desktop-shortcut')) {
+    // Persisted across navigation — arrives already wired, so binding again would fire a press twice.
+    if (shortcut.dataset.pressWired) continue;
+    shortcut.dataset.pressWired = 'true';
+
+    let openedOnPress = false;
+
+    shortcut.addEventListener('pointerdown', (event) => {
+      shortcut.classList.add('is-pressed');
+      openedOnPress = opensOnPress(event);
+      if (!openedOnPress) return;
+      if (shortcut.target === '_blank') window.open(shortcut.href, '_blank', 'noopener');
+      // navigate(), not location.assign() — the router only intercepts anchor clicks, so assign() would drop the view transition and persisted chrome.
+      else void navigate(shortcut.href);
+    });
+
+    // Suppress the click that follows the press, or a new-tab link opens twice.
+    shortcut.addEventListener('click', (event) => {
+      if (openedOnPress) event.preventDefault();
+      openedOnPress = false;
+    });
+
+    for (const releaseType of ['pointerup', 'pointercancel', 'pointerleave']) {
+      shortcut.addEventListener(releaseType, () => shortcut.classList.remove('is-pressed'));
+    }
+  }
+}
+
+// The dock and shortcuts persist across navigation, so this reconciles server-rendered state (current page, minimised window) with the previous page's surviving DOM.
 
 function windowFrame(): HTMLElement | null {
   return document.querySelector<HTMLElement>('[data-window-frame]');
@@ -20,11 +41,7 @@ function taskButton(): HTMLButtonElement | null {
   return document.querySelector<HTMLButtonElement>('[data-window-task]');
 }
 
-/*
- * Current-page markers are rendered by the server into chrome that is then
- * persisted, so without this they keep pointing at the page you just left —
- * which `aria-current` states as fact to a screen reader.
- */
+// Persisted chrome would otherwise keep stating the previous page's aria-current/selected as fact.
 export function syncCurrentPage(pathname: string, root: ParentNode = document): void {
   const currentPath = normalisePath(pathname);
 
@@ -46,10 +63,7 @@ export function syncCurrentPage(pathname: string, root: ParentNode = document): 
   }
 }
 
-/*
- * `hidden`, not offscreen: a minimised window must leave the accessibility tree
- * too, or a screen reader still reads a window the user has put away.
- */
+// hidden, not offscreen — a minimised window must leave the accessibility tree too.
 function setMinimised(minimised: boolean, moveFocus: boolean): void {
   const frame = windowFrame();
   const task = taskButton();
@@ -59,23 +73,12 @@ function setMinimised(minimised: boolean, moveFocus: boolean): void {
   task.hidden = !minimised;
 
   if (!moveFocus) return;
-  // Hiding the element holding focus drops it to <body>, losing a keyboard
-  // user's place entirely.
+  // Hiding the focused element would drop focus to <body>.
   if (minimised) task.focus();
   else frame.querySelector<HTMLButtonElement>('[data-window-minimise]')?.focus();
 }
 
-/*
- * Closing hides the whole frame, title bar included — there is no task
- * button to bring it back, so the close button goes with it. `hidden`, not
- * offscreen, for the same reason as `setMinimised`. Unlike minimise, that
- * takes focus with it: the dock nav is the nearest sensible landing spot,
- * and already a deliberate focus target (see the skip link in
- * BaseLayout.astro). The frame is rebuilt fresh on every navigation (it is
- * not `transition:persist`ed), so it always reopens on its own — nothing
- * about "closed" is written anywhere. Closing also forgets the stored
- * position so the window returns to default size/position on next navigation.
- */
+// Closing hides the whole frame (no task button to reopen it) and clears the stored rect, since the frame isn't persisted and rebuilds open by default anyway.
 function setClosed(closed: boolean): void {
   const frame = windowFrame();
   if (!frame) return;
@@ -87,9 +90,7 @@ function setClosed(closed: boolean): void {
 }
 
 export function enableWindowControls(root: ParentNode = document): void {
-  // Following a link is a request to read something, so arriving minimised
-  // would hide the very thing that was asked for. The frame is rebuilt each
-  // navigation and so returns already open; the persisted task button is not.
+  // Force un-minimised on arrival — the frame rebuilds open each navigation, but the persisted task button doesn't know that.
   setMinimised(false, false);
 
   const minimise = root.querySelector<HTMLButtonElement>('[data-window-minimise]');
@@ -114,8 +115,7 @@ export function enableWindowControls(root: ParentNode = document): void {
 
 let themeToggleWired = false;
 
-/* Delegated so it survives both the toggle being persisted and this module
- * being re-entered; the toggle itself is replaced on some navigations. */
+// Delegated: survives both a persisted toggle and this module re-running.
 export function enableThemeToggle(): void {
   if (themeToggleWired) return;
   themeToggleWired = true;
@@ -129,11 +129,10 @@ export function enableThemeToggle(): void {
   });
 }
 
-export function enableDesktopChrome(): void {
+export function enableDesktop(): void {
   enableThemeToggle();
 
-  // Fires on the initial load as well as every client-side navigation, so this
-  // is the only hook needed.
+  // Covers first load and every navigation, so this is the only hook needed.
   document.addEventListener('astro:page-load', () => {
     enableDesktopShortcuts();
     enableWindowControls();

@@ -1,114 +1,58 @@
 ---
-import DockItem from '~/components/DockItem.astro';
-import Icon from '~/components/Icon.astro';
-import Tooltip from '~/components/Tooltip.astro';
-import {
-  dockBar,
-  dockCluster,
-  dockNav,
-  dockRegion,
-  type DockClusterPlacement,
-  type DockPosition,
-  type DockSize,
-  type DockStep,
-} from '~/lib/dock-variants';
+import { Bar, DockItem, bar, type BarPosition, type BarSize } from '~/components/ui/Bar.tsx';
 import { isCurrent, primaryNav, secondaryNav } from '~/lib/navigation';
 
-type Props = {
-  persist: string; // Unique per page to ensure the router doesn't restore one over the other
-  position?: DockPosition;
+interface Props {
+  currentPath: string;
+  windowTitle: string;
+  position?: BarPosition;
   sticky?: boolean;
-  /*
-   * The bar's own fill, named by its LIGHT-mode ramp step; the dark-mode
-   * fill is derived from it (`dockDarkStep`). Defaults to `900`, the
-   * highest-contrast fill, which is what the bottom dock wants. A caller
-   * asking for a visibly quieter bar — the top status bar's job — picks the
-   * next step down, `800`, per docs/design-system.md §5.
-   */
-  step?: DockStep;
-  /* Bar thickness. `regular` matches the bar's previous fixed padding. */
-  size?: DockSize;
-} & (
-  | { cluster: 'none'; currentPath?: never; windowTitle?: never }
-  | {
-      cluster?: DockClusterPlacement;
-      currentPath: string;
-      windowTitle: string;
-    }
-);
+  size?: BarSize;
+}
 
-const props = Astro.props;
 const {
-  persist,
+  currentPath,
+  windowTitle,
   position = 'bottom',
-  cluster = 'middle',
   sticky = false,
-  step = 900,
   size = 'regular',
-} = props;
+} = Astro.props;
 
-const middleRegion = cluster === 'none' && Astro.slots.has('middle');
+const showMiddleRegion = Astro.slots.has('middle');
 ---
 
-{/* Persisted here rather than at the call site: transition directives apply to
-    elements, not to component tags. */}
-{/* `transition:name` lifts the bar into the `::view-transition` layer too.
-    Without it, the bar is ordinary DOM and that layer — which paints above
-    ALL ordinary content regardless of z-index — is free to paint the
-    in-transit window over it. `persist` already keeps the same node across
-    the swap, so old/new snapshots are identical and nothing here animates;
-    `animate="none"` just avoids paying for a morph that would show no
-    movement. See the `::view-transition-group` rule in global.css for the
-    stacking this depends on. */}
 <div
-  transition:persist={persist}
-  transition:name={persist}
+  transition:persist="dock"
+  transition:name="dock"
   transition:animate="none"
   data-position={position}
-  class={dockBar({ position, cluster, middleRegion, sticky, step, size })}
+  class={bar({
+    position,
+    purpose: 'dock',
+    middleRegion: showMiddleRegion,
+    sticky,
+    size,
+  })}
 >
-  <div class={dockRegion({ position, region: 'start' })}>
-    <slot name="start" />
-  </div>
+  <Bar position={position} showMiddleRegion={showMiddleRegion} windowTitle={windowTitle}>
+    <Fragment slot="start">
+      <slot name="start" />
+    </Fragment>
+    {showMiddleRegion && (
+      <Fragment slot="middle">
+        <slot name="middle" />
+      </Fragment>
+    )}
+    <Fragment slot="end">
+      <slot name="end" />
+    </Fragment>
 
-  {middleRegion && (
-    <div class={dockRegion({ position, region: 'middle' })}>
-      <slot name="middle" />
-    </div>
-  )}
-
-  {props.cluster !== 'none' && (
-    <div class={dockCluster({ position })}>
-      {/* tabindex so the skip link can move focus here; a <nav> is not
-            focusable by itself. */}
-      <nav id="dock-nav" tabindex="-1" aria-label="Site" class={dockNav({ position })}>
-        {primaryNav.map((item) => (
-          <DockItem {...item} current={isCurrent(item, props.currentPath)} />
-        ))}
-
-        <span class="dock-separator" aria-hidden="true" />
-
-        {secondaryNav.map((item) => (
-          <DockItem {...item} current={isCurrent(item, props.currentPath)} />
-        ))}
-      </nav>
-
-      {/* Hidden until minimised, and restored on navigation by the chrome
-            script. Without JavaScript the window never minimises, so this
-            never shows. */}
-      <button type="button" class="task-button tooltip-anchor" data-window-task hidden>
-        <Icon name="document" />
-        {/* The title alone reads as a bare label; the verb says what pressing it does. */}
-        <span class="sr-only">Restore</span>
-        <span class="dock-item-label sr-only">{props.windowTitle}</span>
-        <Tooltip label={props.windowTitle} />
-      </button>
-    </div>
-  )}
-
-  <div class={dockRegion({ position, region: 'end' })}>
-    <slot name="end" />
-  </div>
+    {[
+      ...primaryNav.map((item) => <DockItem {...item} current={isCurrent(item, currentPath)} />),
+      <span class="dock-separator" aria-hidden="true" />,
+      ...secondaryNav.map((item) => <DockItem {...item} current={isCurrent(item, currentPath)} />),
+    ]}
+  </Bar>
 </div>
 
 <style>
@@ -116,9 +60,11 @@ const middleRegion = cluster === 'none' && Astro.slots.has('middle');
    * A dock item is a square target around its icon, not a text button with an
    * icon in front of it, so the width that used to hold a label becomes room
    * around the icon instead. Overrides `@layer components` in global.css: a
-   * component style is unlayered and so wins outright.
+   * component style is unlayered and so wins outright. Fully `:global`, not
+   * just the nested selector — `.dock-cluster` is rendered by `Bar.tsx` now,
+   * outside this file's own template, so Astro never scopes it.
    */
-  .dock-cluster :global(.task-button) {
+  :global(.dock-cluster .task-button) {
     justify-content: center;
     gap: 0;
     min-width: 2.75rem;
@@ -135,25 +81,6 @@ const middleRegion = cluster === 'none' && Astro.slots.has('middle');
     height: 1.75rem;
     margin-inline: 0.25rem;
     background-color: var(--color-border);
-  }
-
-  /*
-   * A bar on the top edge is the bottom bar's mirror: the edge facing the
-   * wallpaper swaps sides, and so does the inset it has to keep clear of.
-   */
-  .dock[data-position='top'] {
-    padding-bottom: 0;
-    padding-top: env(safe-area-inset-top, 0px);
-  }
-
-  /*
-   * Everything that hangs off a top bar hangs downwards, at every width — that
-   * bar is at the top of the document below the breakpoint too, so unlike the
-   * vertical stops there is nothing to flip back at.
-   */
-  .dock[data-position='top'] :global(.tooltip[data-placement]) {
-    --tooltip-inset: calc(100% + 0.5rem) auto auto 50%;
-    --tooltip-shift: translateX(-50%);
   }
 
   /*

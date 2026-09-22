@@ -1,7 +1,7 @@
 ---
 import TitleBar from '~/components/TitleBar.astro';
 import { cn } from '~/lib/cn';
-import { windowFrame, type WindowPalette } from '~/lib/window-variants';
+import { windowFrame, type WindowPalette } from '~/lib/window';
 
 /*
  * The window that owns the page: one per document, wrapping `<main>`.
@@ -21,7 +21,7 @@ const { title, palette = 'fallen-leaf' } = Astro.props;
 {/* pointer-events are disabled on the wrapper so the wallpaper behind it stays
     clickable, and re-enabled on the frame itself. */}
 {/* `pb-15` clears the bottom dock below `lg`: that bar is `fixed`, not in
-    flow, so nothing else reserves its height — see `dock-variants.ts`.
+    flow, so nothing else reserves its height — see `Bar.tsx`.
     `lg:pb-24` replaces it once the dock pins by its own `lg:fixed` instead. */}
 <div class="pointer-events-none relative z-10 flex flex-1 flex-col pb-15 lg:px-10 lg:pt-[6vh] lg:pb-24">
   {/* transition:name pairs this frame with the next page's, so the window
@@ -43,7 +43,7 @@ const { title, palette = 'fallen-leaf' } = Astro.props;
       windowFrame({ palette }),
       'pointer-events-auto mx-auto flex w-full flex-1 flex-col lg:relative lg:max-w-4xl lg:flex-none',
       'lg:positioned:fixed lg:positioned:m-0 lg:positioned:max-w-none lg:positioned:min-w-80',
-      'lg:positioned:left-[var(--window-left)] lg:positioned:top-[var(--window-top)] lg:positioned:w-[var(--window-width)] lg:positioned:h-[var(--window-height)]',
+      'lg:positioned:left-(--window-left) lg:positioned:top-(--window-top) lg:positioned:w-(--window-width) lg:positioned:h-(--window-height)',
     )}
   >
     <TitleBar
