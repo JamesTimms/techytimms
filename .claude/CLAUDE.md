@@ -42,7 +42,7 @@ Prettier is configured (`.prettierrc.mjs`) but is not wired into a script and ha
 
 **Theme** is applied by a blocking `is:inline` script in `<head>` (`src/layouts/BaseLayout.astro`) reading `localStorage` then `prefers-color-scheme`. It must stay inline and in `<head>` — bundling it runs it after first paint and the theme flashes.
 
-**Colour** is semantic OKLCH tokens in `src/styles/global.css`: slate neutrals at hue 250, amber accent at hue 70. Retune by changing the hue angles, not individual values. Use the tokens (`ink`, `ink-muted`, `ink-faint`, `ground`, `surface`, `sunk`, `border`, `accent`, `accent-ink`) rather than raw Tailwind palette colours. `--color-accent` is for marks, borders and rings; `--color-accent-ink` is the darkened variant for text, because amber at full chroma does not reach 4.5:1 on a light ground.
+**Colour** is semantic OKLCH tokens in `src/styles/global.css` (Pumpkin palette): warm neutrals at hue 85, rust/pumpkin accent at hue 40–55, leaf and pumpkin ramps 50–900. `/styleguide` and `docs/design-system.md` §1 hold the reasons and open issues. Use the tokens rather than raw ramp steps or Tailwind palette colours. `--color-accent` is for marks, borders and rings; `--color-accent-ink` is meant to be the darker, text-safe variant.
 
 ## Gotchas
 

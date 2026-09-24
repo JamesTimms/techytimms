@@ -5,6 +5,7 @@ import { site } from '~/data/site';
 import Dock from '~/components/Dock.astro';
 import StatusBar from '~/components/StatusBar.astro';
 import WindowFrame from '~/components/WindowFrame.astro';
+import { Wallpaper } from '~/components/ui/Wallpaper';
 import { DesktopSection, DesktopShortcut } from '~/components/ui/Desktop.tsx';
 import { primaryShortcuts, secondaryShortcuts, desktopRows, isCurrent } from '~/lib/navigation';
 import { type BarPosition } from '~/components/ui/Bar.tsx';
@@ -53,6 +54,8 @@ const statusPosition: BarPosition = 'top';
     <link rel="sitemap" href="/sitemap-index.xml" />
 
     <ClientRouter />
+
+    <Wallpaper />
 
     <script is:inline>
       // Must be inline and in <head> to run before first paint.
@@ -110,7 +113,7 @@ const statusPosition: BarPosition = 'top';
     </script>
   </head>
 
-  <body class="desktop-ground desktop-grain flex min-h-dvh flex-col font-sans antialiased">
+  <body class="desktop-ground flex min-h-dvh flex-col font-sans antialiased">
     <a
       href="#dock-nav"
       class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-30 focus:border focus:border-border focus:bg-surface focus:px-3 focus:py-2"
@@ -155,7 +158,7 @@ const statusPosition: BarPosition = 'top';
       </div>
     )}
 
-    <WindowFrame title={windowTitle}>
+    <WindowFrame title={windowTitle} palette="pumpkin">
       <slot />
     </WindowFrame>
 

@@ -90,7 +90,12 @@ export function DesktopSection({
   };
 
   return (
-    <nav aria-label={label} className="desktop-shortcuts" data-anchor={anchor} style={style}>
+    <nav
+      aria-label={label}
+      className="desktop-shortcuts hidden xl:fixed xl:z-0 xl:grid xl:grid-flow-col xl:justify-items-center"
+      data-anchor={anchor}
+      style={style}
+    >
       {children}
     </nav>
   );

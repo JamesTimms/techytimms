@@ -14,9 +14,11 @@ export default defineConfig({
   },
   integrations: [
     mdx(),
-    // The styleguide is a development surface, not site content. It also
-    // carries noindex; this keeps it out of the sitemap as well.
-    sitemap({ filter: (page) => !page.endsWith('/styleguide/') }),
+    // Development surfaces, not site content. They also carry noindex; this
+    // keeps them out of the sitemap as well.
+    sitemap({
+      filter: (page) => !page.endsWith('/styleguide/'),
+    }),
     react(),
   ],
 });

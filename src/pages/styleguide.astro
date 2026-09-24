@@ -1,239 +1,815 @@
 ---
+import globalCss from '~/styles/global.css?raw';
 import BaseLayout from '~/layouts/BaseLayout.astro';
-import TitleBar from '~/components/TitleBar.astro';
-import {
-  paletteDescriptions,
-  windowFrame,
-  windowPalettes,
-} from '~/lib/window';
 import { paletteCandidates } from '~/data/palette-candidates';
-import { backgroundCandidates } from '~/data/background-candidates';
-import { DesktopShortcut } from '~/components/ui/Desktop.tsx';
+import {
+  cleanRoomCandidate,
+  legacyCandidateRoleToken,
+  requiredTokenRoles,
+} from '~/data/clean-room-candidate';
+import { mainHues, tokenReference } from '~/data/color-system';
+import { apcaContrastHex } from '~/lib/apca';
+import { oklchToHex, parseThemedColorTokens, requireToken, type ColorToken } from '~/lib/color-tokens';
+import {
+  formatOklch,
+  gamutMaxRamp,
+  maxChromaInGamut,
+  RAMP_LIGHTNESS_STEPS,
+  tokensForHue,
+  type HueTokenUsage,
+} from '~/lib/hue-ramp';
+import { huetonePaletteUrl, oklchPaletteUrl } from '~/lib/huetone';
 
 /*
- * A development surface for comparing chrome variants, not site content:
- * `noindex` here, and excluded from the sitemap in `astro.config.mjs`.
- *
- * The demos deliberately do not use `WindowFrame`. That component carries
- * `data-window-frame`, `id="main"` and `transition:name="window"`, all of which
- * must be unique per document — client script resolves the first match, and
- * Astro allows a transition name only once per page. The demos compose the same
- * variant classes onto plain markup instead.
+ * A development surface for the colour system, not site content: `noindex`
+ * here, and excluded from the sitemap in `astro.config.mjs`. Everything below
+ * is parsed from `global.css` at build time (via Vite's `?raw` import) or
+ * computed from that parse, so none of it can drift from the tokens it
+ * describes.
  */
+
+const { light: lightTokens, dark: darkTokens } = parseThemedColorTokens(globalCss);
+
+// ---------------------------------------------------------------------------
+// 1. Goals and dials — static text below, nothing computed.
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// 2. Main colours
+// ---------------------------------------------------------------------------
+
+interface HueUsageEntry extends HueTokenUsage {
+  theme: 'light' | 'dark';
+}
+
+const mainHueRows = mainHues.map((hue) => {
+  const ramp = hue.liveRamp
+    ? RAMP_LIGHTNESS_STEPS.map(({ step }) => {
+        const token = requireToken(lightTokens, `${hue.liveRamp}-${step}`);
+        return { step, oklch: token.oklch, hex: token.hex };
+      })
+    : gamutMaxRamp(hue.hue);
+
+  const excludeNamePrefix = hue.liveRamp ? `${hue.liveRamp}-` : undefined;
+  const usage: HueUsageEntry[] = [
+    ...tokensForHue(lightTokens, hue.hue, excludeNamePrefix).map((entry) => ({
+      ...entry,
+      theme: 'light' as const,
+    })),
+    ...tokensForHue(darkTokens, hue.hue, excludeNamePrefix).map((entry) => ({
+      ...entry,
+      theme: 'dark' as const,
+    })),
+  ];
+
+  const usageByStep = new Map<number, HueUsageEntry[]>();
+  const offScale: HueUsageEntry[] = [];
+  for (const entry of usage) {
+    if (entry.step === null) offScale.push(entry);
+    else usageByStep.set(entry.step, [...(usageByStep.get(entry.step) ?? []), entry]);
+  }
+
+  const step500 = ramp.find((swatch) => swatch.step === 500)!;
+
+  return {
+    ...hue,
+    ramp,
+    usageByStep,
+    offScale,
+    huetoneUrl: huetonePaletteUrl(hue.name, [{ name: hue.name, colors: ramp.map((s) => s.hex) }]),
+    oklchPaletteHref: oklchPaletteUrl(step500.oklch),
+  };
+});
+
+const combinedHuetoneUrl = huetonePaletteUrl(
+  'techytimms',
+  mainHueRows.map((hue) => ({ name: hue.name, colors: hue.ramp.map((s) => s.hex) })),
+);
+
+// The four known deviations the brief calls out, recomputed from the parsed
+// CSS rather than pasted as fixed numbers, so a retune can't leave this page
+// silently wrong.
+const accentLight = requireToken(lightTokens, 'accent');
+const accentInkLight = requireToken(lightTokens, 'accent-ink');
+const accentDark = requireToken(darkTokens, 'accent');
+const accentInkDark = requireToken(darkTokens, 'accent-ink');
+const accentOwnHueChromaCap = maxChromaInGamut(accentLight.oklch.l, accentLight.oklch.h);
+const accentAtPumpkinHueChromaCap = maxChromaInGamut(accentLight.oklch.l, 55);
+const accentInkIsLighterThanAccent = accentInkLight.oklch.l > accentLight.oklch.l;
+
+function nearestStepLabel(lightnessPercent: number): string {
+  const nearest = RAMP_LIGHTNESS_STEPS.reduce((best, candidate) =>
+    Math.abs(candidate.lightnessPercent - lightnessPercent) <
+    Math.abs(best.lightnessPercent - lightnessPercent)
+      ? candidate
+      : best,
+  );
+  return `step ${nearest.step} (${nearest.lightnessPercent}%)`;
+}
+
+// ---------------------------------------------------------------------------
+// 3. Tokens — semanticTokenRows below just attaches the live swatches to
+//    tokenReference's hand-written purpose/reason copy.
+// ---------------------------------------------------------------------------
+
+const semanticTokenRows = tokenReference.map((entry) => ({
+  ...entry,
+  light: requireToken(lightTokens, entry.token),
+  dark: requireToken(darkTokens, entry.token),
+}));
+
+// ---------------------------------------------------------------------------
+// 4./5./6. Palette candidates, the tokens-in-use mockups, and APCA — all
+// three read off the same three candidate columns and the same role
+// resolver, so they can't disagree with one another.
+// ---------------------------------------------------------------------------
+
+type Theme = 'light' | 'dark';
+
+interface CandidateColumn {
+  name: string;
+  live: boolean;
+  roleHex(role: string, theme: Theme): string | null;
+}
+
+const candidateColumns: CandidateColumn[] = [
+  ...paletteCandidates.map((candidate) => ({
+    name: candidate.name,
+    live: candidate.live ?? false,
+    roleHex(role: string, theme: Theme): string | null {
+      const tokenName = legacyCandidateRoleToken[role];
+      if (!tokenName) return null;
+      const swatch = candidate.tokens.find((entry) => entry.token === tokenName);
+      return swatch ? swatch[theme] : null;
+    },
+  })),
+  {
+    name: 'Clean room',
+    live: false,
+    roleHex: (role: string, theme: Theme) => cleanRoomCandidate[role]?.[theme] ?? null,
+  },
+];
+
+// Tokens in use: one mockup per candidate/theme. `on-fill` falls back to
+// `surface` for the two legacy candidates, which never separated title-bar
+// text from the face tint — noted under the mockups, not hidden.
+function mockupColours(candidate: CandidateColumn, theme: Theme) {
+  const get = (role: string) => candidate.roleHex(role, theme);
+  return {
+    desktop: get('desktop'),
+    surface: get('surface'),
+    fill: get('fill'),
+    onFill: get('on-fill') ?? candidate.roleHex('surface', 'light'),
+    shortcutInk: get('on-fill') ?? get('ink'),
+    ink: get('ink'),
+    accentInk: get('accent-ink'),
+    border: get('border'),
+    usedFallback: get('on-fill') === null,
+  };
+}
+
+const contrastPairs: { label: string; fg: string; bg: string; target: number }[] = [
+  { label: 'ink on surface', fg: 'ink', bg: 'surface', target: 75 },
+  { label: 'ink on sunk', fg: 'ink', bg: 'sunk', target: 75 },
+  { label: 'ink-muted on surface', fg: 'ink-muted', bg: 'surface', target: 60 },
+  { label: 'ink-faint on surface', fg: 'ink-faint', bg: 'surface', target: 45 },
+  { label: 'accent-ink on surface (link)', fg: 'accent-ink', bg: 'surface', target: 75 },
+  { label: 'on-fill on fill (title bar text)', fg: 'on-fill', bg: 'fill', target: 75 },
+  { label: 'on-fill on desktop (shortcut label)', fg: 'on-fill', bg: 'desktop', target: 75 },
+  { label: 'accent on desktop (mark)', fg: 'accent', bg: 'desktop', target: 30 },
+  { label: 'border on surface (UI boundary)', fg: 'border', bg: 'surface', target: 30 },
+];
+
+const contrastRows = contrastPairs.map((pair) => ({
+  ...pair,
+  cells: candidateColumns.map((candidate) => {
+    const lightFg = candidate.roleHex(pair.fg, 'light');
+    const lightBg = candidate.roleHex(pair.bg, 'light');
+    const darkFg = candidate.roleHex(pair.fg, 'dark');
+    const darkBg = candidate.roleHex(pair.bg, 'dark');
+    return {
+      name: candidate.name,
+      light: lightFg && lightBg ? apcaContrastHex(lightFg, lightBg) : null,
+      dark: darkFg && darkBg ? apcaContrastHex(darkFg, darkBg) : null,
+    };
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// 7. Why these colours — hue wheel and lightness/chroma chart, both derived
+//    from whichever hues the live tokens actually use (minus the five link
+//    hues), rather than a hand-curated list that could go stale.
+// ---------------------------------------------------------------------------
+
+const isLinkToken = (name: string) => name.startsWith('link-');
+
+interface TokenPoint {
+  name: string;
+  theme: Theme;
+  oklch: ColorToken['oklch'];
+  hex: string;
+}
+
+const nonLinkPoints: TokenPoint[] = [
+  ...Object.entries(lightTokens)
+    .filter(([name]) => !isLinkToken(name))
+    .map(([name, token]) => ({ name, theme: 'light' as const, oklch: token.oklch, hex: token.hex })),
+  // Ramp steps carry no `.dark` override, so the dark map only adds tokens
+  // that actually differ by theme.
+  ...Object.entries(darkTokens)
+    .filter(([name]) => !isLinkToken(name) && !name.startsWith('leaf-') && !name.startsWith('pumpkin-'))
+    .map(([name, token]) => ({ name, theme: 'dark' as const, oklch: token.oklch, hex: token.hex })),
+];
+
+const mainHueNameByHue = new Map(mainHues.map((hue) => [hue.hue, hue.name]));
+
+const hueGroups = new Map<number, { hue: number; members: string[] }>();
+for (const point of nonLinkPoints) {
+  const group = hueGroups.get(point.oklch.h) ?? { hue: point.oklch.h, members: [] };
+  if (!group.members.includes(point.name)) group.members.push(point.name);
+  hueGroups.set(point.oklch.h, group);
+}
+
+const wheelHues = [...hueGroups.values()]
+  .sort((a, b) => a.hue - b.hue)
+  .map((group) => ({
+    hue: group.hue,
+    name: mainHueNameByHue.get(group.hue) ?? group.members.slice(0, 2).join(', '),
+    representativeHex: oklchToHex({ l: 0.6, c: maxChromaInGamut(0.6, group.hue), h: group.hue }),
+  }));
+
+const wheelSize = 320;
+const wheelCenter = wheelSize / 2;
+const wheelRingInner = 96;
+const wheelRingOuter = 124;
+const wheelMarkerRadius = 138;
+const wheelLabelRadius = 148;
+
+function pointOnWheel(hue: number, radius: number) {
+  const angle = ((hue - 90) * Math.PI) / 180;
+  return { x: wheelCenter + radius * Math.cos(angle), y: wheelCenter + radius * Math.sin(angle) };
+}
+
+const wheelTicks = Array.from({ length: 60 }, (_, index) => {
+  const hue = index * 6;
+  const inner = pointOnWheel(hue, wheelRingInner);
+  const outer = pointOnWheel(hue, wheelRingOuter);
+  return {
+    x1: inner.x,
+    y1: inner.y,
+    x2: outer.x,
+    y2: outer.y,
+    hex: oklchToHex({ l: 0.62, c: maxChromaInGamut(0.62, hue), h: hue }),
+  };
+});
+
+const wheelMarkers = wheelHues.map((hue) => {
+  const dot = pointOnWheel(hue.hue, wheelMarkerRadius);
+  const label = pointOnWheel(hue.hue, wheelLabelRadius);
+  const dx = label.x - wheelCenter;
+  const dy = label.y - wheelCenter;
+  return {
+    ...hue,
+    dot,
+    label,
+    anchor: dx > 8 ? 'start' : dx < -8 ? 'end' : 'middle',
+    baseline: dy < -8 ? 'text-after-edge' : dy > 8 ? 'text-before-edge' : 'middle',
+  };
+});
+
+const chartWidth = 640;
+const chartHeight = 360;
+const chartLeft = 46;
+const chartRight = 16;
+const chartTop = 16;
+const chartBottom = 34;
+const chartPlotWidth = chartWidth - chartLeft - chartRight;
+const chartPlotHeight = chartHeight - chartTop - chartBottom;
+const chartMaxChroma = 0.34;
+
+function chartX(lightnessPercent: number) {
+  return chartLeft + (lightnessPercent / 100) * chartPlotWidth;
+}
+function chartY(chroma: number) {
+  return chartTop + chartPlotHeight - (chroma / chartMaxChroma) * chartPlotHeight;
+}
+
+const chartLightnessTicks = [0, 20, 40, 60, 80, 100];
+const chartChromaTicks = [0, 0.1, 0.2, 0.3];
+
+const chartCurves = wheelHues.map((hue) => ({
+  hue: hue.hue,
+  name: hue.name,
+  stroke: hue.representativeHex,
+  points: Array.from({ length: 25 }, (_, index) => {
+    const lightnessPercent = 2 + index * 4;
+    const chroma = maxChromaInGamut(lightnessPercent / 100, hue.hue);
+    return `${chartX(lightnessPercent)},${chartY(chroma)}`;
+  }).join(' '),
+}));
+
+const chartPoints = nonLinkPoints.map((point) => ({
+  ...point,
+  cx: chartX(point.oklch.l * 100),
+  cy: chartY(point.oklch.c),
+}));
 ---
 
-<BaseLayout title="Styleguide" description="Window chrome variants." noindex>
-  <h1 class="text-2xl font-semibold tracking-tight">Window chrome variants</h1>
+<BaseLayout title="Styleguide" description="The colour system." noindex>
+  <h1 class="text-2xl font-semibold tracking-tight">Colour system</h1>
   <p class="mt-3 max-w-prose text-ink-muted">
-    One axis, two stops — a palette each. The chrome itself is the same in both:
-    a thin edge, a flat title bar and flat controls, all drawn from a ten-step
-    (50–900) OKLCH ramp built out of that palette's main colour. Switch with the
-    <code class="text-ink">palette</code> prop on
-    <code class="text-ink">WindowFrame</code>;
-    <code class="text-ink">fallen-leaf</code> is the default.
+    Reference only — nothing on this page changes a value. Every figure below
+    is parsed from <code class="text-ink">global.css</code> at build time, so
+    it can't drift from the tokens it describes.
   </p>
 
-  <div class="mt-10 flex flex-col gap-10">
-    {
-      windowPalettes.map((palette) => (
-        <section>
-          <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-faint">
-            {palette}
-          </h2>
-          <p class="mt-1 max-w-prose text-sm text-ink-muted">
-            {paletteDescriptions[palette]}
-          </p>
+  {/* ===================================================================
+      1. Goals and dials
+      =================================================================== */}
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold tracking-tight">1. Goals and dials</h2>
+    <div class="mt-4 overflow-x-auto">
+      <table class="w-full min-w-[32rem] border-collapse text-sm">
+        <tbody>
+          <tr class="border-t border-rule">
+            <td class="py-2 pr-4 font-medium text-ink-muted">Priority</td>
+            <td class="py-2 text-ink">Contrast first — the APCA pair fixes lightness before chroma or hue move.</td>
+          </tr>
+          <tr class="border-t border-rule">
+            <td class="py-2 pr-4 font-medium text-ink-muted">Order</td>
+            <td class="py-2 text-ink">L → C → H, always in that order.</td>
+          </tr>
+          <tr class="border-t border-rule">
+            <td class="py-2 pr-4 font-medium text-ink-muted">1 JND</td>
+            <td class="py-2 text-ink">0.02 in OKLCH — CSS Color 4's own gamut-mapping threshold.</td>
+          </tr>
+          <tr class="border-t border-rule">
+            <td class="py-2 pr-4 font-medium text-ink-muted">Chroma</td>
+            <td class="py-2 text-ink">Capped by the gamut; peaks at each hue's own cusp lightness, not at a fixed L.</td>
+          </tr>
+          <tr class="border-t border-rule">
+            <td class="py-2 pr-4 font-medium text-ink-muted">Hue</td>
+            <td class="py-2 text-ink">Only visible in proportion to chroma — hue drift at low chroma is inert.</td>
+          </tr>
+          <tr class="border-t border-rule">
+            <td class="py-2 pr-4 font-medium text-ink-muted">Hue drift</td>
+            <td class="py-2 text-ink">Stays inside the colour family it started in.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
 
-          {/* On the wallpaper, because the edge is the one part of this that
-              cannot be judged in isolation: it has to clear 3:1 against what is
-              behind it, and what is behind it is the desktop. */}
-          <div class="desktop-ground mt-4 border border-rule p-6">
-            <div class={`${windowFrame({ palette })} border-x rounded-window`}>
-              <TitleBar
-                title="techytimms.com/about"
-                icon="document"
-                palette={palette}
-              />
-              <div class="px-4 py-5 sm:px-6">
-                <p class="max-w-prose text-sm text-ink-muted">
-                  Body text sits on the window's face, a light tint of the main
-                  colour rather than the main colour itself — at the main
-                  colour's own lightness{' '}
-                  <code class="text-ink">ink-faint</code> falls to 2.54. Spacing,
-                  type and reading width are identical across both palettes.
-                </p>
-                <p class="mt-3 text-sm">
-                  <a href="/about" class="link link-3">A link, for colour</a>
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-      ))
-    }
-  </div>
-
-  <section class="mt-12 border-t border-rule pt-6">
-    <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-faint">
-      Note on the edge and the rule
-    </h2>
+  {/* ===================================================================
+      2. Main colours
+      =================================================================== */}
+  <section class="mt-14 border-t border-rule pt-8">
+    <h2 class="text-xl font-semibold tracking-tight">2. Main colours</h2>
     <p class="mt-2 max-w-prose text-sm text-ink-muted">
-      Two lines do all the work the bevels used to. The window edge is a
-      single step — 500 — in both themes: a 1px line has to clear 3:1 against
-      the wallpaper, and the wallpaper sits at opposite ends of the lightness
-      range in the two themes, so 500 is the narrow band that clears both
-      (3.88 light, 3.57 dark). The rule under the title bar is the main
-      colour in both — step 200 on Fallen Leaf, 300 on Pumpkin — and is
-      load-bearing in dark mode: the bar and the face are only ~1.6:1 apart
-      there, so without it the bar has no boundary.
-    </p>
-  </section>
-
-  <section class="mt-14 border-t border-rule pt-8">
-    <h2 class="text-2xl font-semibold tracking-tight">Desktop backgrounds</h2>
-    <p class="mt-3 max-w-prose text-ink-muted">
-      The live background: a real wallpaper with a real window and shortcut on
-      it, at a realistic size. The ratios are the pattern's <em>worst</em>
-      extreme, not its average — a label that lands on the darkest pixel is
-      the one that has to stay legible. Floors are 4.5 for the label and 3.0
-      for the edge.
+      <code class="text-ink">leaf</code> and <code class="text-ink">pumpkin</code> are
+      the live ten-step ramps in <code class="text-ink">global.css</code>.
+      <code class="text-ink">neutral / ink</code> and
+      <code class="text-ink">accent</code> have no hand-built ramp, so their
+      row is a comparison ramp: the most chroma sRGB allows at that hue and
+      lightness, found by search, not a value anyone has shipped. A step
+      bordered in accent is one a live token's lightness lands on.
+      <a href={combinedHuetoneUrl} class="link link-3 ml-1">All four ramps in huetone →</a>
     </p>
 
-    <div class="mt-8 flex flex-col gap-10">
+    <div class="mt-6 flex flex-col gap-10">
       {
-        backgroundCandidates.map((candidate) => (
-          <article>
-            <h3 class="font-semibold">
-              {candidate.name}
-              {candidate.live && (
-                <span class="ml-2 border border-accent bg-accent-sunk px-1.5 py-0.5 text-xs font-normal uppercase tracking-wide text-accent-ink">
-                  live
+        mainHueRows.map((hue) => (
+          <div>
+            <h3 class="flex flex-wrap items-baseline gap-x-2 text-sm font-semibold">
+              <span class="uppercase tracking-wide text-ink-faint">{hue.name}</span>
+              <span class="font-mono text-ink-muted">hue {hue.hue}</span>
+              {hue.liveRamp ? (
+                <span class="border border-accent bg-accent-sunk px-1.5 py-0.5 text-[0.65rem] font-normal uppercase tracking-wide text-accent-ink">
+                  live ramp
+                </span>
+              ) : (
+                <span class="border border-border px-1.5 py-0.5 text-[0.65rem] font-normal uppercase tracking-wide text-ink-faint">
+                  derived, comparison only
                 </span>
               )}
-              {candidate.fails && (
-                <span class="ml-2 border border-border bg-sunk px-1.5 py-0.5 text-xs font-normal uppercase tracking-wide text-ink">
-                  fails AA
-                </span>
-              )}
+              <span class="ml-auto flex gap-3 text-xs font-normal normal-case tracking-normal">
+                <a href={hue.huetoneUrl} class="link link-3">huetone →</a>
+                <a href={hue.oklchPaletteHref} class="link link-3">oklch-palette (500) →</a>
+              </span>
             </h3>
-            <p class="mt-1 max-w-prose text-sm text-ink-muted">{candidate.blurb}</p>
 
-            <div
-              class={`desktop-ground ${candidate.className} mt-3 flex items-start gap-4 border border-rule p-4`}
-            >
-              <DesktopShortcut icon="about" label="About" href="/about" />
-              <div class={`${windowFrame()} min-w-0 flex-1 border-x rounded-window`}>
-                <TitleBar title="techytimms.com" icon="document" />
-                <p class="px-3 py-3 text-sm text-ink-muted">
-                  A window on the wallpaper, so the edge and the label can be
-                  judged against the pattern rather than in isolation.
+            <div class="mt-2 flex flex-wrap gap-1.5">
+              {hue.ramp.map((swatch) => {
+                const matches = hue.usageByStep.get(swatch.step) ?? [];
+                return (
+                  <div class={`w-16 border p-1 text-center ${matches.length > 0 ? 'border-accent' : 'border-rule'}`}>
+                    <div
+                      class="h-9 w-full border border-border"
+                      style={`background-color:${swatch.hex}`}
+                      title={`${swatch.step} — oklch(${formatOklch(swatch.oklch)}) ${swatch.hex}`}
+                    />
+                    <div class="mt-1 font-mono text-[0.65rem] text-ink-faint">{swatch.step}</div>
+                    {matches.length > 0 && (
+                      <ul class="mt-0.5 flex flex-col gap-0.5">
+                        {matches.map((match) => (
+                          <li
+                            class="truncate text-[0.6rem] leading-tight text-accent-ink"
+                            title={`${match.name} (${match.theme}) ${match.lightnessPercent.toFixed(1)}%`}
+                          >
+                            {match.name}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {hue.offScale.length > 0 && (
+              <p class="mt-2 max-w-prose text-xs text-ink-faint">
+                Off-scale: {hue.offScale.map((token) => `${token.name} (${token.theme}) ${token.lightnessPercent.toFixed(1)}%`).join(', ')}
+              </p>
+            )}
+
+            {hue.key === 'accent' && (
+              <div class="mt-2 max-w-prose text-xs text-ink-muted">
+                <p>
+                  <strong class="text-ink">Deviation.</strong> Light{' '}
+                  <code class="text-ink">accent</code> sits at {nearestStepLabel(accentLight.oklch.l * 100)}'s
+                  lightness but is drawn at hue {accentLight.oklch.h}, not pumpkin's hue 55: at L{' '}
+                  {(accentLight.oklch.l * 100).toFixed(0)}%, hue 55 caps at{' '}
+                  {accentAtPumpkinHueChromaCap.toFixed(3)} chroma, hue {accentLight.oklch.h} at{' '}
+                  {accentOwnHueChromaCap.toFixed(3)} — redder buys more chroma, which reads as rust rather
+                  than brown.
+                </p>
+                <p class="mt-1">
+                  <strong class="text-ink">Issue — hue changes between themes.</strong> Dark{' '}
+                  <code class="text-ink">accent</code> is oklch({formatOklch(accentDark.oklch)}), hue{' '}
+                  {accentDark.oklch.h} — pumpkin's own hue, not this row's; dark{' '}
+                  <code class="text-ink">accent-ink</code> matches it (hue {accentInkDark.oklch.h}). Both
+                  show up on the pumpkin row below, not here; light and dark accent are roughly{' '}
+                  {Math.abs(accentDark.oklch.h - accentLight.oklch.h)}° apart (~1.6 JND at this chroma).
+                </p>
+                <p class="mt-1">
+                  <strong class="text-ink">Bug — accent-ink is lighter than accent.</strong>{' '}
+                  <code class="text-ink">accent-ink</code> (L {(accentInkLight.oklch.l * 100).toFixed(0)}%) is
+                  {accentInkIsLighterThanAccent ? ' lighter' : ' darker'} than <code class="text-ink">accent</code>{' '}
+                  (L {(accentLight.oklch.l * 100).toFixed(0)}%). It exists to be the darker, text-safe half of
+                  the pair (see Tokens below) — today it's the wrong way round.
                 </p>
               </div>
-            </div>
+            )}
 
-            <dl class="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-ink-faint">
-              <div class="flex gap-1.5">
-                <dt>label light</dt>
-                <dd class={candidate.contrast.lightInk < 4.5 ? 'text-accent-ink' : 'text-ink'}>
-                  {candidate.contrast.lightInk.toFixed(2)}
-                </dd>
-              </div>
-              <div class="flex gap-1.5">
-                <dt>edge light</dt>
-                <dd class={candidate.contrast.lightEdge < 3 ? 'text-accent-ink' : 'text-ink'}>
-                  {candidate.contrast.lightEdge.toFixed(2)}
-                </dd>
-              </div>
-              <div class="flex gap-1.5">
-                <dt>label dark</dt>
-                <dd class={candidate.contrast.darkInk < 4.5 ? 'text-accent-ink' : 'text-ink'}>
-                  {candidate.contrast.darkInk.toFixed(2)}
-                </dd>
-              </div>
-              <div class="flex gap-1.5">
-                <dt>edge dark</dt>
-                <dd class={candidate.contrast.darkEdge < 3 ? 'text-accent-ink' : 'text-ink'}>
-                  {candidate.contrast.darkEdge.toFixed(2)}
-                </dd>
-              </div>
-              <div class="flex gap-1.5">
-                <dt>cost</dt>
-                <dd class="text-ink">{candidate.cost}</dd>
-              </div>
-            </dl>
-            <p class="mt-1 max-w-prose text-xs text-ink-faint">{candidate.weakness}</p>
-          </article>
+            {hue.key === 'pumpkin' && (
+              <p class="mt-2 max-w-prose text-xs text-ink-muted">
+                Dark-mode <code class="text-ink">accent</code> and{' '}
+                <code class="text-ink">accent-ink</code> land on this ramp (hue {hue.hue}) — see the
+                "matches" listed on the steps above and the accent row's issue note.
+              </p>
+            )}
+
+            {hue.key === 'neutral' && (
+              <p class="mt-2 max-w-prose text-xs text-ink-muted">
+                Five degrees off <code class="text-ink">leaf</code>'s hue 80, invisible at this family's own
+                chroma (≤0.03): the OKLab distance between hue 85 and hue 80 at C 0.03 is about 0.13 of a
+                JND. What actually reads is the chroma itself, 0.03 — enough to read as paper rather than
+                grey, not enough to read as its own hue.
+              </p>
+            )}
+          </div>
         ))
       }
     </div>
   </section>
 
+  {/* ===================================================================
+      3. Tokens
+      =================================================================== */}
   <section class="mt-14 border-t border-rule pt-8">
-    <h2 class="text-2xl font-semibold tracking-tight">Palette candidates</h2>
-    <p class="mt-3 max-w-prose text-ink-muted">
-      Both columns are shown at once, so this reads the same whichever theme
-      you are in. Fallen Leaf is live; Pumpkin is the other real variant,
-      selectable via the <code class="text-ink">palette</code> prop above.
-      Full reasoning, including the candidates that were not chosen, is in
-      <code class="text-ink">docs/palette-exploration.md</code>.
+    <h2 class="text-xl font-semibold tracking-tight">3. Tokens</h2>
+    <p class="mt-2 max-w-prose text-sm text-ink-muted">
+      Every semantic token off the ramp — never a raw ramp step in markup.
+      <code class="text-ink">ground</code> and <code class="text-ink">window-edge</code> are
+      recounted from the current tree (grep, not the brief's figures) and marked as removal
+      candidates.
     </p>
 
-    <div class="mt-8 flex flex-col gap-8">
-      {
-        paletteCandidates.map((candidate) => (
-          <article>
-            <h3 class="font-semibold">
-              {candidate.name}
-              <span class="ml-2 text-xs font-normal uppercase tracking-wide text-ink-faint">
-                {candidate.mode === 'light-ground' ? 'light wallpaper' : 'dark wallpaper'}
-              </span>
-              {candidate.live && (
-                <span class="ml-2 border border-accent bg-accent-sunk px-1.5 py-0.5 text-xs font-normal uppercase tracking-wide text-accent-ink">
-                  live
-                </span>
-              )}
-            </h3>
-            <p class="mt-1 max-w-prose text-sm text-ink-muted">{candidate.blurb}</p>
+    <div class="mt-4 overflow-x-auto">
+      <table class="w-full min-w-[52rem] border-collapse text-xs">
+        <thead>
+          <tr class="text-left text-ink-faint">
+            <th class="py-1 pr-3 font-medium">Token</th>
+            <th class="py-1 pr-3 font-medium">Light</th>
+            <th class="py-1 pr-3 font-medium">Dark</th>
+            <th class="py-1 pr-3 font-medium">Purpose</th>
+            <th class="py-1 font-medium">Why this, not the alternative</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            semanticTokenRows.map(({ token, purpose, why, usageNote, light, dark }) => (
+              <tr class="border-t border-rule align-top">
+                <td class="py-1.5 pr-3 font-mono text-ink-muted">
+                  {token}
+                  {usageNote && (
+                    <span class="mt-1 block w-fit border border-accent bg-accent-sunk px-1 py-0.5 text-[0.6rem] font-sans font-normal normal-case tracking-normal text-accent-ink">
+                      remove?
+                    </span>
+                  )}
+                </td>
+                <td class="py-1.5 pr-3">
+                  <span class="flex items-center gap-2">
+                    <span class="inline-block h-5 w-9 shrink-0 border border-border" style={`background-color:${light.hex}`} />
+                    <code class="text-ink-faint">{light.hex}</code>
+                  </span>
+                </td>
+                <td class="py-1.5 pr-3">
+                  <span class="flex items-center gap-2">
+                    <span class="inline-block h-5 w-9 shrink-0 border border-border" style={`background-color:${dark.hex}`} />
+                    <code class="text-ink-faint">{dark.hex}</code>
+                  </span>
+                </td>
+                <td class="py-1.5 pr-3 text-ink-muted">
+                  {purpose}
+                  {usageNote && <span class="mt-1 block text-ink-faint">{usageNote}</span>}
+                </td>
+                <td class="py-1.5 text-ink-muted">{why}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
 
-            <div class="mt-3 overflow-x-auto">
-              <table class="w-full min-w-[34rem] border-collapse text-xs">
-                <thead>
-                  <tr class="text-left text-ink-faint">
-                    <th class="py-1 pr-3 font-medium">Token</th>
-                    <th class="py-1 pr-3 font-medium">Light</th>
-                    <th class="py-1 font-medium">Dark</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {candidate.tokens.map((swatch) => (
-                    <tr class="border-t border-rule">
-                      <td class="py-1 pr-3 font-mono text-ink-muted">{swatch.token}</td>
-                      <td class="py-1 pr-3">
-                        <span class="flex items-center gap-2">
-                          <span
-                            class="inline-block h-5 w-9 shrink-0 border border-border"
-                            style={`background-color:${swatch.light}`}
-                          />
-                          <code>{swatch.light}</code>
+  {/* ===================================================================
+      4. Palette candidates
+      =================================================================== */}
+  <section class="mt-14 border-t border-rule pt-8">
+    <h2 class="text-xl font-semibold tracking-tight">4. Palette candidates</h2>
+    <p class="mt-2 max-w-prose text-sm text-ink-muted">
+      Rows are the roles every candidate is judged against; each column shows a candidate's
+      light swatch over its dark one. <strong class="text-ink">Pumpkin is live</strong> (its wallpaper now comes from <code class="text-ink">Wallpaper.tsx</code>).{' '}
+      <strong class="text-ink">Clean room</strong> is new here: every role a literal step off
+      just the two live 500s (<code class="text-ink">leaf-500</code>, one neutral ramp built
+      from them) — nothing interpolated or hand-picked. "—" is a role the candidate never
+      defined; Pumpkin and Fallen Leaf predate <code class="text-ink">chrome</code>,{' '}
+      <code class="text-ink">ink-muted</code>, <code class="text-ink">ink-faint</code>,{' '}
+      <code class="text-ink">on-fill</code> and <code class="text-ink">rule</code> as separate
+      ideas.
+    </p>
+
+    <div class="mt-4 overflow-x-auto">
+      <table class="w-full min-w-[36rem] border-collapse text-xs">
+        <thead>
+          <tr class="text-left text-ink-faint">
+            <th class="py-1 pr-3 font-medium">Role</th>
+            {candidateColumns.map((candidate) => (
+              <th class="py-1 pr-3 font-medium">
+                {candidate.name}
+                {candidate.live && (
+                  <span class="ml-1.5 border border-accent bg-accent-sunk px-1 py-0.5 text-[0.6rem] font-normal uppercase tracking-wide text-accent-ink">
+                    live
+                  </span>
+                )}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {
+            requiredTokenRoles.map((role) => (
+              <tr class="border-t border-rule align-top">
+                <td class="py-1.5 pr-3 font-mono text-ink-muted">{role.label}</td>
+                {candidateColumns.map((candidate) => {
+                  const light = candidate.roleHex(role.key, 'light');
+                  const dark = candidate.roleHex(role.key, 'dark');
+                  return (
+                    <td class="py-1.5 pr-3">
+                      {light && dark ? (
+                        <span class="flex flex-col gap-1">
+                          <span class="flex items-center gap-1.5">
+                            <span class="inline-block h-4 w-7 shrink-0 border border-border" style={`background-color:${light}`} />
+                            <code class="text-ink-faint">{light}</code>
+                          </span>
+                          <span class="flex items-center gap-1.5">
+                            <span class="inline-block h-4 w-7 shrink-0 border border-border" style={`background-color:${dark}`} />
+                            <code class="text-ink-faint">{dark}</code>
+                          </span>
                         </span>
-                      </td>
-                      <td class="py-1">
-                        <span class="flex items-center gap-2">
-                          <span
-                            class="inline-block h-5 w-9 shrink-0 border border-border"
-                            style={`background-color:${swatch.dark}`}
-                          />
-                          <code>{swatch.dark}</code>
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </article>
-        ))
+                      ) : (
+                        <span class="text-ink-faint">—</span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  {/* ===================================================================
+      5. Tokens in use
+      =================================================================== */}
+  <section class="mt-14 border-t border-rule pt-8">
+    <h2 class="text-xl font-semibold tracking-tight">5. Tokens in use</h2>
+    <p class="mt-2 max-w-prose text-sm text-ink-muted">
+      The same three candidates, rendered: a window (title bar, body text, a link, a border) on
+      a desktop wallpaper with a shortcut. Light and dark side by side.
+    </p>
+
+    <div class="mt-6 flex flex-col gap-8">
+      {
+        candidateColumns.map((candidate) => {
+          const light = mockupColours(candidate, 'light');
+          const dark = mockupColours(candidate, 'dark');
+          return (
+            <article>
+              <h3 class="font-semibold">
+                {candidate.name}
+                {candidate.live && (
+                  <span class="ml-2 border border-accent bg-accent-sunk px-1.5 py-0.5 text-xs font-normal uppercase tracking-wide text-accent-ink">
+                    live
+                  </span>
+                )}
+              </h3>
+              <div class="mt-3 grid gap-4 sm:grid-cols-2">
+                {[
+                  { label: 'light', colours: light },
+                  { label: 'dark', colours: dark },
+                ].map(({ label, colours }) => (
+                  <div>
+                    <div class="mb-1.5 text-[0.65rem] uppercase tracking-wide text-ink-faint">{label}</div>
+                    <div class="flex items-start gap-3 border border-rule p-4" style={`background-color:${colours.desktop}`}>
+                      <div class="flex w-14 flex-col items-center gap-1 text-center" style={`color:${colours.shortcutInk}`}>
+                        <div class="size-6 border" style={`border-color:${colours.shortcutInk}`} />
+                        <span class="text-[0.65rem]">About</span>
+                      </div>
+                      <div class="min-w-0 flex-1 border" style={`border-color:${colours.border}`}>
+                        <div class="px-2.5 py-1.5 text-xs font-semibold" style={`background-color:${colours.fill};color:${colours.onFill}`}>
+                          techytimms.com
+                        </div>
+                        <div class="px-2.5 py-2 text-xs" style={`background-color:${colours.surface};color:${colours.ink}`}>
+                          Body text sits here. <span style={`color:${colours.accentInk}`} class="underline">A link</span>.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {(light.usedFallback || dark.usedFallback) && (
+                <p class="mt-1.5 text-xs text-ink-faint">
+                  No <code class="text-ink-muted">on-fill</code> role recorded — title-bar text uses the light{' '}
+                  <code class="text-ink-muted">surface</code>, shortcut labels use <code class="text-ink-muted">ink</code>.
+                </p>
+              )}
+            </article>
+          );
+        })
       }
     </div>
+  </section>
+
+  {/* ===================================================================
+      6. Contrast
+      =================================================================== */}
+  <section class="mt-14 border-t border-rule pt-8">
+    <h2 class="text-xl font-semibold tracking-tight">6. Contrast</h2>
+    <p class="mt-2 max-w-prose text-sm text-ink-muted">
+      APCA Lc per candidate, light and dark, against the target for that pair's role (body text
+      75, secondary 60, tertiary 45, boundaries and marks 30). Lc is signed — positive is
+      dark-on-light, negative light-on-dark; pass/fail compares magnitude. "—" is a role the
+      candidate never defined.
+    </p>
+
+    <div class="mt-4 overflow-x-auto">
+      <table class="w-full min-w-[52rem] border-collapse text-xs">
+        <thead>
+          <tr class="text-left text-ink-faint">
+            <th class="py-1 pr-3 font-medium">Pair</th>
+            <th class="py-1 pr-3 font-medium">Target</th>
+            {candidateColumns.map((candidate) => (
+              <th class="py-1 pr-3 font-medium" colspan={2}>{candidate.name}</th>
+            ))}
+          </tr>
+          <tr class="text-left text-ink-faint">
+            <th class="py-1 pr-3 font-medium" />
+            <th class="py-1 pr-3 font-medium" />
+            {candidateColumns.map(() => (
+              <>
+                <th class="py-1 pr-3 font-medium">light</th>
+                <th class="py-1 pr-3 font-medium">dark</th>
+              </>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {
+            contrastRows.map((row) => (
+              <tr class="border-t border-rule">
+                <td class="py-1.5 pr-3 font-mono text-ink-muted">{row.label}</td>
+                <td class="py-1.5 pr-3 text-ink-faint">{row.target}</td>
+                {row.cells.map((cell) => (
+                  <>
+                    <td class={`py-1.5 pr-3 ${cell.light !== null && Math.abs(cell.light) < row.target ? 'text-accent-ink' : 'text-ink'}`}>
+                      {cell.light === null ? '—' : cell.light.toFixed(1)}
+                    </td>
+                    <td class={`py-1.5 pr-3 ${cell.dark !== null && Math.abs(cell.dark) < row.target ? 'text-accent-ink' : 'text-ink'}`}>
+                      {cell.dark === null ? '—' : cell.dark.toFixed(1)}
+                    </td>
+                  </>
+                ))}
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  {/* ===================================================================
+      7. Why these colours
+      =================================================================== */}
+  <section class="mt-14 border-t border-rule pt-8">
+    <h2 class="text-xl font-semibold tracking-tight">7. Why these colours</h2>
+    <p class="mt-2 max-w-prose text-sm text-ink-muted">
+      Every hue the live tokens actually use, minus the five (soon-to-be-deleted) link hues —
+      found by grouping every non-link token by its own hue, not by a hand-kept list.
+    </p>
+
+    <div class="mt-4 flex flex-wrap items-start gap-10">
+      <figure>
+        <svg viewBox={`0 0 ${wheelSize} ${wheelSize}`} width={wheelSize} height={wheelSize} class="max-w-full" role="img" aria-labelledby="hue-wheel-title">
+          <title id="hue-wheel-title">Hue wheel: every hue a live, non-link token uses, marked by angle around a full sRGB hue ring.</title>
+          {wheelTicks.map((tick) => (
+            <line x1={tick.x1} y1={tick.y1} x2={tick.x2} y2={tick.y2} stroke={tick.hex} stroke-width="6" />
+          ))}
+          <circle cx={wheelCenter} cy={wheelCenter} r={wheelRingInner} fill="none" stroke="var(--color-border)" stroke-width="1" />
+          <circle cx={wheelCenter} cy={wheelCenter} r={wheelRingOuter} fill="none" stroke="var(--color-border)" stroke-width="1" />
+          {wheelMarkers.map((marker) => (
+            <g>
+              <line x1={marker.dot.x} y1={marker.dot.y} x2={marker.label.x} y2={marker.label.y} stroke="var(--color-ink-faint)" stroke-width="1" />
+              <circle cx={marker.dot.x} cy={marker.dot.y} r="6" fill={marker.representativeHex} stroke="var(--color-ink)" stroke-width="1.5" />
+              <text x={marker.label.x} y={marker.label.y} text-anchor={marker.anchor} dominant-baseline={marker.baseline} font-size="11" fill="var(--color-ink)">
+                {marker.hue}° {marker.name}
+              </text>
+            </g>
+          ))}
+        </svg>
+        <figcaption class="mt-2 max-w-xs text-xs text-ink-faint">
+          Five hues survive without the links: leaf (80), neutral/ink (85), pumpkin (55, also
+          dark-mode accent), accent (40), and hue 45 — dark-mode <code class="text-ink-muted">desktop-ink</code> only, no ramp of its own.
+        </figcaption>
+      </figure>
+
+      <figure class="min-w-0">
+        <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} width={chartWidth} height={chartHeight} class="max-w-full" role="img" aria-labelledby="hue-chart-title">
+          <title id="hue-chart-title">Lightness against chroma: each hue's sRGB gamut ceiling, with every non-link token plotted against it.</title>
+          {chartChromaTicks.map((chroma) => (
+            <g>
+              <line x1={chartLeft} y1={chartY(chroma)} x2={chartWidth - chartRight} y2={chartY(chroma)} stroke="var(--color-rule)" stroke-width="1" />
+              <text x={chartLeft - 6} y={chartY(chroma)} text-anchor="end" dominant-baseline="middle" font-size="10" fill="var(--color-ink-faint)">{chroma.toFixed(2)}</text>
+            </g>
+          ))}
+          {chartLightnessTicks.map((lightness) => (
+            <g>
+              <line x1={chartX(lightness)} y1={chartTop} x2={chartX(lightness)} y2={chartHeight - chartBottom} stroke="var(--color-rule)" stroke-width="1" />
+              <text x={chartX(lightness)} y={chartHeight - chartBottom + 14} text-anchor="middle" font-size="10" fill="var(--color-ink-faint)">{lightness}%</text>
+            </g>
+          ))}
+          {chartCurves.map((curve) => (
+            <polyline points={curve.points} fill="none" stroke={curve.stroke} stroke-width="1.5" opacity="0.85" />
+          ))}
+          {chartPoints.map((point) => (
+            <circle cx={point.cx} cy={point.cy} r="2.75" fill={point.hex} stroke="var(--color-surface)" stroke-width="0.75">
+              <title>{point.name} ({point.theme}) — oklch({formatOklch(point.oklch)})</title>
+            </circle>
+          ))}
+          <text x={chartLeft} y={12} font-size="10" fill="var(--color-ink-faint)">chroma</text>
+          <text x={chartWidth - chartRight} y={chartHeight - 4} text-anchor="end" font-size="10" fill="var(--color-ink-faint)">lightness →</text>
+        </svg>
+        <figcaption class="mt-2 max-w-md text-xs text-ink-faint">
+          One line per hue (its gamut ceiling, sampled by search); one dot per real token, light
+          and dark.
+        </figcaption>
+      </figure>
+    </div>
+
+    <h3 class="mt-8 text-base font-semibold">Open issues</h3>
+    <ul class="mt-2 max-w-prose list-disc space-y-1.5 pl-5 text-sm text-ink-muted">
+      <li><code class="text-ink">accent</code> changes hue between themes (40 light, 55 dark — pumpkin's own hue) — see Main colours.</li>
+      <li><code class="text-ink">accent-ink</code> is lighter than <code class="text-ink">accent</code> in light mode, the wrong way round for a token that exists to be the darker, text-safe half.</li>
+      <li><code class="text-ink">ground</code> and <code class="text-ink">window-edge</code> are defined and unused — see Tokens.</li>
+      <li>
+        The accent-on-wallpaper 3:1 margin (design-system.md §1.3) was measured against a flat{' '}
+        <code class="text-ink">--color-desktop</code> fill. The live wallpaper is now{' '}
+        <code class="text-ink">Wallpaper.tsx</code>'s gradient-plus-noise-plus-lighting composite,
+        which was never re-measured against it.
+      </li>
+    </ul>
   </section>
 </BaseLayout>

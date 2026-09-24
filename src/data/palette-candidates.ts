@@ -25,6 +25,7 @@ export const paletteCandidates: PaletteCandidate[] = [
     name: "Pumpkin",
     blurb: "Bright pumpkin wallpaper, burnt-umber accent. The most literal reading of autumn.",
     mode: "light-ground",
+    live: true,
     tokens: [
       {
         token: "desktop",
@@ -82,7 +83,6 @@ export const paletteCandidates: PaletteCandidate[] = [
     name: "FallenLeaf",
     blurb: "Pale straw wallpaper, deep russet accent. The lightest and calmest of the two.",
     mode: "light-ground",
-    live: true,
     tokens: [
       {
         token: "desktop",

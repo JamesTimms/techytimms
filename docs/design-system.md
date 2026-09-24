@@ -6,197 +6,95 @@ implements. If the two disagree, the blueprint's section 6 wins and this file
 is wrong.
 
 Every contrast ratio below was computed, not estimated — OKLCH converted to
-sRGB and run through the WCAG relative-luminance formula. All 42 checked pairs
-pass.
+sRGB and run through the WCAG relative-luminance formula. `/styleguide` is the
+live source of truth for the palette: it parses `global.css` at build time, so
+it can't go stale the way a hand-copied number in this file can.
 
 ---
 
 ## 1. Palette
 
-**Live scheme: Fallen Leaf.** Pale straw wallpaper, warm greys at **hue 85**,
-deep russet accent at **hue 45**. The greys are low-chroma warm rather than
-neutral, which is what makes them read as paper rather than as dirty grey.
+**Live scheme: Fallen Leaf.** Pale straw wallpaper, warm greys at **hue 85**.
+The accent changes hue by theme — **hue 40 light, hue 55 (pumpkin's own hue)
+dark** — see Open issues. Neutrals stay low-chroma warm rather than achromatic,
+which is what makes them read as paper rather than as dirty grey.
 
-The neutrals and the accent no longer share a hue, and that is deliberate: the
-accent has to clear 3:1 against the wallpaper for the desktop to be able to show
-selection, and on a pale wallpaper that needs the accent dark and saturated.
-Hue is the free variable — see §1.3.
+An alternative scheme (Pumpkin) is specified in `docs/palette-exploration.md`
+and rendered as swatches at `/styleguide`, alongside a clean-room candidate
+built from nothing but the two live ramps. Swapping is a block replacement:
+everything colour-bearing in `global.css` sits between the two `PALETTE`
+markers.
 
-Six alternative schemes are specified in `docs/palette-exploration.md` and
-rendered as swatches at `/styleguide`, where the live one is badged. Swapping is
-a block replacement: everything colour-bearing in `global.css` sits between the
-two `PALETTE` markers.
+### Goals and dials
+
+| Dial | Rule |
+|---|---|
+| Priority | Contrast first — the APCA pair fixes lightness before chroma or hue move |
+| Order | L → C → H, always in that order |
+| 1 JND | 0.02 in OKLCH — CSS Color 4's own gamut-mapping threshold |
+| Chroma | Capped by the gamut; peaks at each hue's own cusp lightness, not a fixed L |
+| Hue | Only visible in proportion to chroma — drift at low chroma is inert |
+| Hue drift | Stays inside the colour family it started in |
+
+### The ramps
+
+Two live, hand-built, ten-step (50–900) OKLCH ramps — `leaf` (hue 80) and
+`pumpkin` (hue 55) — plus two comparison-only ramps at the same ten lightness
+steps for hues with no ramp of their own: `neutral / ink` (hue 85) and
+`accent` (hue 40, light mode's own accent hue). Full values, huetone links and
+every deviation between a semantic token and its nearest ramp step are at
+`/styleguide` §2 — generated from `global.css`, not copied here, so they can't
+drift out of sync with it.
 
 ### Tokens
 
-| Token | Light | Dark | Role |
-|---|---|---|---|
-| `ground` | `oklch(98.5% 0.006 85)` | `oklch(17% 0.012 85)` | Contrast baseline; no current markup use |
-| `surface` | `oklch(100% 0 85)` | `oklch(21% 0.014 85)` | Panel and window fill |
-| `sunk` | `oklch(95.5% 0.012 85)` | `oklch(14% 0.010 85)` | Inset areas, code blocks, title bars |
-| `rule` | `oklch(88.5% 0.016 85)` | `oklch(32% 0.018 85)` | Decorative dividers only |
-| `border` | `oklch(63% 0.018 85)` | `oklch(52% 0.018 85)` | Panel borders. **Not** the window's outer edge |
-| `window-edge` | `oklch(47% 0.018 85)` | `oklch(55% 0.018 85)` | Window outer edge on the wallpaper, where no bevel draws it |
-| `ink-faint` | `oklch(55.5% 0.024 85)` | `oklch(72% 0.020 85)` | Tertiary text: dates, metadata |
-| `ink-muted` | `oklch(47% 0.028 85)` | `oklch(82% 0.020 85)` | Secondary body text |
-| `ink` | `oklch(24% 0.030 85)` | `oklch(93% 0.014 85)` | Primary text |
-| `accent` | `oklch(48% 0.130 45)` | `oklch(81% 0.110 60)` | Marks, rings, borders — **never text** |
-| `accent-ink` | `oklch(47% 0.110 45)` | `oklch(82% 0.105 60)` | Accent **text** |
-| `accent-sunk` | `oklch(95.5% 0.024 45)` | `oklch(26% 0.035 60)` | Tinted panel fill |
-| `desktop` | `oklch(88% 0.032 80)` | `oklch(14% 0.025 80)` | The wallpaper — nearest `leaf-100` in light, exactly `leaf-900` in dark. See §4 |
-| `desktop-ink` | `oklch(24% 0.022 80)` | `oklch(97% 0.006 60)` | Shortcut labels. **Flips** |
-| `bevel-light` | `oklch(100% 0 85)` | `oklch(56% 0.020 85)` | Raised top/left edge |
-| `bevel-dark` | `oklch(38% 0.020 85)` | `oklch(8% 0.010 85)` | Raised bottom/right edge |
+| Token | Purpose | Why this, not the alternative |
+|---|---|---|
+| `ground` | Contrast baseline text was solved against | vs `surface` filling the same role: a future surface between wallpaper and panel needs its own reference point. **0 uses in real markup — removal candidate.** |
+| `surface` | Window/panel fill | vs one fill shared with `sunk`: an inset region has to read as recessed against it |
+| `sunk` | Inset regions — title bars, code blocks, empty states | vs no inset level: depth here comes from borders alone (no shadows) |
+| `rule` | Decorative divider, no boundary meaning | vs `border` for every divider: `border` is deliberately dark to clear 3:1 (WCAG 1.4.11); a hairline that means nothing shouldn't borrow that |
+| `border` | Panel/UI boundary, 3:1 minimum | vs a plain hairline: 1.4.11 requires boundaries to clear 3:1 |
+| `ink-faint` | Tertiary text — dates, metadata | vs `ink-muted` doing both jobs: secondary and tertiary text need different floors |
+| `ink-muted` | Secondary body text | see above |
+| `ink` | Primary text | — |
+| `accent` | Marks, rings, borders — never text | vs one value for marks and text: saturated enough to read as a mark, it doesn't reach 4.5:1 as text |
+| `accent-ink` | Accent-coloured text — links, current-page state | The text-safe half of the pair above. **Currently lighter than `accent`, not darker — see Open issues.** |
+| `accent-sunk` | Tinted panel fill — callouts, active dock state | vs plain `sunk`: needs to read as accent-flavoured |
+| `bar-ink-muted` | Text/icons on a bar whose fill runs opposite the site theme | vs reusing `ink-muted`: that assumes a surface matching the current theme; the bars invert |
+| `bar-accent` | Marks/icons on that inverted bar fill | same inversion, for accent |
+| `desktop` | The wallpaper fill | vs `ground`: the wallpaper never carries text, so retuning it can't move the text baseline |
+| `desktop-ink` | Shortcut labels — the only text the wallpaper carries | vs `ink`: tuned against `ground`; the wallpaper sits at a different, theme-flipping lightness |
+| `window-edge` | Window's outer edge on the wallpaper, where no bevel draws it | vs a borderless window: without it, face and wallpaper separate by lightness alone. **0 uses — defined, referenced nowhere — removal candidate.** |
+| `bevel-light` | Raised top/left edge | vs one border colour: a raised control needs only one of its two edges to clear 3:1, and which one flips with the surround/theme |
+| `bevel-dark` | Raised bottom/right edge | same pair, other side |
 
-`accent-sunk` is published in `palette-exploration.md` at chroma 0.028, which
-clips red in sRGB. 0.024 is the most that fits and costs 0.04 of contrast.
+Both usage counts are recomputed by grep, not carried over from an earlier
+draft — see `/styleguide` §3 for the method.
 
-### `desktop` is not `ground`
+### Open issues
 
-`ground` is the contrast baseline — seventeen pairs per theme are measured
-against it. `desktop` is the wallpaper the window sits on, and it never carries
-text. They are separate tokens so that retuning the wallpaper cannot silently
-invalidate the text contrast table.
+- **`accent` changes hue between themes** — hue 40 light, hue 55 (pumpkin's
+  own hue) dark, roughly 15° / 1.6 JND apart.
+- **`accent-ink` is lighter than `accent`** in light mode — the wrong way
+  round for a token whose purpose is to be the darker, text-safe half.
+- **`ground` and `window-edge` are defined and unused.**
+- **The accent-on-wallpaper 3:1 margin below was measured against a flat
+  `--color-desktop` fill.** The live wallpaper is now `Wallpaper.tsx`'s
+  gradient-plus-noise-plus-lighting composite, never re-measured against it.
 
-`ground` is currently referenced by no markup at all; `body` paints `desktop`.
-It stays because it is the baseline the type tokens were solved against, and
-because any future surface that sits between the wallpaper and a panel will
-want it.
+### Accent on the wallpaper is a lightness problem
 
-### Two tokens that need explaining
-
-**`border` vs `rule`.** `border` is deliberately dark — mid-grey in light mode,
-not a hairline. Two reasons, and they agree: WCAG 1.4.11 requires 3:1 for UI
-boundaries, and the design's whole thesis is *visible borders, flat fills, no
-shadows*. A hairline would fail the guideline and undersell the look. `rule` is
-the hairline, reserved for decorative separation where no boundary is being
-communicated — it is exempt from 1.4.11 precisely because it carries no meaning.
-
-If you find yourself reaching for `rule` to separate two panels, use `border`.
-`rule` is for dividing a list, not for defining an object.
-
-**`accent` vs `accent-ink`.** Amber at the chroma that looks right as a mark
-does not reach 4.5:1 as text on a light ground. `accent` is for underlines,
-focus rings, borders and marks. `accent-ink` is the only accent value allowed
-on text. This split is the most common way a palette that looks fine fails an
-audit.
-
-### Verified contrast
-
-Light theme:
-
-| Pair | Ratio | Min | |
-|---|---|---|---|
-| `ink` on `ground` | 15.80 | 4.5 | ✅ |
-| `ink` on `surface` | 16.51 | 4.5 | ✅ |
-| `ink` on `sunk` | 14.68 | 4.5 | ✅ |
-| `ink-muted` on `ground` | 6.56 | 4.5 | ✅ |
-| `ink-muted` on `surface` | 6.85 | 4.5 | ✅ |
-| `ink-muted` on `sunk` | 6.10 | 4.5 | ✅ |
-| `ink-faint` on `ground` | 4.56 | 4.5 | ✅ |
-| `ink-faint` on `surface` | 4.77 | 4.5 | ✅ |
-| `accent-ink` on `ground` | 7.28 | 4.5 | ✅ |
-| `accent-ink` on `surface` | 7.61 | 4.5 | ✅ |
-| `accent-ink` on `accent-sunk` | 6.55 | 4.5 | ✅ |
-| `ink` on `accent-sunk` | 14.22 | 4.5 | ✅ |
-| `border` on `surface` | 3.51 | 3.0 | ✅ |
-| `border` on `ground` | 3.36 | 3.0 | ✅ |
-| `border` on `sunk` | 3.12 | 3.0 | ✅ |
-| `accent` on `ground` | 4.21 | 3.0 | ✅ |
-| `accent` on `surface` | 4.40 | 3.0 | ✅ |
-
-Dark theme:
-
-| Pair | Ratio | Min | |
-|---|---|---|---|
-| `ink` on `ground` | 15.55 | 4.5 | ✅ |
-| `ink` on `surface` | 14.41 | 4.5 | ✅ |
-| `ink` on `sunk` | 16.18 | 4.5 | ✅ |
-| `ink-muted` on `ground` | 10.95 | 4.5 | ✅ |
-| `ink-muted` on `surface` | 10.15 | 4.5 | ✅ |
-| `ink-muted` on `sunk` | 11.40 | 4.5 | ✅ |
-| `ink-faint` on `ground` | 7.71 | 4.5 | ✅ |
-| `ink-faint` on `surface` | 7.14 | 4.5 | ✅ |
-| `accent-ink` on `ground` | 10.08 | 4.5 | ✅ |
-| `accent-ink` on `surface` | 9.34 | 4.5 | ✅ |
-| `accent-ink` on `accent-sunk` | 8.70 | 4.5 | ✅ |
-| `ink` on `accent-sunk` | 13.43 | 4.5 | ✅ |
-| `border` on `surface` | 3.21 | 3.0 | ✅ |
-| `border` on `ground` | 3.46 | 3.0 | ✅ |
-| `border` on `sunk` | 3.61 | 3.0 | ✅ |
-| `accent` on `ground` | 9.39 | 3.0 | ✅ |
-| `accent` on `surface` | 8.71 | 3.0 | ✅ |
-
-Wallpaper and dock pairs:
-
-| Pair | Light | Dark | Min | |
-|---|---|---|---|---|
-| `ink` on `desktop` (shortcut label) | 6.60 | 16.28 | 4.5 | ✅ |
-| `surface` on `ink` (selected label) | 16.51 | 14.41 | 4.5 | ✅ |
-| `bevel-light` on `desktop` | 2.50 | 3.95 | 3.0 | one edge |
-| `bevel-dark` on `desktop` | 4.02 | 1.04 | 3.0 | one edge |
-| `bevel-light` on `sunk` | 1.12 | 3.92 | 3.0 | one edge |
-| `bevel-dark` on `sunk` | 8.93 | 1.04 | 3.0 | one edge |
-| `ink` on `sunk` | 14.68 | 16.18 | 4.5 | ✅ |
-| `ink-muted` on `sunk` | 6.10 | 11.40 | 4.5 | ✅ |
-| `border` on `sunk` | 3.12 | 3.61 | 3.0 | ✅ |
-
-`ink-faint` on `ground` at 4.56 (light) is the tightest pair in the system. If
-you darken `ground` or lighten `ink-faint`, recheck it.
-
-### 1.3 Accent on the wallpaper is a lightness problem
-
-**`accent` on `desktop` is 3.68 in light mode and 10.52 in dark** — usable in
-both, where earlier schemes could not manage it at all.
+**`accent` on `desktop` clears 3:1 in both themes** — usable, where earlier
+schemes could not manage it at all (see the margin caveat above).
 
 Two earlier schemes failed this pair, and the first diagnosis was wrong. It
 blamed the shared hue. Sweeping the wallpaper across the entire hue wheel at
 fixed lightness moves the ratio by less than 0.1; sweeping *lightness* at fixed
-hue moves it from 1.05 to 4.6. **It is entirely a lightness collision.**
-
-The rule that falls out, and the one to check before retuning anything:
-
-> An accent needs roughly **26–30 points of lightness separation** from the
-> wallpaper to clear 3:1. Which direction does not matter — darker on a pale
-> wallpaper, lighter on a dark one.
-
-Fallen Leaf takes the first route: an 80% wallpaper with a 48% accent, 32 points
-apart. That is the tightest margin in this scheme, so recheck it before moving
-either token.
-
-A corollary worth knowing: a **mid-lightness wallpaper around 44–55% is the
-worst case**, too light to carry light text and too dark to carry dark text. The
-workable regions are genuinely pale or genuinely dark, not the middle.
-
-**`ink-faint` is not usable on `sunk` in light mode** — it lands at 4.24. The
-dock's side regions use `ink-muted` for that reason. `sunk` is a darker
-fill than `ground`, so any pair verified only against `ground` needs rechecking
-before it moves onto a sunk surface.
-
-Dark-theme separation between the wallpaper and the fills above it is low as a
-WCAG ratio, and that ratio is a poor model at the dark end of the range. The
-perceptual gap is real (21% and 14% against 13.5% lightness), but the boundary
-that carries the signal is the raised edge at 3.95, not the fill.
-
-### Extending to full ramps later
-
-Plan §9 defers hand-built ramps of ~5 steps per hue. The tokens above are
-*already* a 5-step neutral ramp with semantic names rather than numeric ones:
-
-```
-surface → ground → sunk → rule → border → ink-faint → ink-muted → ink
-```
-
-When the ramps arrive, the change is to add a numeric layer underneath and
-redefine the semantic tokens as aliases:
-
-```css
---neutral-0: …;  --neutral-1: …;  /* etc. */
---color-ground: var(--neutral-1);
-```
-
-Nothing in the markup changes, because the markup only ever names semantic
-tokens. That is the reason for the rule below.
+hue moves it far more. **It is entirely a lightness collision:** an accent
+needs roughly 26–30 points of lightness separation from the wallpaper to clear
+3:1, in either direction. A mid-lightness wallpaper (44–55%) is the worst
+case — too light for light text, too dark for dark text.
 
 > **Never use a raw Tailwind palette colour in markup.** Not `text-stone-600`,
 > not `border-gray-200`. Only the semantic tokens. This is what makes a palette
@@ -495,8 +393,8 @@ both-themes wallpaper:
   with the ground, because it *is* the ground. Win98 marked selection the same
   way, so the constraint and the period behaviour agree.
 
-`accent` is now usable on the wallpaper at 3.69, where earlier schemes could
-not manage it — see §1.3. Selection does not use it, because inverting the
+`accent` is now usable on the wallpaper (see §1's "Accent on the wallpaper"),
+where earlier schemes could not manage it. Selection does not use it, because inverting the
 label is both more period and more robust to a wallpaper change.
 
 | Pair | Light | Dark | Min | |

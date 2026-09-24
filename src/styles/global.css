@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -8,7 +8,7 @@
 @custom-variant positioned (html[data-positioned=true] &);
 
 /* ==========================================================================
- * PALETTE — Fallen Leaf
+ * PALETTE — Pumpkin
  *
  * Pale straw wallpaper, warm greys at hue 85, deep russet accent at hue 45.
  * Candidate schemes live in docs/palette-exploration.md and are rendered as
@@ -34,11 +34,11 @@
      for the desktop to show selection at all, and that is a lightness problem,
      not a hue one: at 48% against an 80% wallpaper it reaches 3.68. Sweeping
      hue moves that number by less than 0.1. */
-  --color-accent: oklch(48% 0.13 45);
-  --color-accent-ink: oklch(47% 0.11 45);
+  --color-accent: oklch(42% 0.125 40);
+  --color-accent-ink: oklch(47% 0.11 40);
   /* 0.028 as published clips red in sRGB; 0.024 is the most chroma that fits,
      and costs 0.04 of contrast. */
-  --color-accent-sunk: oklch(95.5% 0.024 45);
+  --color-accent-sunk: oklch(95.5% 0.03 55);
 
   /* ----------------------------------------------------------------------
    * Window ramps. Two palettes, ten OKLCH steps each on a conventional
@@ -113,7 +113,7 @@
      Not a rename of `ink-muted`/`accent` — those still serve every normal
      surface, which is why they cannot also serve this inverted one. */
   --color-bar-ink-muted: oklch(82% 0.02 85);
-  --color-bar-accent: oklch(81% 0.11 60);
+  --color-bar-accent: oklch(80% 0.115 55);
 
   /* The wallpaper the window sits on. Deliberately not `ground`: ground is the
      contrast baseline every text pair is measured against, and the wallpaper is
@@ -124,11 +124,11 @@
      colour itself: the main colour is now the window's identity, and a
      wallpaper still wearing it would leave the window nothing of its own to
      be. */
-  --color-desktop: oklch(88% 0.032 80);
+  --color-desktop: oklch(88% 0.045 55);
 
   /* Flips with the theme, unlike the dark-wallpaper schemes: pale straw cannot
      carry light text. Shortcut labels are the only text on the wallpaper. */
-  --color-desktop-ink: oklch(24% 0.022 80);
+  --color-desktop-ink: oklch(24% 0.03 55);
 
   /* The dock's edge against the wallpaper. It cannot be `border`: that is tuned to sit on near-white panels
      at 3.50, and the same value against this pale wallpaper is 1.87. A screen
@@ -167,19 +167,19 @@
   --color-ink-muted: oklch(82% 0.02 85);
   --color-ink: oklch(93% 0.014 85);
 
-  --color-accent: oklch(81% 0.11 60);
-  --color-accent-ink: oklch(82% 0.105 60);
-  --color-accent-sunk: oklch(26% 0.035 60);
+  --color-accent: oklch(80% 0.115 55);
+  --color-accent-ink: oklch(82% 0.105 55);
+  --color-accent-sunk: oklch(25% 0.035 55);
 
   /* The bar tokens invert: in dark mode the bar's own fill is light (step
      50–100), so it needs light mode's dark ink and accent, upside down. */
   --color-bar-ink-muted: oklch(47% 0.028 85);
-  --color-bar-accent: oklch(48% 0.13 45);
+  --color-bar-accent: oklch(42% 0.125 40);
 
   /* `leaf-900`, exactly — the step the title bar also uses. The two only ever
      meet at the window's top edge, where the border separates them. */
-  --color-desktop: oklch(14% 0.025 80);
-  --color-desktop-ink: oklch(97% 0.006 60);
+  --color-desktop: oklch(14% 0.03 55);
+  --color-desktop-ink: oklch(97% 0.008 45);
 
   /* 52% is the boundary against the near-black wallpaper; 55% buys headroom. */
   --color-window-edge: oklch(55% 0.018 85);
@@ -195,7 +195,7 @@
   --color-link-4: oklch(76% 0.11 95);
   --color-link-5: oklch(76% 0.11 125);
 }
-/* ========================= end PALETTE — Fallen Leaf ====================== */
+/* =========================== end PALETTE — Pumpkin ======================== */
 
 @theme {
   --radius-panel: 0px;
@@ -248,174 +248,131 @@
   }
 }
 
-@layer components {
-  /* Base rules lived in Tooltip.astro's scoped block; the component is now
-     .tsx, which has no scoped styles, so they belong here. Dock.astro keeps
-     only the per-position overrides. */
-  .tooltip-anchor {
-    position: relative;
-  }
-
-  .tooltip {
-    position: absolute;
-    inset: var(--tooltip-inset, auto auto calc(100% + 0.5rem) 50%);
-    transform: var(--tooltip-shift, translateX(-50%));
-    z-index: 30;
-    width: max-content;
-    max-width: 12rem;
-    border: 1px solid var(--color-border);
-    background-color: var(--color-surface);
-    color: var(--color-ink);
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    line-height: 1.2;
-    white-space: nowrap;
-    pointer-events: none;
-    opacity: 0;
-    visibility: hidden;
-    transition:
-      opacity 0.12s ease-out,
-      visibility 0.12s;
-  }
-
-  .tooltip-anchor:hover > .tooltip,
-  .tooltip-anchor:focus-visible > .tooltip,
-  .tooltip-anchor:has(:focus-visible) > .tooltip {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  /* Base rules lived in ThemeToggle.astro's scoped block; the component is
-     now .tsx, which has no scoped styles, so they belong here. Sizing and
-     layout move to Tailwind utilities on the component; only the
-     custom-property plumbing and colour states stay here. */
-  .theme-toggle {
-    --toggle-hover-ink: var(--color-leaf-50);
-    transition: background-color 0.15s ease-in-out;
-  }
-
-  .dark .theme-toggle {
-    --toggle-hover-ink: var(--color-leaf-900);
-  }
-
-  .theme-toggle-sun,
-  .theme-toggle-moon {
-    transition: fill 0.15s ease-in-out;
-  }
-
-  .theme-toggle-sun {
-    fill: var(--color-bar-accent);
-  }
-
-  .theme-toggle-moon {
-    fill: var(--color-bar-ink-muted);
-  }
-
-  .theme-toggle:hover,
-  .theme-toggle:focus-visible,
-  .theme-toggle:active {
-    background-color: color-mix(in oklab, var(--toggle-hover-ink) 12%, transparent);
-  }
-
-  .theme-toggle:focus-visible {
-    outline: 2px solid var(--color-bar-accent);
-    outline-offset: 2px;
-  }
-
-  .theme-toggle:hover .theme-toggle-sun,
-  .theme-toggle:hover .theme-toggle-moon {
-    fill: var(--toggle-hover-ink);
-  }
-
-  .theme-toggle:focus-visible .theme-toggle-sun,
-  .theme-toggle:active .theme-toggle-sun {
-    fill: var(--color-accent);
-  }
-
-  .theme-toggle:focus-visible .theme-toggle-moon,
-  .theme-toggle:active .theme-toggle-moon {
-    fill: var(--color-ink);
-  }
-
-  /*
-   * One primitive. Cards, callouts, buttons and window frames are all variants.
-   * Square corners and hard borders throughout — depth comes from the bevel,
-   * never from a shadow.
-   */
-  .panel {
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-panel);
-    background-color: var(--color-surface);
-  }
-
-  .panel-sunk {
-    background-color: var(--color-sunk);
-  }
-
-  .panel-accent {
-    border-color: var(--color-accent);
-    background-color: var(--color-accent-sunk);
-  }
-
-  /*
-   * Windows 9x raised controls by painting the top and left edges light and the
-   * bottom and right edges dark. It reads as three-dimensional without a shadow,
-   * which is the constraint this design already has.
-   *
-   * The edges use the bevel tokens rather than surface/ink-faint. Those two
-   * invert in dark mode — ink-faint is lighter than surface there — which put
-   * the lit edge on the bottom right and made every control read as pressed.
-   *
-   * Two rings, not one: Win9x raised buttons are a 2px double bevel, outer
-   * light over inner light on the top left. The pseudo-element carries the
-   * inner ring so this stays a border effect rather than an inset shadow.
-   */
-  .panel-bevel {
-    position: relative;
-    border-radius: var(--radius-control);
-    border-top-color: var(--color-bevel-light);
-    border-left-color: var(--color-bevel-light);
-    border-bottom-color: var(--color-bevel-dark);
-    border-right-color: var(--color-bevel-dark);
-    background-color: var(--color-sunk);
-  }
-
-  .panel-bevel::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    border: 1px solid transparent;
-    border-top-color: var(--color-surface);
-    border-left-color: var(--color-surface);
-    border-bottom-color: var(--color-border);
-    border-right-color: var(--color-border);
-  }
-
-  .panel-bevel:active {
-    border-top-color: var(--color-bevel-dark);
-    border-left-color: var(--color-bevel-dark);
-    border-bottom-color: var(--color-bevel-light);
-    border-right-color: var(--color-bevel-light);
-  }
-
-  .panel-bevel:active::before {
-    border-top-color: var(--color-border);
-    border-left-color: var(--color-border);
-    border-bottom-color: var(--color-surface);
-    border-right-color: var(--color-surface);
-  }
-
+@utility pixel-icon {
   /*
    * Icons are pixel art at 16, 32 or 48px. Smoothing them on scale-up is what
    * makes period chrome look like a screenshot of itself.
    */
-  .pixel-icon {
-    image-rendering: pixelated;
-    flex-shrink: 0;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+/* Base rules lived in Tooltip.astro's scoped block; the component is now .tsx,
+   which has no scoped styles, so they belong here. Dock.astro keeps only the
+   per-position overrides. */
+@utility tooltip-anchor {
+  position: relative;
+
+  &:hover > .tooltip,
+  &:focus-visible > .tooltip,
+  &:has(:focus-visible) > .tooltip {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+@utility tooltip {
+  position: absolute;
+  inset: var(--tooltip-inset, auto auto calc(100% + 0.5rem) 50%);
+  transform: var(--tooltip-shift, translateX(-50%));
+  z-index: 30;
+  width: max-content;
+  max-width: 12rem;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.12s ease-out,
+    visibility 0.12s;
+}
+
+/* Sizing and layout are Tailwind utilities on the component; only the
+   custom-property plumbing and colour states stay here. */
+@utility theme-toggle {
+  --toggle-hover-ink: var(--color-leaf-50);
+  transition: background-color 0.15s ease-in-out;
+
+  .dark & {
+    --toggle-hover-ink: var(--color-leaf-900);
   }
 
+  &:hover,
+  &:focus-visible,
+  &:active {
+    background-color: color-mix(in oklab, var(--toggle-hover-ink) 12%, transparent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-bar-accent);
+    outline-offset: 2px;
+  }
+
+  &:hover .theme-toggle-icon {
+    fill: var(--toggle-hover-ink);
+  }
+
+  &:focus-visible .theme-toggle-sun,
+  &:active .theme-toggle-sun {
+    fill: var(--color-accent);
+  }
+
+  &:focus-visible .theme-toggle-moon,
+  &:active .theme-toggle-moon {
+    fill: var(--color-ink);
+  }
+}
+
+@utility theme-toggle-icon {
+  transition: fill 0.15s ease-in-out;
+}
+
+@utility theme-toggle-sun {
+  fill: var(--color-bar-accent);
+}
+
+@utility theme-toggle-moon {
+  fill: var(--color-bar-ink-muted);
+}
+
+@utility link {
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+  transition:
+    color 120ms ease,
+    text-decoration-thickness 120ms ease;
+
+  &:hover {
+    color: var(--color-accent-ink);
+    text-decoration-thickness: 3px;
+  }
+}
+
+@utility link-1 {
+  text-decoration-color: var(--color-link-1);
+}
+@utility link-2 {
+  text-decoration-color: var(--color-link-2);
+}
+@utility link-3 {
+  text-decoration-color: var(--color-link-3);
+}
+@utility link-4 {
+  text-decoration-color: var(--color-link-4);
+}
+@utility link-5 {
+  text-decoration-color: var(--color-link-5);
+}
+
+@layer components {
   /*
    * The one title-bar glyph that stays CSS. Minimise and restore are single
    * boxes and live as utilities in `window-variants.ts`; this is two bars
@@ -436,7 +393,7 @@
 
   .title-glyph-close::before,
   .title-glyph-close::after {
-    content: "";
+    content: '';
     position: absolute;
     inset-inline: 0;
     top: 50%;
@@ -478,7 +435,7 @@
   /* The inner ring of the groove, offset one pixel so the two lines read as a
      carved channel rather than a doubled border. */
   .group-box::before {
-    content: "";
+    content: '';
     position: absolute;
     inset: 1px;
     pointer-events: none;
@@ -503,17 +460,6 @@
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: var(--color-ink-muted);
-  }
-
-  /*
-   * The desktop wallpaper: one flat fill, no texture. What makes it read as a
-   * desktop rather than a page background is that it is darker than everything
-   * on it — a window is lit, the surface under it is not. The vignette and
-   * weave that used to do that job were compensating for a wallpaper too close
-   * in lightness to the chrome sitting on it.
-   */
-  .desktop-ground {
-    background-color: var(--color-desktop);
   }
 
   /* ------------------------------------------------------------------------
@@ -575,20 +521,21 @@
    * its multiply branch compresses hard on a near-black base, so the same value
    * that reads as grain on pale straw is nearly invisible at 16% lightness.
    *
-   * Both strengths are sized to hold their floors even if the blend mode is
-   * NOT applied. A body background propagates to the canvas, and whether
-   * `background-blend-mode` survives that is not something we can test here, so
-   * the contrast floor does not depend on it. Dark at 0.22 looks better and
-   * breaks `window-edge` to 2.07 if the blend is dropped; 0.10 holds at 3.15
-   * either way. Light 0.07 holds at 3.15 source-over, 3.47 blended.
+   * Strengths now rely on the overlay blend: source-over, dark 0.22 drops
+   * `window-edge` to 2.07 against a 3.0 floor.
    */
   .desktop-grain {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.08'/%3E%3C/svg%3E");
-    background-blend-mode: overlay;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.16'/%3E%3C/svg%3E"),
+      var(--desktop-gradient);
+    background-blend-mode: overlay, normal;
+    background-attachment: scroll, fixed;
   }
 
   .dark .desktop-grain {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.12'/%3E%3C/svg%3E");
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.22'/%3E%3C/svg%3E"),
+      var(--desktop-gradient);
   }
 
   /*
@@ -598,26 +545,17 @@
    * that width, and these are additive rather than the only route anywhere.
    */
   .desktop-shortcuts {
-    display: none;
     /* Each fixed bar's height plus a margin, for shortcuts anchored to that edge. */
     --dock-clearance: calc(3rem + env(safe-area-inset-bottom, 0px));
     --status-clearance: calc(3rem + env(safe-area-inset-top, 0px));
   }
 
   @media (min-width: 80rem) {
-    .desktop-shortcuts {
-      position: fixed;
-      z-index: 0;
-      display: grid;
-      grid-auto-flow: column;
-      justify-items: center;
-    }
-
-    .desktop-shortcuts[data-anchor="top"] {
+    .desktop-shortcuts[data-anchor='top'] {
       top: calc(1rem + var(--status-clearance));
     }
 
-    .desktop-shortcuts[data-anchor="bottom"] {
+    .desktop-shortcuts[data-anchor='bottom'] {
       bottom: calc(1rem + var(--dock-clearance));
     }
   }
@@ -625,8 +563,8 @@
   /* A grid only fills downwards, so a bottom-anchored group is flipped and each
      shortcut flipped back. Rows then fill up from the taskbar, and a short last
      column sits at the bottom instead of the top. */
-  .desktop-shortcuts[data-anchor="bottom"],
-  .desktop-shortcuts[data-anchor="bottom"] > * {
+  .desktop-shortcuts[data-anchor='bottom'],
+  .desktop-shortcuts[data-anchor='bottom'] > * {
     transform: scaleY(-1);
   }
 
@@ -724,7 +662,7 @@
    * per-component one, so it lives here rather than in that file's own
    * styles.
    */
-  .dock[data-position="top"] {
+  .dock[data-position='top'] {
     padding-bottom: 0;
     padding-top: env(safe-area-inset-top, 0px);
   }
@@ -732,7 +670,7 @@
   /* Everything that hangs off a top bar hangs downwards, at every width —
      that bar is at the top of the document below the breakpoint too, so
      unlike the vertical stops there is nothing to flip back at. */
-  .dock[data-position="top"] .tooltip[data-placement] {
+  .dock[data-position='top'] .tooltip[data-placement] {
     --tooltip-inset: calc(100% + 0.5rem) auto auto 50%;
     --tooltip-shift: translateX(-50%);
   }
@@ -740,16 +678,16 @@
   /* Vertical placements start at the breakpoint; below it every position is the
      same static bottom bar. */
   @media (min-width: 64rem) {
-    .dock[data-position="left"],
-    .dock[data-position="right"] {
+    .dock[data-position='left'],
+    .dock[data-position='right'] {
       padding-bottom: 0;
     }
 
     /* A vertical bar is as wide as its widest item, and a window title is far
        wider than an icon. Hidden visually, not removed: the button's name has
        to keep saying which window it restores. */
-    .dock[data-position="left"] .dock-item-label,
-    .dock[data-position="right"] .dock-item-label {
+    .dock[data-position='left'] .dock-item-label,
+    .dock[data-position='right'] .dock-item-label {
       position: absolute;
       width: 1px;
       height: 1px;
@@ -819,7 +757,7 @@
     border-right-color: var(--color-bevel-dark);
   }
 
-  .dock-item[aria-current="page"] {
+  .dock-item[aria-current='page'] {
     border-color: var(--color-border);
     border-top-color: var(--color-bevel-dark);
     border-left-color: var(--color-bevel-dark);
@@ -850,34 +788,6 @@
     font-size: 0.75rem;
     color: var(--color-ink);
     cursor: pointer;
-  }
-
-  .link {
-    text-decoration-line: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 0.2em;
-    transition: color 120ms ease, text-decoration-thickness 120ms ease;
-  }
-
-  .link:hover {
-    color: var(--color-accent-ink);
-    text-decoration-thickness: 3px;
-  }
-
-  .link-1 {
-    text-decoration-color: var(--color-link-1);
-  }
-  .link-2 {
-    text-decoration-color: var(--color-link-2);
-  }
-  .link-3 {
-    text-decoration-color: var(--color-link-3);
-  }
-  .link-4 {
-    text-decoration-color: var(--color-link-4);
-  }
-  .link-5 {
-    text-decoration-color: var(--color-link-5);
   }
 }
 
