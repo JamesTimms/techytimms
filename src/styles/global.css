@@ -10,35 +10,39 @@
 /* ==========================================================================
  * PALETTE — Pumpkin
  *
- * Pale straw wallpaper, warm greys at hue 85, deep russet accent at hue 45.
- * Candidate schemes live in docs/palette-exploration.md and are rendered as
- * swatches at /styleguide. To try another, replace everything between the two
- * PALETTE markers — nothing outside them encodes a colour.
+ * Pale pumpkin-tinted wallpaper, warm greys at hue 55 (pumpkin's own hue —
+ * moved from 85 so the neutral scale itself reads as pumpkin-tinted, not
+ * just the accent). Candidate schemes live in docs/palette-exploration.md and
+ * are rendered as swatches at /styleguide. To try another, replace everything
+ * between the two PALETTE markers — nothing outside them encodes a colour.
  *
- * Every value is contrast-verified in both themes; docs/design-system.md holds
- * the table. The pair with least headroom is ink-faint on ground at 4.55, and
- * it should be rechecked before any retune. The window's own colours are the
- * ramps below, not these.
+ * Every value is APCA-verified (src/lib/apca.ts) in both themes — see the
+ * table in docs/design-system.md §1. The window's own colours used to be a
+ * separate ramp; the chrome tokens below (title-bar, menu-bar, dock) now
+ * carry that job instead, so contrast is checked against what is actually
+ * behind the text rather than against a ramp step the chrome no longer uses.
  * ========================================================================== */
 @theme {
-  --color-ground: oklch(98.5% 0.006 85);
-  --color-surface: oklch(100% 0 85);
-  --color-sunk: oklch(95.5% 0.012 85);
-  --color-rule: oklch(88.5% 0.016 85);
-  --color-border: oklch(63% 0.018 85);
-  --color-ink-faint: oklch(55.5% 0.024 85);
-  --color-ink-muted: oklch(47% 0.028 85);
-  --color-ink: oklch(24% 0.03 85);
+  --color-ground: oklch(98.5% 0.006 55);
+  --color-surface: oklch(98.5% 0.008 55);
+  --color-sunk: oklch(95.5% 0.014 55);
+  --color-rule: oklch(88.5% 0.018 55);
+  --color-border: oklch(63% 0.02 55);
+  --color-ink-faint: oklch(55.5% 0.024 55);
+  --color-ink-muted: oklch(47% 0.028 55);
+  --color-ink: oklch(24% 0.03 55);
 
-  /* Russet, off the neutral hue. The accent has to clear 3:1 on the wallpaper
-     for the desktop to show selection at all, and that is a lightness problem,
-     not a hue one: at 48% against an 80% wallpaper it reaches 3.68. Sweeping
-     hue moves that number by less than 0.1. */
-  --color-accent: oklch(42% 0.125 40);
-  --color-accent-ink: oklch(47% 0.11 40);
-  /* 0.028 as published clips red in sRGB; 0.024 is the most chroma that fits,
-     and costs 0.04 of contrast. */
-  --color-accent-sunk: oklch(95.5% 0.03 55);
+  /* One drifting ramp, not two hues switched by theme: hue moves with
+     lightness (≈57 at the palest step, ≈39 at the darkest — redder as it
+     darkens), so accent/accent-ink/accent-sunk in both themes read off the
+     same curve instead of accent silently taking pumpkin's own hue in dark
+     mode. hue(L) = clamp(38, 60, 40 + 0.3 * (L% - 40)). accent-ink sits
+     darker than accent in light mode (38% vs 52%) — accent is the mark/
+     border token and does not need to be the ramp's darkest step, accent-ink
+     does, being text. */
+  --color-accent: oklch(52% 0.125 44);
+  --color-accent-ink: oklch(38% 0.105 39);
+  --color-accent-sunk: oklch(95.5% 0.024 57);
 
   /* ----------------------------------------------------------------------
    * Window ramps. Two palettes, ten OKLCH steps each on a conventional
@@ -49,36 +53,29 @@
    * steps instead, which is why every step below is an absolute colour
    * rather than a semantic one.
    *
-   * Roles (window chrome, `window-variants.ts`):
+   * The live window (`palette="pumpkin"` in BaseLayout) no longer reads its
+   * chrome off this ramp directly — see `--color-title-bar` and `--color-
+   * window-edge` below, and `--color-surface` above for the face. Raw ramp
+   * steps in chrome markup meant text tokens were being contrast-checked
+   * against a colour the chrome didn't actually render (the title bar used
+   * `pumpkin-900` in *both* themes, so light mode inherited dark mode's
+   * value). The `fallen-leaf` palette, unused and unmeasured, still reads
+   * off these steps directly; both ramps stay as-is for it and for
+   * /styleguide's exploration.
+   *
+   * Roles still current for `fallen-leaf`:
    *   50   window face, light mode; title text
    *   100  wallpaper, light mode; title-bar control glyphs
    *   200  MAIN, Fallen Leaf — the rule under the title bar, light mode only
-   *   300  MAIN, Pumpkin — same role, one step darker on this palette
    *   500  window edge, both themes; control hover fill
    *   700  window face, dark mode
    *   900  title bar in both themes; wallpaper in dark mode
-   * 400/600/800 are unused by the window and free for other roles — see the
-   * dock, which spans 800–900 (light mode) and 50–100 (dark mode).
-   *
-   * Was a six-step ramp with irregular gaps (99/88/80/50/30/14%); respaced to
-   * ten even steps so a consumer can pick any step, not just the six the
-   * window happened to need. Old step 1→50, 2→100, 4→500, 5→700 and 6→900
-   * land within 3 points of their old lightness (900 and 50 are exact); old
-   * step 3 (leaf 80%, pumpkin 70%) is genuinely two different lightnesses
-   * under one role, so it lands on two different new steps — 200 for leaf,
-   * 300 for pumpkin. See docs/design-system.md §4 for the recomputed
-   * contrast table.
    *
    * Step 50 is a light TINT, not the main colour. On a surface at the main
    * colour's own 80% lightness `ink-muted` measures 3.65 and `ink-faint` 2.54;
    * ink-faint needs a surface at 99%. So the face is tinted up to 99% rather
    * than the neutral ink scale being redefined per palette. Chroma carries the
    * identity there — lightness is spent entirely on contrast.
-   *
-   * Chroma per step is interpolated from the old six control points and then
-   * capped to whatever sRGB allows at that lightness and hue — step 50 is
-   * still as chromatic as the gamut permits (0.008 at hue 80, 0.0055 at hue
-   * 55; hue 55 clips earlier).
    * -------------------------------------------------------------------- */
   --color-leaf-50: oklch(99% 0.008 80);
   --color-leaf-100: oklch(89.6% 0.0285 80);
@@ -102,18 +99,21 @@
   --color-pumpkin-800: oklch(23.4% 0.0418 55);
   --color-pumpkin-900: oklch(14% 0.03 55);
 
-  /* The two bars (dock, status bar) sit on the wallpaper with no border, so
-     their own fill has to clear 3:1 against it unaided. The wallpaper is
-     pale in light mode and near-black in dark, so a fill that does this
-     without flipping the ramp step runs opposite to the site theme: dark
-     (ramp step 800–900) in light mode, light (step 50–100) in dark mode —
-     see `Bar.tsx`. These two tokens carry text and icons that sit
-     directly on that inverted fill: the value that is legible on a DARK bar
-     in light mode is light mode's own `ink-muted`/`accent` used upside down.
-     Not a rename of `ink-muted`/`accent` — those still serve every normal
-     surface, which is why they cannot also serve this inverted one. */
-  --color-bar-ink-muted: oklch(82% 0.02 85);
-  --color-bar-accent: oklch(80% 0.115 55);
+  /* Window chrome, off-ramp: valued from the accent hue-drift curve above
+     (hue(L) = clamp(38, 60, 40 + 0.3 * (L% - 40))), not from the leaf/pumpkin
+     ramps, because the title bar is the accent's own identity rather than
+     the window's tint — James asked for "the rust red of the accent family"
+     specifically, not another ramp step. Previously the title bar used
+     `pumpkin-900` unconditionally (no `dark:` override), so light mode wore
+     dark mode's near-black bar; it now has its own light-mode value, and the
+     two agree by sharing the drift curve rather than by being equal. */
+  --color-title-bar: oklch(38% 0.105 39);
+  --color-title-bar-ink: oklch(96% 0.015 60);
+
+  /* Bars follow the theme: `surface` here, `sunk` in `.dark`. A 1px `window-edge`
+     line carries the boundary, since the fill sits close to the wallpaper. */
+  --color-menu-bar: oklch(98.5% 0.008 55);
+  --color-dock: oklch(98.5% 0.008 55);
 
   /* The wallpaper the window sits on. Deliberately not `ground`: ground is the
      contrast baseline every text pair is measured against, and the wallpaper is
@@ -130,19 +130,22 @@
      carry light text. Shortcut labels are the only text on the wallpaper. */
   --color-desktop-ink: oklch(24% 0.03 55);
 
-  /* The dock's edge against the wallpaper. It cannot be `border`: that is tuned to sit on near-white panels
-     at 3.50, and the same value against this pale wallpaper is 1.87. A screen
-     boundary and a panel boundary are different jobs against different grounds,
-     so they get different tokens. The window's own edge comes from its ramp. */
-  --color-window-edge: oklch(47% 0.018 85);
+  /* The window's outer edge against the wallpaper. It cannot be `border`:
+     that is tuned to sit on near-white panels, and the same value against
+     this pale wallpaper falls well short of 3:1. A screen boundary and a
+     panel boundary are different jobs against different grounds, so they get
+     different tokens. Now the live window's actual frame border (previously
+     defined, 0 uses — the frame instead carried a raw `pumpkin-500` border,
+     duplicating this token's job under a different name). */
+  --color-window-edge: oklch(47% 0.018 55);
 
   /* Raised-edge pair. A raised object needs only ONE of its two edges to clear
      3:1 against what surrounds it, and which one does flips with the surround.
      On this pale wallpaper the DARK edge carries the window at 5.34 while the
      light edge is 1.88; in dark mode it is the other way round. Both tokens
      must stay real colours — neither is decorative. */
-  --color-bevel-light: oklch(100% 0 85);
-  --color-bevel-dark: oklch(38% 0.02 85);
+  --color-bevel-light: oklch(100% 0 55);
+  --color-bevel-dark: oklch(38% 0.02 55);
 
   /* Underline hues for links. Colour varies; the underline itself never does,
      so colour is never the only signal that something is navigable. */
@@ -154,40 +157,51 @@
 }
 
 .dark {
-  --color-ground: oklch(17% 0.012 85);
-  --color-surface: oklch(21% 0.014 85);
-  --color-sunk: oklch(14% 0.01 85);
-  --color-rule: oklch(32% 0.018 85);
-  --color-border: oklch(52% 0.018 85);
+  --color-ground: oklch(17% 0.014 55);
+  /* Darkened from 21% — the live window face used to render `pumpkin-700`
+     (32.9%) instead of this token, well past the point `ink`/`ink-muted`/
+     `ink-faint` below were actually checked against. Now the face and the
+     checked token are the same value, not two colours with the same name. */
+  --color-surface: oklch(18% 0.016 55);
+  --color-sunk: oklch(14% 0.012 55);
+  --color-rule: oklch(32% 0.02 55);
+  /* Raised from 52% (APCA −23 on `surface`, short of the −30 UI-boundary
+     floor) to 60%. */
+  --color-border: oklch(60% 0.02 55);
   /* Higher than the light scale's mirror image. Dark surfaces carry less
      apparent contrast at the same ratio, and these two sit on the window face
-     as well as on `ground`; at 62% faint measured 4.53 there, which is the AA
-     floor and reads as it. */
-  --color-ink-faint: oklch(72% 0.02 85);
-  --color-ink-muted: oklch(82% 0.02 85);
-  --color-ink: oklch(93% 0.014 85);
+     as well as on `ground`. */
+  --color-ink-faint: oklch(78% 0.02 55);
+  --color-ink-muted: oklch(85% 0.02 55);
+  --color-ink: oklch(94% 0.014 55);
 
-  --color-accent: oklch(80% 0.115 55);
-  --color-accent-ink: oklch(82% 0.105 55);
-  --color-accent-sunk: oklch(25% 0.035 55);
+  /* Same drift curve as light mode's accent (see the `@theme` block above),
+     evaluated at this theme's own lightness steps rather than switched to a
+     second, unrelated hue. */
+  --color-accent: oklch(78% 0.11 51);
+  --color-accent-ink: oklch(87% 0.078 54);
+  --color-accent-sunk: oklch(25% 0.032 36);
 
-  /* The bar tokens invert: in dark mode the bar's own fill is light (step
-     50–100), so it needs light mode's dark ink and accent, upside down. */
-  --color-bar-ink-muted: oklch(47% 0.028 85);
-  --color-bar-accent: oklch(42% 0.125 40);
+  /* Same family as the light title bar (`--color-title-bar` above), evaluated
+     at a lighter, more vibrant step — dark mode's version of "too dark and
+     dull" was `pumpkin-900` read as plain brown; this is the same curve, just
+     further up it. */
+  --color-title-bar: oklch(38% 0.105 39);
+  --color-title-bar-ink: oklch(95% 0.015 60);
 
-  /* `leaf-900`, exactly — the step the title bar also uses. The two only ever
-     meet at the window's top edge, where the border separates them. */
-  --color-desktop: oklch(14% 0.03 55);
+  --color-menu-bar: oklch(14% 0.012 55);
+  --color-dock: oklch(14% 0.012 55);
+
+  --color-desktop: oklch(22% 0.05 42);
   --color-desktop-ink: oklch(97% 0.008 45);
 
-  /* 52% is the boundary against the near-black wallpaper; 55% buys headroom. */
-  --color-window-edge: oklch(55% 0.018 85);
+  /* Raised from 55% — the wallpaper lightened (see `Wallpaper.tsx`), so the
+     old value's margin against it thinned. */
+  --color-window-edge: oklch(63% 0.018 55);
 
-  /* Here the LIGHT edge carries the window at 4.18; the dark edge is 1.07
-     against a near-black wallpaper. The reverse of light mode. */
-  --color-bevel-light: oklch(56% 0.02 85);
-  --color-bevel-dark: oklch(8% 0.01 85);
+  /* Light edge raised from 56% for the same reason as `window-edge` above. */
+  --color-bevel-light: oklch(62% 0.02 55);
+  --color-bevel-dark: oklch(8% 0.01 55);
 
   --color-link-1: oklch(76% 0.11 25);
   --color-link-2: oklch(76% 0.11 45);
@@ -297,12 +311,9 @@
 /* Sizing and layout are Tailwind utilities on the component; only the
    custom-property plumbing and colour states stay here. */
 @utility theme-toggle {
-  --toggle-hover-ink: var(--color-leaf-50);
+  --toggle-hover-ink: var(--color-ink);
   transition: background-color 0.15s ease-in-out;
 
-  .dark & {
-    --toggle-hover-ink: var(--color-leaf-900);
-  }
 
   &:hover,
   &:focus-visible,
@@ -311,7 +322,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--color-bar-accent);
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
 
@@ -335,11 +346,11 @@
 }
 
 @utility theme-toggle-sun {
-  fill: var(--color-bar-accent);
+  fill: var(--color-accent);
 }
 
 @utility theme-toggle-moon {
-  fill: var(--color-bar-ink-muted);
+  fill: var(--color-ink-muted);
 }
 
 @utility link {
@@ -642,13 +653,8 @@
    * Screen chrome, not window chrome — it sits outside the window and outlives
    * whatever page is open.
    *
-   * No border. The bar's own fill is the boundary against the wallpaper —
-   * `window-edge` and the old `bevel-light` taskbar top both undershot it
-   * (1.87 and 1.88 on the pale wallpaper), which is why a border used to be
-   * needed at all. `Bar`'s `variant` prop supplies a ramp fill that clears
-   * 3:1 unaided in both themes by running opposite the site theme: dark
-   * (`leaf-800`/`leaf-900`) in light mode, light (`leaf-50`/`leaf-100`) in
-   * dark — see `Bar.tsx` and docs/design-system.md §5.
+   * Fill follows the theme, so a 1px `window-edge` line on the side facing
+   * the wallpaper carries the boundary (see `Bar.tsx`).
    */
   .dock {
     position: relative;

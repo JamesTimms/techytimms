@@ -16,38 +16,31 @@ import {
   windowPalettes,
 } from '~/lib/window';
 
-// The MAIN step is a different absolute lightness per palette (Fallen Leaf's
-// main colour sits at 80%, Pumpkin's at 70%), so it lands on a different step
-// of the shared 50–900 scale for each.
-const mainStep: Record<(typeof windowPalettes)[number], number> = {
-  'fallen-leaf': 200,
-  pumpkin: 300,
-};
-
 describe('windowFrame', () => {
   it('defaults to Fallen Leaf, the live palette', () => {
     expect(windowFrame()).toBe(windowFrame({ palette: 'fallen-leaf' }));
   });
 
-  it('keeps an explicit edge in both palettes, one step for both themes', () => {
+  it('keeps Fallen Leaf on its own ramp, one edge step for both themes', () => {
     // The face cannot mark the window against the wallpaper in either theme,
     // and step 500 is the one band that clears 3:1 on both wallpapers, so the
     // edge no longer swaps.
-    for (const palette of windowPalettes) {
-      const classes = windowFrame({ palette });
-      expect(classes).toMatch(/\sborder-\w+-500\b/);
-      expect(classes).not.toMatch(/\sdark:border-/);
-    }
+    const classes = windowFrame({ palette: 'fallen-leaf' });
+    expect(classes).toMatch(/\sborder-leaf-500\b/);
+    expect(classes).not.toMatch(/\sdark:border-/);
+    expect(classes).toMatch(/\sbg-leaf-50\b/);
+    expect(classes).not.toMatch(/\sbg-leaf-200\b/);
   });
 
-  it('draws the face from a light tint, never from the main colour', () => {
-    // ink-faint is 2.54 on a surface at the main colour's own lightness.
-    // Step 50 is the tint the face has to use instead.
-    for (const palette of windowPalettes) {
-      const classes = windowFrame({ palette });
-      expect(classes).toMatch(/\sbg-\w+-50\b/);
-      expect(classes).not.toMatch(new RegExp(`\\sbg-\\w+-${mainStep[palette]}\\b`));
-    }
+  it('draws Pumpkin, the live palette, off semantic tokens rather than a ramp step', () => {
+    // `surface`/`window-edge` are theme-aware custom properties, so the live
+    // palette needs no `dark:` class of its own — unlike Fallen Leaf, whose
+    // ramp does not flip.
+    const classes = windowFrame({ palette: 'pumpkin' });
+    expect(classes).toContain('bg-surface');
+    expect(classes).toContain('border-window-edge');
+    expect(classes).not.toMatch(/\bpumpkin-\d+\b/);
+    expect(classes).not.toMatch(/\sdark:/);
   });
 
   it('carries no bevel in either palette', () => {
@@ -64,11 +57,19 @@ describe('titleBar', () => {
     }
   });
 
-  it('rules off the bar in light mode and draws nothing internal in dark', () => {
+  it('draws no internal divide — the frame border is the window’s only edge', () => {
     for (const palette of windowPalettes) {
-      expect(titleBar({ palette })).toMatch(new RegExp(`\\sborder-\\w+-${mainStep[palette]}\\b`));
-      expect(titleBar({ palette })).toContain('dark:border-b-0');
+      const classes = titleBar({ palette });
+      expect(classes).not.toContain('border-b');
+      expect(classes).not.toContain('dark:border-b-0');
     }
+  });
+
+  it('gives Pumpkin its own fill and text tokens, off the accent hue-drift curve', () => {
+    const classes = titleBar({ palette: 'pumpkin' });
+    expect(classes).toContain('bg-title-bar');
+    expect(classes).toContain('text-title-bar-ink');
+    expect(classes).not.toMatch(/\bpumpkin-\d+\b/);
   });
 });
 

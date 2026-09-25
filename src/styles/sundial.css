@@ -37,19 +37,16 @@
   transition: transform 600ms ease-out;
 }
 
-/* `bar-accent`/`bar-ink-muted`, not `accent`/`ink-muted`: the sundial only
-   ever sits on the top bar, whose fill runs opposite the site theme — see
-   `--color-bar-accent` in global.css. */
 .sky-sun {
-  fill: var(--color-bar-accent);
+  fill: var(--color-accent);
 }
 
 .sky-moon {
-  fill: var(--color-bar-ink-muted);
+  fill: var(--color-ink-muted);
 }
 
 .sky-stars {
-  fill: var(--color-bar-ink-muted);
+  fill: var(--color-ink-muted);
 }
 
 .sky-horizon {

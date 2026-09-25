@@ -80,23 +80,20 @@ describe('bar', () => {
 });
 
 describe('bar fill and size', () => {
-  it('carries no border utility — the fill is the only boundary now', () => {
-    // The old 2px border lived in plain CSS on `.dock`, not as a utility
-    // here; this guards against one creeping back in as the fill's classes.
-    for (const purpose of barPurposes) {
-      expect(
-        bar({ purpose })
-          .split(' ')
-          .some((cls) => cls.startsWith('border')),
-      ).toBe(false);
-    }
+  it('draws its edge on the side facing the wallpaper', () => {
+    expect(bar({ position: 'top' })).toContain('border-b');
+    expect(bar({ position: 'bottom' })).toContain('border-t');
+    expect(bar({ position: 'left' })).toContain('border-r');
+    expect(bar({ position: 'right' })).toContain('border-l');
   });
 
-  it('couples each purpose with its own light- and dark-mode fill', () => {
-    expect(bar({ purpose: 'dock' })).toContain('bg-leaf-900');
-    expect(bar({ purpose: 'dock' })).toContain('dark:bg-leaf-50');
-    expect(bar({ purpose: 'menu' })).toContain('bg-leaf-800');
-    expect(bar({ purpose: 'menu' })).toContain('dark:bg-leaf-100');
+  it('couples each purpose with its own theme-aware fill token', () => {
+    // `menu-bar`/`dock` are CSS custom properties that flip under `.dark`
+    // themselves, so neither utility needs a `dark:` class of its own.
+    expect(bar({ purpose: 'dock' })).toContain('bg-dock');
+    expect(bar({ purpose: 'menu' })).toContain('bg-menu-bar');
+    expect(bar({ purpose: 'dock' })).not.toMatch(/\bleaf-\d+\b/);
+    expect(bar({ purpose: 'menu' })).not.toMatch(/\bleaf-\d+\b/);
   });
 
   it('sizes the bar, defaulting to its old fixed padding', () => {

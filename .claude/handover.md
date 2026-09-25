@@ -88,12 +88,14 @@ Cost lessons, learned expensively — 27 agents, ~6.1M tokens.
 
 - **Never fork.** A fork inherits the whole conversation: 425k average versus 90k for a
   fresh agent with a targeted brief.
-- **Model by risk, not diff size.** Haiku for mechanical edits with explicit values;
-  Sonnet for anything deriving a value or spanning files. Haiku failed twice here, both
-  times when it had to reason about *which direction* a value should move.
+- **Default to Opus 5.5, medium effort.** A much smaller model only for small, focused
+  tasks (text formatting, a button's variant), or when James names one. Haiku failed
+  twice here, both times when it had to reason about *which direction* a value should move.
 - **Hand over measured constraints inline** so agents don't rediscover them.
 - **Batch related tweaks.** Each agent pays a fixed startup tax; three tweaks to one file
   should be one task.
 - **Check small things yourself first.** Several "regressions" were two-line fixes that
   cost nothing to diagnose directly.
 - **Always verify the report.** Agents have claimed passes that did not hold.
+- **Report every agent:** runtime, model, tokens, and anything else relevant (failures,
+  retries, unverified claims, deviations from the brief).

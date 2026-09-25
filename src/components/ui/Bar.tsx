@@ -21,17 +21,17 @@ export type BarPurpose = (typeof barPurposes)[number];
 
 // `dock` always carries the cluster, so its middle track is fixed; `menu` never does.
 const barVariantClasses: Record<BarPurpose, string> = {
-  menu: 'bg-leaf-800 dark:bg-leaf-100',
-  dock: 'bg-leaf-900 dark:bg-leaf-50 grid-cols-[1fr_auto_1fr]',
+  menu: 'bg-menu-bar',
+  dock: 'bg-dock grid-cols-[1fr_auto_1fr]',
 };
 
-export const bar = cva('dock z-20 grid items-center gap-3', {
+export const bar = cva('dock z-20 grid items-center gap-3 border-window-edge', {
   variants: {
     position: {
-      top: 'lg:fixed lg:inset-x-0 lg:top-0',
-      bottom: 'lg:fixed lg:inset-x-0 lg:bottom-0',
-      left: 'lg:fixed lg:inset-y-0 lg:left-0 lg:grid-cols-none lg:px-2 lg:py-3',
-      right: 'lg:fixed lg:inset-y-0 lg:right-0 lg:grid-cols-none lg:px-2 lg:py-3',
+      top: 'border-b lg:fixed lg:inset-x-0 lg:top-0',
+      bottom: 'border-t lg:fixed lg:inset-x-0 lg:bottom-0',
+      left: 'border-r lg:fixed lg:inset-y-0 lg:left-0 lg:grid-cols-none lg:px-2 lg:py-3',
+      right: 'border-l lg:fixed lg:inset-y-0 lg:right-0 lg:grid-cols-none lg:px-2 lg:py-3',
     },
     purpose: barVariantClasses,
     middleRegion: { true: '', false: '' },
@@ -157,7 +157,7 @@ function Dock({ position, windowTitle, children }: DockProps) {
   );
 }
 
-export const barRegion = cva('flex min-w-0 items-center gap-2 text-xs text-bar-ink-muted', {
+export const barRegion = cva('flex min-w-0 items-center gap-2 text-xs text-ink-muted', {
   variants: {
     position: { top: '', bottom: '', left: '', right: '' },
     region: {

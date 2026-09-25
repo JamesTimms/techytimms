@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { isInSrgbGamut } from '~/lib/color-tokens';
 import {
+  assignFamily,
+  deviationFromPureStep,
+  deviationReason,
   formatOklch,
   gamutMaxRamp,
-  matchStepForLightness,
+  hueDelta,
+  isMeaningfulDeviation,
   maxChromaInGamut,
-  tokensForHue,
+  nearestRampStep,
 } from '~/lib/hue-ramp';
 
 describe('maxChromaInGamut', () => {
@@ -45,16 +49,15 @@ describe('gamutMaxRamp', () => {
   });
 });
 
-describe('matchStepForLightness', () => {
-  it('matches a lightness within a tenth of a percent of a published step', () => {
-    expect(matchStepForLightness(14)).toBe(900);
-    expect(matchStepForLightness(80.1)).toBe(200);
-    expect(matchStepForLightness(80)).toBe(200); // within tolerance, not exact
+describe('nearestRampStep', () => {
+  it('finds the closest published step regardless of distance', () => {
+    expect(nearestRampStep(14).step).toBe(900);
+    expect(nearestRampStep(80).step).toBe(200); // 0.1 off 80.1, still nearest
+    expect(nearestRampStep(55).step).toBe(500); // 51.8 (3.2 away) beats 42.3 (12.7 away)
   });
 
-  it('returns null for a lightness that sits off every step', () => {
-    expect(matchStepForLightness(55)).toBeNull();
-    expect(matchStepForLightness(42)).toBeNull(); // 0.3 from step 600 (42.3) — too far
+  it('picks 500 for a lightness roughly in the middle of the scale', () => {
+    expect(nearestRampStep(50).step).toBe(500);
   });
 });
 
@@ -64,22 +67,69 @@ describe('formatOklch', () => {
   });
 });
 
-describe('tokensForHue', () => {
-  const tokens = {
-    ink: { oklch: { l: 0.24, c: 0.03, h: 85 }, oklchText: '24% 0.03 85', hex: '#000000' },
-    ground: { oklch: { l: 0.985, c: 0.006, h: 85 }, oklchText: '98.5% 0.006 85', hex: '#ffffff' },
-    accent: { oklch: { l: 0.42, c: 0.125, h: 40 }, oklchText: '42% 0.125 40', hex: '#000000' },
-    'leaf-900': { oklch: { l: 0.14, c: 0.025, h: 80 }, oklchText: '14% 0.025 80', hex: '#000000' },
-  };
-
-  it('filters to the given hue and reports each token’s matched step', () => {
-    const usage = tokensForHue(tokens, 85);
-    expect(usage.map((entry) => entry.name)).toEqual(['ground', 'ink']);
-    expect(usage.find((entry) => entry.name === 'ink')?.step).toBeNull();
+describe('hueDelta', () => {
+  it('returns a plain signed difference away from the wheel seam', () => {
+    expect(hueDelta(44, 55)).toBe(-11);
+    expect(hueDelta(55, 44)).toBe(11);
+    expect(hueDelta(55, 55)).toBe(0);
   });
 
-  it('excludes a ramp’s own steps from its own row', () => {
-    const usage = tokensForHue(tokens, 80, 'leaf-');
-    expect(usage).toEqual([]);
+  it('takes the short way round the 0/360 seam', () => {
+    expect(hueDelta(5, 355)).toBe(10);
+    expect(hueDelta(355, 5)).toBe(-10);
+  });
+});
+
+describe('assignFamily', () => {
+  const families = [
+    { key: 'leaf', hue: 80 },
+    { key: 'neutral', hue: 55 },
+  ];
+
+  it('matches a family only on an exact hue', () => {
+    expect(assignFamily(55, families, 'accent')).toBe('neutral');
+    expect(assignFamily(80, families, 'accent')).toBe('leaf');
+  });
+
+  it('falls back for a hue that matches no family, even a near miss', () => {
+    expect(assignFamily(54, families, 'accent')).toBe('accent');
+    expect(assignFamily(39, families, 'accent')).toBe('accent');
+  });
+});
+
+describe('deviationFromPureStep', () => {
+  it('reports zero deltas for a colour that already sits on the pure curve', () => {
+    const pureAt600 = { l: 0.423, c: maxChromaInGamut(0.423, 55), h: 55 };
+    const deviation = deviationFromPureStep(pureAt600, 55);
+    expect(deviation.step).toBe(600);
+    expect(deviation.deltaL).toBeCloseTo(0, 6);
+    expect(deviation.deltaC).toBeCloseTo(0, 6);
+    expect(deviation.deltaH).toBe(0);
+  });
+
+  it('measures a real deviation on all three axes', () => {
+    // title-bar: oklch(38% 0.105 39), compared against the pumpkin family (hue 55).
+    const deviation = deviationFromPureStep({ l: 0.38, c: 0.105, h: 39 }, 55);
+    expect(deviation.step).toBe(600); // nearest published step to 38% is 42.3%
+    expect(deviation.deltaL).toBeCloseTo(-4.3, 1);
+    expect(deviation.deltaH).toBe(-16);
+  });
+});
+
+describe('isMeaningfulDeviation', () => {
+  it('ignores a deviation inside every threshold', () => {
+    expect(isMeaningfulDeviation({ step: 500, pure: { l: 0.5, c: 0.1, h: 55 }, deltaL: 0.1, deltaC: 0.005, deltaH: 1 })).toBe(false);
+  });
+
+  it('flags a deviation that crosses any one threshold', () => {
+    expect(isMeaningfulDeviation({ step: 500, pure: { l: 0.5, c: 0.1, h: 55 }, deltaL: 0, deltaC: 0, deltaH: 16 })).toBe(true);
+  });
+});
+
+describe('deviationReason', () => {
+  it('explains a hue shift as a chroma-budget trade when the numbers support it', () => {
+    const oklch = { l: 0.38, c: 0.105, h: 39 };
+    const deviation = deviationFromPureStep(oklch, 55);
+    expect(deviationReason(oklch, deviation)).toMatch(/hue shifted/);
   });
 });

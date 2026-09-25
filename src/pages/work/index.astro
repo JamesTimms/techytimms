@@ -40,20 +40,24 @@ const projects = featuredFirst(excludeDrafts(await getCollection("work")));
                       <a
                         href={project.data.url}
                         rel="noopener"
+                        target="_blank"
                         class:list={[linkClass(project.data.url), "inline-flex items-center gap-1.5"]}
                       >
                         <Icon name="external" />
                         Visit
+                        <span class="sr-only"> (opens in a new tab)</span>
                       </a>
                     )}
                     {project.data.repo && (
                       <a
                         href={project.data.repo}
                         rel="noopener"
+                        target="_blank"
                         class:list={[linkClass(project.data.repo), "inline-flex items-center gap-1.5"]}
                       >
                         <Icon name="external" />
                         Source
+                        <span class="sr-only"> (opens in a new tab)</span>
                       </a>
                     )}
                   </p>

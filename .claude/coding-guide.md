@@ -50,9 +50,9 @@ One plain word where one will do, and a name you can say aloud in conversation. 
 
 ## Comments
 
-**Default to none.** If the code can be self-documenting — better names, a smaller function — do that instead.
+**Self-documenting code first.** Before writing a comment, make the code explain itself: better names, a smaller function, an extracted variable.
 
-Comment only for an unintuitive or overly complex implementation, and then keep it **extremely brief, even at the cost of accuracy**. One line beats three. A comment restating the code is worse than none.
+Comment only what is still unintuitive after that, and keep it **extremely brief, even at the cost of accuracy**. One line beats three. A comment restating the code is worse than none.
 
 ## Styling
 

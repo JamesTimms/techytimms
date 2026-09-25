@@ -8,24 +8,31 @@ export const windowPalettes = ['fallen-leaf', 'pumpkin'] as const;
 export type WindowPalette = (typeof windowPalettes)[number];
 
 // Face is a light tint (step 50), not the main colour, so ink-faint clears contrast; side border/radius drop below lg since there's no wallpaper there to sit against.
+// `pumpkin`, the live palette, reads its face and edge off semantic tokens
+// (`surface`, `window-edge`) rather than ramp steps — see the PALETTE block
+// in global.css for why. `fallen-leaf` is unmeasured and unused; it keeps its
+// own ramp steps rather than being folded into tokens tuned for the other.
 export const windowFrame = cva('border border-x-0 lg:border-x lg:rounded-window', {
   variants: {
     palette: {
       'fallen-leaf': 'bg-leaf-50 border-leaf-500 dark:bg-leaf-700',
-      pumpkin: 'bg-pumpkin-50 border-pumpkin-500 dark:bg-pumpkin-700',
+      pumpkin: 'bg-surface border-window-edge',
     },
   },
   defaultVariants: { palette: 'fallen-leaf' },
 });
 
-// The bottom rule is the main colour in light mode only — dark mode draws no internal rule (bar-to-face is only ~1.6:1, but the bar is chrome, not a boundary). Corners use radius-window-inner to nest inside the frame's own.
+// No border-b: the frame's own outer border is the only boundary a window
+// draws now — an internal divide between the bar and the face read as a
+// second, redundant edge. Corners use radius-window-inner to nest inside the
+// frame's own.
 export const titleBar = cva(
-  'flex items-center justify-between gap-3 border-b px-3 py-1.5 lg:rounded-t-window-inner dark:border-b-0',
+  'flex items-center justify-between gap-3 px-3 py-1.5 lg:rounded-t-window-inner',
   {
     variants: {
       palette: {
-        'fallen-leaf': 'bg-leaf-900 text-leaf-50 border-leaf-200',
-        pumpkin: 'bg-pumpkin-900 text-pumpkin-50 border-pumpkin-300',
+        'fallen-leaf': 'bg-leaf-900 text-leaf-50',
+        pumpkin: 'bg-title-bar text-title-bar-ink',
       },
     },
     defaultVariants: { palette: 'fallen-leaf' },
@@ -39,7 +46,7 @@ export const titleControl = cva(
     variants: {
       palette: {
         'fallen-leaf': 'text-leaf-100',
-        pumpkin: 'text-pumpkin-100',
+        pumpkin: 'text-title-bar-ink',
       },
       pressable: { true: 'cursor-pointer', false: '' },
     },
@@ -50,10 +57,12 @@ export const titleControl = cva(
         class: 'hover:bg-leaf-500 hover:text-leaf-50 active:bg-leaf-200 active:text-leaf-900',
       },
       {
+        // One fill for both hover and active — accent/title-bar sit close
+        // enough in lightness that a three-way split (resting/hover/pressed)
+        // couldn't clear Lc 75 in both themes at once; accent-sunk + ink can.
         palette: 'pumpkin',
         pressable: true,
-        class:
-          'hover:bg-pumpkin-500 hover:text-pumpkin-50 active:bg-pumpkin-300 active:text-pumpkin-900',
+        class: 'hover:bg-accent-sunk hover:text-ink active:bg-accent-sunk active:text-ink',
       },
     ],
     defaultVariants: { palette: 'fallen-leaf', pressable: false },
@@ -69,7 +78,7 @@ export const paletteDescriptions: Record<WindowPalette, string> = {
   'fallen-leaf':
     'Straw at 80% as the main colour. The calmest of the two: the face is barely tinted and the edge is a warm brown rather than a line of colour.',
   pumpkin:
-    'Pumpkin at 70% as the main colour. Higher chroma at every step, so the edge and the rule under the title bar read as orange rather than as brown.',
+    'The live palette. Rust red off the accent hue-drift curve, not the pumpkin ramp — the face is a pumpkin-tinted `surface`, the edge is `window-edge`.',
 };
 
 export type PaletteVariantProps = VariantProps<typeof windowFrame>;

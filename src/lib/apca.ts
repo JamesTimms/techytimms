@@ -58,9 +58,8 @@ export function apcaContrast(text: Oklch, background: Oklch): number {
   return apcaContrastFromLuminance(clampNearBlack(apcaLuminance(text)), clampNearBlack(apcaLuminance(background)));
 }
 
-// Same formula, fed sRGB hex directly — for palette candidates that are only
-// ever specified as hex (they must render both themes at once, so they can't
-// use theme-dependent OKLCH tokens; see palette-candidates.ts).
+// Same formula, fed sRGB hex directly — for a value that only ever arrives as
+// a hex string rather than a themed OKLCH token.
 export function apcaContrastHex(text: string, background: string): number {
   return apcaContrastFromLuminance(
     clampNearBlack(apcaLuminanceFromGamma(hexToRgb01(text))),

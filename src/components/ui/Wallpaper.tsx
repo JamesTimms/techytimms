@@ -63,7 +63,10 @@ export const lightWallpaper: WallpaperTheme = {
 
 export const darkWallpaper: WallpaperTheme = {
   colour: 'var(--color-desktop)',
-  gradient: { ...gradient, angle: 135, stops: ['#491304', '#080200'] },
+  // Lighter pumpkin-toned stops than the previous near-black pair — same
+  // structure (135deg, two stops), verified against desktop-ink and accent
+  // at both ends via apcaContrastHex (see docs/design-system.md §1).
+  gradient: { ...gradient, angle: 135, stops: ['#581e00', '#140200'] },
   noise: {
     ...noise,
     frequency: 0.65,

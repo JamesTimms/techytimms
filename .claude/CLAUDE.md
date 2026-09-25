@@ -20,7 +20,7 @@ pnpm preview               # serve dist/
 pnpm check                 # astro check (type check only, no build)
 pnpm test                  # vitest run
 pnpm test:watch
-pnpm test src/lib/__tests__/content.test.ts   # a single file
+pnpm test src/lib/content.test.ts             # a single file
 pnpm test -t "drops drafts in production"      # a single test by name
 ```
 
@@ -32,7 +32,7 @@ Prettier is configured (`.prettierrc.mjs`) but is not wired into a script and ha
 
 **`.astro` is the data layer, `.tsx` is the UI layer.** `.astro` owns data access (`getCollection`, `Astro.url`), Astro directives (`transition:*`, `is:inline`, `client:*`) and `<head>`; a component-level `.astro` file should be a thin wrapper, not a component. `.tsx` holds the grouped, composable component library with CVA variants, rendered to static HTML — **no `client:*` unless interaction genuinely requires it**, because the first one loads React's renderer on every page containing that component. Directives do not exist in `.tsx` and silently do nothing on a component tag, which is what the wrappers are for.
 
-**Logic lives in `src/lib/`, not in components.** `.astro` files are awkward to unit test, so filtering, sorting and formatting are pure functions in `src/lib/content.ts` and the page templates stay thin. Tests target `src/lib/` only. New page logic belongs in a lib function with a test, not inline in the template.
+**Code lives beside its use.** Declare a helper in the file that uses it; move it to `src/lib/` only once a second caller exists. Page templates stay thin: logic too complex for a template goes into a pure, tested function, not inline markup. No folders sorted by file type. Tests sit next to the file under test (`Bar.test.ts` beside `Bar.tsx`); no `__tests__/`.
 
 **Draft handling is a correctness concern.** `excludeDrafts()` passes drafts through in dev and filters them in production (`import.meta.env.PROD`). A bug here silently publishes unfinished work, which is why it is tested. It takes the production flag as an injectable argument so tests can drive both branches.
 
@@ -59,7 +59,7 @@ Prettier is configured (`.prettierrc.mjs`) but is not wired into a script and ha
 - **Documents and reports are extremely concise, even at the cost of accuracy.** State conclusions, not reasoning. No "considered but rejected", no restating the brief, no narration. Tables over prose. A design note is a reference, not a transcript.
 - **One element at a time.** Iterate on a single component per task rather than making sweeping changes across the site.
 - **No i18n.** Decided and closed; do not add scaffolding for it.
-- **Default to no comment.** If the code can be self-documenting — better names, a smaller function — do that instead. Comment only for an unintuitive or overly complex implementation, and then keep it **extremely brief, even at the cost of accuracy**. One line beats three; a comment restating the code is worse than none.
+- **Self-documenting code first, comments last.** Before writing a comment, make the code explain itself: better names, a smaller function, an extracted variable. Comment only what is still unintuitive after that, and keep it **extremely brief, even at the cost of accuracy**. One line beats three; a comment restating the code is worse than none.
 - **Compose React components with the children pattern.** Container components take `children`; the call site does the mapping:
   ```tsx
   <DesktopSection rows={n}>
@@ -70,6 +70,8 @@ Prettier is configured (`.prettierrc.mjs`) but is not wired into a script and ha
 - **`key` is not a prop in `.astro` templates.** Astro has no reconciliation, so `key` is passed through as an unknown prop and fails type checking. Omit it when mapping inside `.astro` files; it is only meaningful inside `.tsx`.
 - **Names carry their use without abbreviation or padding**: `publishedPosts`, not `pp`, not `postsFilteredByPublishedStatus`. A name needing a comment is the wrong name.
 - **Tests stay deliberately small** — draft exclusion, ordering, the CV schema rejecting bad data, date and slug formatting. Do not add coverage for thin templates.
+- **Subagents** default to **Claude Opus 5.5, medium effort**. Use a much smaller model only for a small, focused task (text formatting, a button's variant), or when James names a model. Never fork; give a minimal, self-contained brief; verify the result.
+- **Report every subagent** on completion: runtime, model, tokens used, and anything else relevant (failures, retries, claims not verified, deviations from the brief).
 - Deferred by decision, do not introduce unasked: hand-written CSS, a headless CMS, newsletter capture, comments, E2E tests, interactive MDX components.
 
 ## Status

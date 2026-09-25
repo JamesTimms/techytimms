@@ -27,7 +27,7 @@ describe('wallpaperCss', () => {
   it('keeps the live gradients and tile sizes', () => {
     const css = build();
     expect(css).toContain('linear-gradient(90deg, #efd0bb, #fbf1ea)');
-    expect(css).toContain('linear-gradient(135deg, #491304, #080200)');
+    expect(css).toContain('linear-gradient(135deg, #581e00, #140200)');
     expect(css).toContain('background-size: 180px 180px, auto;');
     expect(css).toContain('background-size: 140px 140px, auto;');
   });
