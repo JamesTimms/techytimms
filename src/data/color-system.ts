@@ -5,7 +5,7 @@
  * file only records which hue each ramp uses, and which tokens pair.
  */
 
-export type MainHueKey = 'leaf' | 'pumpkin' | 'neutral' | 'accent';
+export type MainHueKey = 'leaf' | 'pumpkin' | 'umber' | 'ash' | 'accent';
 
 export interface MainHueDefinition {
   key: MainHueKey;
@@ -13,13 +13,14 @@ export interface MainHueDefinition {
   name: string;
   hue: number;
   /** Which live 50–900 ramp in global.css this reads verbatim, or null for a derived comparison ramp. */
-  liveRamp: 'leaf' | 'pumpkin' | null;
+  liveRamp: 'leaf' | 'pumpkin' | 'umber' | 'ash' | null;
 }
 
 export const mainHues: MainHueDefinition[] = [
   { key: 'pumpkin', name: 'pumpkin', hue: 55, liveRamp: 'pumpkin' },
   { key: 'leaf', name: 'leaf', hue: 80, liveRamp: 'leaf' },
-  { key: 'neutral', name: 'neutral / ink', hue: 55, liveRamp: null },
+  { key: 'umber', name: 'umber', hue: 55, liveRamp: 'umber' },
+  { key: 'ash', name: 'ash', hue: 55, liveRamp: 'ash' },
   { key: 'accent', name: 'accent / rust', hue: 44, liveRamp: null },
 ];
 
@@ -33,7 +34,8 @@ export const contrastTargets: Record<string, number> = {
   accent: 30,
   border: 30,
   'window-edge': 30,
-  'bar-edge': 30,
+  'bar-edge': 15,
+  'menu-bar-edge': 15,
   rule: 15,
 };
 
@@ -41,6 +43,8 @@ export interface ForegroundPairing {
   token: string;
   kind: 'text' | 'link' | 'mark' | 'boundary';
   sample?: string;
+  /** Overrides the token's default target for this background. */
+  target?: number;
   use: string;
 }
 
@@ -87,15 +91,16 @@ export const tokenPairings: BackgroundRow[] = [
   {
     background: 'menu-bar',
     foregrounds: [
-      { token: 'ink-muted', kind: 'text', sample: 'Section', use: 'Text in the top bar.' },
+      { token: 'ink', kind: 'text', sample: 'Section', target: 75, use: 'Small text in the top bar.' },
       { token: 'accent', kind: 'mark', use: 'A status mark in the top bar.' },
       { token: 'bar-edge', kind: 'boundary', use: 'The line between the top bar and the wallpaper.' },
+      { token: 'menu-bar-edge', kind: 'boundary', target: 15, use: 'The top bar’s own fainter edge, so it recedes behind the dock.' },
     ],
   },
   {
     background: 'dock',
     foregrounds: [
-      { token: 'ink-muted', kind: 'text', sample: 'Home', use: 'Labels in the dock.' },
+      { token: 'ink', kind: 'text', sample: 'Home', target: 75, use: 'Labels in the dock.' },
       { token: 'accent', kind: 'mark', use: 'The current-page mark in the dock.' },
       { token: 'bar-edge', kind: 'boundary', use: 'The line between the dock and the wallpaper.' },
     ],

@@ -29,7 +29,7 @@
   --color-rule: oklch(88.5% 0.018 55);
   --color-border: oklch(63% 0.02 55);
   --color-ink-faint: oklch(55.5% 0.024 55);
-  --color-ink-muted: oklch(47% 0.028 55);
+  --color-ink-muted: oklch(44.9% 0.028 55);
   --color-ink: oklch(24% 0.03 55);
 
   /* One drifting ramp, not two hues switched by theme: hue moves with
@@ -99,6 +99,30 @@
   --color-pumpkin-800: oklch(23.4% 0.0418 55);
   --color-pumpkin-900: oklch(14% 0.03 55);
 
+  /* Warm neutral: light-theme text and surfaces. */
+  --color-umber-50: oklch(99% 0.006 55);
+  --color-umber-100: oklch(89.6% 0.009 55);
+  --color-umber-200: oklch(80.1% 0.012 55);
+  --color-umber-300: oklch(70.7% 0.015 55);
+  --color-umber-400: oklch(61.2% 0.018 55);
+  --color-umber-500: oklch(51.8% 0.021 55);
+  --color-umber-600: oklch(42.3% 0.024 55);
+  --color-umber-700: oklch(32.9% 0.027 55);
+  --color-umber-800: oklch(23.4% 0.030 55);
+  --color-umber-900: oklch(14% 0.033 55);
+
+  /* Grey neutral: lines everywhere, dark-theme surfaces and text. */
+  --color-ash-50: oklch(99% 0.008 55);
+  --color-ash-100: oklch(89.6% 0.016 55);
+  --color-ash-200: oklch(80.1% 0.020 55);
+  --color-ash-300: oklch(70.7% 0.020 55);
+  --color-ash-400: oklch(61.2% 0.020 55);
+  --color-ash-500: oklch(51.8% 0.019 55);
+  --color-ash-600: oklch(42.3% 0.018 55);
+  --color-ash-700: oklch(32.9% 0.018 55);
+  --color-ash-800: oklch(23.4% 0.016 55);
+  --color-ash-900: oklch(14% 0.012 55);
+
   /* Window chrome, off-ramp: valued from the accent hue-drift curve above
      (hue(L) = clamp(38, 60, 40 + 0.3 * (L% - 40))), not from the leaf/pumpkin
      ramps, because the title bar is the accent's own identity rather than
@@ -107,13 +131,14 @@
      `pumpkin-900` unconditionally (no `dark:` override), so light mode wore
      dark mode's near-black bar; it now has its own light-mode value, and the
      two agree by sharing the drift curve rather than by being equal. */
-  --color-title-bar: oklch(38% 0.105 39);
-  --color-title-bar-ink: oklch(96% 0.015 60);
+  --color-title-bar: oklch(56% 0.142 53);
+  --color-title-bar-ink: oklch(99% 0.01 60);
 
   /* Bars: a pumpkin tint, with a darker (light mode) or lighter (dark mode) pumpkin edge. */
-  --color-menu-bar: oklch(97% 0.026 60);
-  --color-dock: oklch(97% 0.026 60);
-  --color-bar-edge: oklch(70% 0.08 55);
+  --color-menu-bar: oklch(97% 0.02 60 / 0.55);
+  --color-dock: oklch(97% 0.02 60 / 0.75);
+  --color-bar-edge: oklch(40% 0.02 55 / 0.35);
+  --color-menu-bar-edge: oklch(82% 0.04 58);
 
   /* The wallpaper the window sits on. Deliberately not `ground`: ground is the
      contrast baseline every text pair is measured against, and the wallpaper is
@@ -124,7 +149,7 @@
      colour itself: the main colour is now the window's identity, and a
      wallpaper still wearing it would leave the window nothing of its own to
      be. */
-  --color-desktop: oklch(88% 0.045 55);
+  --color-desktop: oklch(94% 0.02 60);
 
   /* Flips with the theme, unlike the dark-wallpaper schemes: pale straw cannot
      carry light text. Shortcut labels are the only text on the wallpaper. */
@@ -164,10 +189,10 @@
      checked token are the same value, not two colours with the same name. */
   --color-surface: oklch(18% 0.016 55);
   --color-sunk: oklch(14% 0.012 55);
-  --color-rule: oklch(32% 0.02 55);
+  --color-rule: oklch(47% 0.018 55);
   /* Raised from 52% (APCA −23 on `surface`, short of the −30 UI-boundary
      floor) to 60%. */
-  --color-border: oklch(66% 0.02 55);
+  --color-border: oklch(78% 0.02 55);
   /* Higher than the light scale's mirror image. Dark surfaces carry less
      apparent contrast at the same ratio, and these two sit on the window face
      as well as on `ground`. */
@@ -178,20 +203,21 @@
   /* Same drift curve as light mode's accent (see the `@theme` block above),
      evaluated at this theme's own lightness steps rather than switched to a
      second, unrelated hue. */
-  --color-accent: oklch(82% 0.1 52);
-  --color-accent-ink: oklch(87% 0.078 54);
+  --color-accent: oklch(86.5% 0.1 52);
+  --color-accent-ink: oklch(94.9% 0.078 54);
   --color-accent-sunk: oklch(25% 0.032 36);
 
   /* Same family as the light title bar (`--color-title-bar` above), evaluated
      at a lighter, more vibrant step — dark mode's version of "too dark and
      dull" was `pumpkin-900` read as plain brown; this is the same curve, just
      further up it. */
-  --color-title-bar: oklch(38% 0.105 39);
-  --color-title-bar-ink: oklch(95% 0.015 60);
+  --color-title-bar: oklch(56% 0.142 53);
+  --color-title-bar-ink: oklch(99% 0.01 60);
 
-  --color-menu-bar: oklch(17% 0.03 50);
-  --color-dock: oklch(17% 0.03 50);
-  --color-bar-edge: oklch(60% 0.06 50);
+  --color-menu-bar: oklch(12% 0.015 50 / 0.55);
+  --color-dock: oklch(12% 0.015 50 / 0.75);
+  --color-bar-edge: oklch(90% 0.01 60 / 0.2);
+  --color-menu-bar-edge: oklch(45% 0.03 50);
 
   --color-desktop: oklch(24% 0.015 60);
   --color-desktop-ink: oklch(97% 0.008 45);
@@ -209,6 +235,13 @@
   --color-link-3: oklch(76% 0.11 70);
   --color-link-4: oklch(76% 0.11 95);
   --color-link-5: oklch(76% 0.11 125);
+}
+/* Brand title bar: pumpkin at P3 chroma where the display can show it; sRGB value above is the fallback. */
+@media (color-gamut: p3) {
+  :root,
+  :root.dark {
+    --color-title-bar: oklch(56% 0.162 53);
+  }
 }
 /* =========================== end PALETTE — Pumpkin ======================== */
 
@@ -559,7 +592,7 @@
   .desktop-shortcuts {
     /* Each fixed bar's height plus a margin, for shortcuts anchored to that edge. */
     --dock-clearance: calc(3rem + env(safe-area-inset-bottom, 0px));
-    --status-clearance: calc(3rem + env(safe-area-inset-top, 0px));
+    --status-clearance: calc(2.5rem + env(safe-area-inset-top, 0px));
   }
 
   @media (min-width: 80rem) {

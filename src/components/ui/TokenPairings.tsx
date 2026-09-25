@@ -1,7 +1,7 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useState, type CSSProperties } from 'react';
 
 import { apcaContrast } from '~/lib/apca';
-import type { Oklch } from '~/lib/color-tokens';
+import { linearSrgbToOklch, oklchToLinearSrgb, type Oklch } from '~/lib/color-tokens';
 import { contrastTargets, type BackgroundRow, type ForegroundPairing } from '~/data/color-system';
 import { ColourSliders, formatOklch, RESET_EVENT, setColourOverride, type Theme } from '~/components/ui/ColourControl';
 
@@ -29,20 +29,31 @@ const targetLabels: Record<number, string> = {
   15: 'decorative lines',
 };
 
-function resultInfo(contrast: number, target: number, { kind }: ForegroundPairing): string {
+function resultInfo(contrast: number, target: number, { kind }: ForegroundPairing, composited: boolean): string {
   const magnitude = Math.abs(contrast);
   const figures = `APCA ${magnitude.toFixed(1)} against a target of ${target}`;
-  if (magnitude >= target) return `Passes: ${figures} for ${targetLabels[target] ?? 'this use'}.`;
+  const note = composited ? '\nMeasured over the wallpaper’s flat colour.' : '';
+  if (magnitude >= target) return `Passes: ${figures} for ${targetLabels[target] ?? 'this use'}.${note}`;
   const noun = kind === 'boundary' ? 'line' : kind === 'mark' ? 'mark' : 'text';
   const advice = contrast >= 0 ? `darken the ${noun} or lighten the background` : `lighten the ${noun} or darken the background`;
-  return `Fails: ${figures} — ${(target - magnitude).toFixed(1)} short; ${advice}`;
+  return `Fails: ${figures} — ${(target - magnitude).toFixed(1)} short; ${advice}${note}`;
 }
 
-function Example({ pairing, foreground, background }: { pairing: ForegroundPairing; foreground: string; background: string }) {
+function compositeOver(top: Oklch, bottom: Oklch): Oklch {
+  const alpha = top.alpha ?? 1;
+  const bottomLinear = oklchToLinearSrgb(bottom);
+  const mixed = oklchToLinearSrgb(top).map((channel, index) => alpha * channel + (1 - alpha) * bottomLinear[index]!);
+  return linearSrgbToOklch(mixed as [number, number, number]);
+}
+
+const isTranslucent = (oklch: Oklch) => (oklch.alpha ?? 1) < 1;
+const checkered = (oklch: Oklch) => (isTranslucent(oklch) ? 'checkered' : '');
+
+function Example({ pairing, foreground, background }: { pairing: ForegroundPairing; foreground: string; background: Oklch }) {
   return (
     <span
-      className="flex h-10 w-20 shrink-0 items-center justify-center border border-border p-1 text-[0.65rem]"
-      style={{ backgroundColor: background }}
+      className={`flex h-10 w-20 shrink-0 items-center justify-center border border-border bg-(--swatch) p-1 text-[0.65rem] ${checkered(background)}`}
+      style={{ '--swatch': formatOklch(background) } as CSSProperties}
     >
       {pairing.kind === 'boundary' ? (
         <span className="block h-6 w-10 border-4" style={{ borderColor: foreground }} />
@@ -58,11 +69,11 @@ function Example({ pairing, foreground, background }: { pairing: ForegroundPairi
   );
 }
 
-function Result({ contrast, pairing }: { contrast: number; pairing: ForegroundPairing }) {
-  const target = contrastTargets[pairing.token]!;
+function Result({ contrast, pairing, composited }: { contrast: number; pairing: ForegroundPairing; composited: boolean }) {
+  const target = pairing.target ?? contrastTargets[pairing.token]!;
   const passes = Math.abs(contrast) >= target;
   return (
-    <span className="relative whitespace-nowrap font-mono text-ink-muted" tabIndex={0} data-swatch-info={resultInfo(contrast, target, pairing)}>
+    <span className="relative whitespace-nowrap font-mono text-ink-muted" tabIndex={0} data-swatch-info={resultInfo(contrast, target, pairing, composited)}>
       <span className={passes ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>{passes ? '✓' : '✗'}</span>{' '}
       {Math.abs(contrast).toFixed(1)} / {target}
     </span>
@@ -107,8 +118,8 @@ export function TokenPairings({ values: savedValues, rows, otherTokens }: TokenP
               aria-pressed={open}
               aria-label={`Edit ${token} (${theme})`}
               onClick={() => setEditing(open ? null : { row, token, theme })}
-              className={`relative block h-4 w-4 cursor-pointer border ${open ? 'border-accent ring-2 ring-accent' : 'border-border'}`}
-              style={{ backgroundColor: css(token, theme) }}
+              className={`relative block h-4 w-4 cursor-pointer border ${open ? 'border-accent ring-2 ring-accent' : 'border-border'} bg-(--swatch) ${checkered(values[token]![theme])}`}
+              style={{ '--swatch': css(token, theme) } as CSSProperties}
               data-swatch-info={`${token} (${theme})\n${css(token, theme)}`}
             />
           );
@@ -161,17 +172,23 @@ export function TokenPairings({ values: savedValues, rows, otherTokens }: TokenP
                       {chip(row, background)}
                     </td>
                   )}
-                  {themes.map((theme) => (
-                    <td key={theme} className="py-1.5 pr-3">
-                      <span className="flex items-center gap-2">
-                        <Example pairing={pairing} foreground={css(pairing.token, theme)} background={css(background, theme)} />
-                        <Result
-                          contrast={apcaContrast(measured[pairing.token]![theme], measured[background]![theme])}
-                          pairing={pairing}
-                        />
-                      </span>
-                    </td>
-                  ))}
+                  {themes.map((theme) => {
+                    const measuredBackground = measured[background]![theme];
+                    const composited = isTranslucent(measuredBackground) || isTranslucent(measured[pairing.token]![theme]);
+                    const flatBackground = composited ? compositeOver(measuredBackground, measured.desktop![theme]) : measuredBackground;
+                    return (
+                      <td key={theme} className="py-1.5 pr-3">
+                        <span className="flex items-center gap-2">
+                          <Example pairing={pairing} foreground={css(pairing.token, theme)} background={values[background]![theme]} />
+                          <Result
+                            contrast={apcaContrast(compositeOver(measured[pairing.token]![theme], flatBackground), flatBackground)}
+                            pairing={pairing}
+                            composited={composited}
+                          />
+                        </span>
+                      </td>
+                    );
+                  })}
                   <td className="py-1.5 pr-3">{chip(row, pairing.token)}</td>
                   <td className="py-1.5 text-ink-muted">{pairing.use}</td>
                 </tr>

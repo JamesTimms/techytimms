@@ -6,6 +6,7 @@ export interface Oklch {
   l: number; // 0–1
   c: number;
   h: number; // degrees
+  alpha?: number; // 0–1, absent when opaque
 }
 
 // OKLab → linear sRGB, Björn Ottosson's published matrices — the same ones
@@ -57,6 +58,26 @@ export function hexToRgb01(hex: string): [number, number, number] {
   return [r, g, b].map((byte) => parseInt(byte, 16) / 255) as [number, number, number];
 }
 
+export function linearSrgbToOklch([r, g, b]: [number, number, number]): Oklch {
+  const lMix = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const mMix = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const sMix = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+
+  const l = 0.2104542553 * lMix + 0.793617785 * mMix - 0.0040720468 * sMix;
+  const a = 1.9779984951 * lMix - 2.428592205 * mMix + 0.4505937099 * sMix;
+  const bAxis = 0.0259040371 * lMix + 0.7827717662 * mMix - 0.808675766 * sMix;
+
+  const hue = (Math.atan2(bAxis, a) * 180) / Math.PI;
+  return { l, c: Math.hypot(a, bAxis), h: hue < 0 ? hue + 360 : hue };
+}
+
+const gammaToLinearSrgb = (channel: number) =>
+  channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+
+export function hexToOklch(hex: string): Oklch {
+  return linearSrgbToOklch(hexToRgb01(hex).map(gammaToLinearSrgb) as [number, number, number]);
+}
+
 export function oklchToHex(oklch: Oklch): string {
   const bytes = oklchToLinearSrgb(oklch)
     .map(linearToGammaSrgb)
@@ -66,19 +87,21 @@ export function oklchToHex(oklch: Oklch): string {
 
 export interface ColorToken {
   oklch: Oklch;
-  /** The literal `L% C H` from the source CSS, so display never re-derives it through floats. */
+  /** The literal `L% C H[ / A]` from the source CSS, so display never re-derives it through floats. */
   oklchText: string;
   hex: string;
 }
 
 const TOKEN_PATTERN =
-  /--color-([a-z0-9-]+):\s*oklch\(\s*([\d.]+)%\s+([\d.]+)\s+([\d.]+)\s*\)/g;
+  /--color-([a-z0-9-]+):\s*oklch\(\s*([\d.]+)%\s+([\d.]+)\s+([\d.]+)\s*(?:\/\s*([\d.]+)\s*)?\)/g;
 
 export function parseColorTokens(css: string): Record<string, ColorToken> {
   return Object.fromEntries(
-    [...css.matchAll(TOKEN_PATTERN)].map(([, name, l, c, h]) => {
+    [...css.matchAll(TOKEN_PATTERN)].map(([, name, l, c, h, alpha]) => {
       const oklch: Oklch = { l: Number(l) / 100, c: Number(c), h: Number(h) };
-      return [name, { oklch, oklchText: `${l}% ${c} ${h}`, hex: oklchToHex(oklch) }];
+      if (alpha !== undefined) oklch.alpha = Number(alpha);
+      const oklchText = `${l}% ${c} ${h}${alpha === undefined ? '' : ` / ${alpha}`}`;
+      return [name, { oklch, oklchText, hex: oklchToHex(oklch) }];
     }),
   );
 }

@@ -10,7 +10,7 @@ interface Props {
   size?: BarSize;
 }
 
-const { currentPath, position = 'top', size = 'regular' } = Astro.props;
+const { currentPath, position = 'top', size = 'compact' } = Astro.props;
 
 // The build's instant, stale by definition — enableClock() (src/lib/clock.ts) corrects it client-side; rendering it anyway keeps the bar sized right before that runs.
 const renderedAt = new Date();

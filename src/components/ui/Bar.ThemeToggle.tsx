@@ -5,11 +5,11 @@ export function ThemeToggle() {
     <button
       id="theme-toggle"
       type="button"
-      className="theme-toggle tooltip-anchor inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-1.5 py-1.5"
+      className="theme-toggle tooltip-anchor inline-flex min-h-8 min-w-8 items-center justify-center rounded-md p-1"
       aria-label="Toggle colour theme"
     >
       <svg
-        className="theme-toggle-icon theme-toggle-sun hidden h-8 w-8 dark:block"
+        className="theme-toggle-icon theme-toggle-sun hidden h-6 w-6 dark:block"
         viewBox="4 0 8 8"
         shapeRendering="crispEdges"
         aria-hidden="true"
@@ -24,7 +24,7 @@ export function ThemeToggle() {
         <rect x="11" y="3" width="1" height="2" />
       </svg>
       <svg
-        className="theme-toggle-icon theme-toggle-moon block h-8 w-8 dark:hidden"
+        className="theme-toggle-icon theme-toggle-moon block h-6 w-6 dark:hidden"
         viewBox="4 0 8 8"
         shapeRendering="crispEdges"
         aria-hidden="true"

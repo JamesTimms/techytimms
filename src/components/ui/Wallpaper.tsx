@@ -47,7 +47,7 @@ const noise: WallpaperNoise = {
 const gradient: WallpaperGradient = {
   type: 'linear',
   angle: 90,
-  stops: ['#efd0bb', '#fbf1ea'],
+  stops: ['oklch(92% 0.03 60)', 'oklch(96.5% 0.012 60)'],
   blend: 'normal',
   size: 'auto',
   repeat: 'no-repeat',

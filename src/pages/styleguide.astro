@@ -18,7 +18,7 @@ import { Wallpaper } from '~/components/ui/Wallpaper';
 const { light: lightTokens, dark: darkTokens } = parseThemedColorTokens(globalCss);
 
 const isLinkToken = (name: string) => name.startsWith('link-');
-const isRampToken = (name: string) => name.startsWith('leaf-') || name.startsWith('pumpkin-');
+const isRampToken = (name: string) => /^(leaf|pumpkin|umber|ash)-/.test(name);
 
 // ---------------------------------------------------------------------------
 // 2. Every colour used by any token
@@ -36,7 +36,7 @@ function themeVariants(name: string): FamilyEntry[] {
   const dark = darkTokens[name];
   if (!light) return [];
   const identical =
-    dark && light.oklch.l === dark.oklch.l && light.oklch.c === dark.oklch.c && light.oklch.h === dark.oklch.h;
+    dark && light.oklch.l === dark.oklch.l && light.oklch.c === dark.oklch.c && light.oklch.h === dark.oklch.h && light.oklch.alpha === dark.oklch.alpha;
   if (identical) return [{ name, theme: 'both', oklch: light.oklch, hex: light.hex }];
   const entries: FamilyEntry[] = [{ name, theme: 'light', oklch: light.oklch, hex: light.hex }];
   if (dark) entries.push({ name, theme: 'dark', oklch: dark.oklch, hex: dark.hex });
@@ -52,12 +52,6 @@ const ONE_JND = 0.02;
 
 const signedHueDelta = (a: number, b: number) => ((a - b + 540) % 360) - 180;
 
-function familyOf({ c, h }: Oklch): MainHueKey {
-  if (c < NEUTRAL_CHROMA) return 'neutral';
-  if (Math.abs(signedHueDelta(h, 80)) <= 2) return 'leaf';
-  if (Math.abs(signedHueDelta(h, 55)) <= 2) return 'pumpkin';
-  return 'accent';
-}
 
 function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
@@ -69,6 +63,38 @@ function definedRamp(name: string): Oklch[] {
   return RAMP_LIGHTNESS_STEPS.map(({ step }) => requireToken(lightTokens, `${name}-${step}`).oklch);
 }
 
+const MAX_RAMP_DISTANCE = 0.05;
+
+function oklabDistance(a: Oklch, b: Oklch): number {
+  const toRadians = Math.PI / 180;
+  return Math.hypot(
+    a.l - b.l,
+    a.c * Math.cos(a.h * toRadians) - b.c * Math.cos(b.h * toRadians),
+    a.c * Math.sin(a.h * toRadians) - b.c * Math.sin(b.h * toRadians),
+  );
+}
+
+const rampFamilies = mainHues.flatMap((family) => (family.liveRamp ? [{ key: family.key, ramp: definedRamp(family.liveRamp) }] : []));
+
+// Ramp colour at an arbitrary lightness, so a token between (or beyond) steps is judged on chroma and hue only.
+function rampAt(ramp: Oklch[], lightness: number): Oklch {
+  const sorted = [...ramp].sort((a, b) => b.l - a.l);
+  if (lightness >= sorted[0]!.l) return { ...sorted[0]!, l: lightness };
+  if (lightness <= sorted.at(-1)!.l) return { ...sorted.at(-1)!, l: lightness };
+  const upper = sorted.findLast((step) => step.l >= lightness)!;
+  const lower = sorted.find((step) => step.l < lightness)!;
+  const t = (upper.l - lightness) / (upper.l - lower.l);
+  return { l: lightness, c: upper.c + (lower.c - upper.c) * t, h: upper.h + (lower.h - upper.h) * t };
+}
+
+function familyOf(entry: FamilyEntry): MainHueKey {
+  if (entry.name.startsWith('accent') || entry.name === 'title-bar') return 'accent';
+  const nearest = rampFamilies
+    .map(({ key, ramp }) => ({ key, distance: oklabDistance(entry.oklch, rampAt(ramp, entry.oklch.l)) }))
+    .reduce((best, candidate) => (candidate.distance < best.distance ? candidate : best));
+  return nearest.distance > MAX_RAMP_DISTANCE ? 'accent' : nearest.key;
+}
+
 function sharedLightnessRamp(members: FamilyEntry[]): Oklch[] {
   const h = Math.round(median(members.map((member) => member.oklch.h)));
   const c = Number(median(members.map((member) => member.oklch.c)).toFixed(3));
@@ -76,9 +102,14 @@ function sharedLightnessRamp(members: FamilyEntry[]): Oklch[] {
 }
 
 const signed = (value: number, digits: number) => `${value < 0 ? '−' : '+'}${Math.abs(value).toFixed(digits)}`;
-const formatLch = ({ l, c, h }: Oklch) => `L${Number((l * 100).toFixed(1))} C${c.toFixed(3)} H${Math.round(h)}`;
-const cssOklch = ({ l, c, h }: Oklch) => `oklch(${Number((l * 100).toFixed(1))}% ${c.toFixed(3)} ${Math.round(h)})`;
-const themeLabel = (entry: FamilyEntry) => (entry.theme === 'both' ? entry.name : `${entry.name} (${entry.theme})`);
+const isTranslucent = ({ alpha = 1 }: Oklch) => alpha < 1;
+const formatLch = (oklch: Oklch) =>
+  `L${Number((oklch.l * 100).toFixed(1))} C${oklch.c.toFixed(3)} H${Math.round(oklch.h)}${isTranslucent(oklch) ? ` A${oklch.alpha}` : ''}`;
+const cssOklch = (oklch: Oklch) =>
+  `oklch(${Number((oklch.l * 100).toFixed(1))}% ${oklch.c.toFixed(3)} ${Math.round(oklch.h)}${isTranslucent(oklch) ? ` / ${oklch.alpha}` : ''})`;
+const themeLabel = (entry: FamilyEntry) =>
+  `${entry.theme === 'both' ? entry.name : `${entry.name} (${entry.theme})`}${isTranslucent(entry.oklch) ? ` A${entry.oklch.alpha}` : ''}`;
+const swatchStyle = (oklch: Oklch, hex: string) => `--swatch:${isTranslucent(oklch) ? cssOklch(oklch) : hex}`;
 
 function deviationExplanation(entry: FamilyEntry, reference: Oklch, deltaL: number, deltaC: number, deltaH: number): string {
   const sentences: string[] = [];
@@ -106,12 +137,13 @@ function deviationExplanation(entry: FamilyEntry, reference: Oklch, deltaL: numb
 const familyCaptions: Record<MainHueKey, string> = {
   pumpkin: 'Defined ramp in global.css.',
   leaf: 'Defined ramp in global.css. Used only by the unused `fallen-leaf` window variant.',
-  neutral: 'Tokens with chroma < 0.04. Reference: shared lightness scale at the median token hue and chroma.',
-  accent: 'Remaining tokens. Reference: shared lightness scale at the median token hue and chroma.',
+  umber: 'Warm neutral — chroma rises as it darkens.',
+  ash: 'Grey neutral — flat chroma.',
+  accent: 'Accent and title-bar tokens, and any token > 0.05 ΔE from every ramp. Reference: shared lightness scale at the median token hue and chroma.',
 };
 
 const familyRows = mainHues.map((family) => {
-  const members = semanticEntries.filter((entry) => familyOf(entry.oklch) === family.key);
+  const members = semanticEntries.filter((entry) => familyOf(entry) === family.key);
   const referenceRamp = family.liveRamp ? definedRamp(family.liveRamp) : sharedLightnessRamp(members);
 
   const steps = RAMP_LIGHTNESS_STEPS.map(({ step }, index) => {
@@ -284,8 +316,8 @@ const lightThemeCss = `.theme-light{${Object.entries(lightTokens)
                     <div class="mt-1 border border-accent bg-accent-sunk p-1 text-left">
                       <button
                         type="button"
-                        class="copy-swatch relative block h-5 w-full border border-border"
-                        style={`background-color:${entry.hex}`}
+                        class:list={['copy-swatch relative block h-5 w-full border border-border bg-(--swatch)', isTranslucent(entry.oklch) && 'checkered']}
+                        style={swatchStyle(entry.oklch, entry.hex)}
                         aria-label={`Copy ${entry.name} oklch value`}
                         {...copyAttrs(entry.oklch, entry.hex, entry.info)}
                       >
@@ -325,7 +357,7 @@ const lightThemeCss = `.theme-light{${Object.entries(lightTokens)
         (['light', 'dark'] as const).map((theme) => (
           <div class={theme === 'dark' ? 'dark' : 'theme-light'}>
             <div class="flex h-80 flex-col border border-border">
-              <div class="flex items-center gap-2 border-b border-bar-edge bg-menu-bar px-2 py-1 text-xs text-ink-muted">
+              <div class="flex items-center gap-2 border-b border-menu-bar-edge bg-menu-bar backdrop-blur-sm px-2 py-1 text-xs text-ink">
                 <span class="text-accent">●</span>
                 <span>James Timms</span>
                 <span class="ml-auto">12:00</span>
@@ -349,7 +381,7 @@ const lightThemeCss = `.theme-light{${Object.entries(lightTokens)
                   </div>
                 </div>
               </div>
-              <div class="flex items-center justify-center gap-4 border-t border-bar-edge bg-dock px-2 py-1 text-xs text-ink-muted">
+              <div class="flex items-center justify-center gap-4 border-t border-bar-edge bg-dock px-2 py-1 text-xs text-ink">
                 <span><span class="text-accent">●</span> Home</span>
                 <span>Work</span>
                 <span>Writing</span>
@@ -385,6 +417,12 @@ const lightThemeCss = `.theme-light{${Object.entries(lightTokens)
   <style is:global>
     .copy-swatch {
       cursor: pointer;
+    }
+    .checkered {
+      background-image:
+        linear-gradient(var(--swatch), var(--swatch)),
+        repeating-conic-gradient(var(--color-border) 0 25%, var(--color-surface) 0 50%);
+      background-size: auto, 8px 8px;
     }
     [data-swatch-info]::after {
       content: attr(data-swatch-info);

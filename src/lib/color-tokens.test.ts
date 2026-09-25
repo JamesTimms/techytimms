@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   cssBlock,
   hexToRgb01,
+  hexToOklch,
   isInSrgbGamut,
   oklchToHex,
   parseColorTokens,
@@ -13,6 +14,14 @@ describe('oklchToHex', () => {
   it('converts pure white and black', () => {
     expect(oklchToHex({ l: 1, c: 0, h: 0 })).toBe('#ffffff');
     expect(oklchToHex({ l: 0, c: 0, h: 0 })).toBe('#000000');
+  });
+});
+
+describe('hexToOklch', () => {
+  it('round-trips through oklchToHex', () => {
+    for (const hex of ['#ffffff', '#000000', '#c2410c', '#3b82f6', '#7a5c3e']) {
+      expect(oklchToHex(hexToOklch(hex))).toBe(hex);
+    }
   });
 });
 
@@ -45,6 +54,12 @@ describe('parseColorTokens', () => {
     expect(ink.oklch).toEqual({ l: 0.24, c: 0.03, h: 85 });
     expect(ink.oklchText).toBe('24% 0.03 85');
     expect(ink.hex).toMatch(/^#[0-9a-f]{6}$/);
+  });
+
+  it('reads an optional alpha', () => {
+    const menuBar = requireToken(parseColorTokens('--color-menu-bar: oklch(97% 0.02 60 / 0.55);'), 'menu-bar');
+    expect(menuBar.oklch).toEqual({ l: 0.97, c: 0.02, h: 60, alpha: 0.55 });
+    expect(menuBar.oklchText).toBe('97% 0.02 60 / 0.55');
   });
 
   it('ignores declarations that are not oklch colours', () => {
