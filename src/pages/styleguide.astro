@@ -1,12 +1,13 @@
 ---
 import globalCss from '~/styles/global.css?raw';
 import BaseLayout from '~/layouts/BaseLayout.astro';
-import { mainHues, tokenPairings, tokenReference, type MainHueKey } from '~/data/color-system';
-import { apcaContrast } from '~/lib/apca';
+import { mainHues, tokenPairings, type MainHueKey } from '~/data/color-system';
 import { oklchToHex, parseThemedColorTokens, requireToken, type Oklch } from '~/lib/color-tokens';
 import { maxChromaInGamut, nearestRampStep, RAMP_LIGHTNESS_STEPS } from '~/lib/hue-ramp';
 import { huetonePaletteUrl, oklchPaletteUrl } from '~/lib/huetone';
-import { ColourControl, ResetColourTweaks } from '~/components/ui/ColourControl';
+import { ResetColourTweaks } from '~/components/ui/ColourControl';
+import { TokenPairings } from '~/components/ui/TokenPairings';
+import { Wallpaper } from '~/components/ui/Wallpaper';
 
 /*
  * A development surface for the colour system, not site content: `noindex`
@@ -160,40 +161,32 @@ function copyAttrs(oklch: Oklch, hex: string, info?: string) {
 }
 
 // ---------------------------------------------------------------------------
-// 3. Tokens — semanticTokenRows just attaches the live swatches to
-//    tokenReference's hand-written purpose/reason copy.
+// 3. Tokens in use
 // ---------------------------------------------------------------------------
 
-const semanticTokenRows = tokenReference.map((entry) => ({
-  ...entry,
-  light: requireToken(lightTokens, entry.token),
-  dark: requireToken(darkTokens, entry.token),
-}));
+const pairedTokens = new Set(tokenPairings.flatMap((row) => [row.background, ...row.foregrounds.map((pairing) => pairing.token)]));
+const otherTokens = Object.keys(lightTokens).filter(
+  (name) => !isLinkToken(name) && !isRampToken(name) && !pairedTokens.has(name),
+);
 
-// ---------------------------------------------------------------------------
-// 4. Tokens in use — every live text/mark pairing, one inline example per
-//    pairing, light and dark side by side, with its real APCA figure.
-// ---------------------------------------------------------------------------
+const tokenValues = Object.fromEntries(
+  [...pairedTokens, ...otherTokens].map((name) => [
+    name,
+    { light: requireToken(lightTokens, name).oklch, dark: requireToken(darkTokens, name).oklch },
+  ]),
+);
 
-const pairingRows = tokenPairings.map((pairing) => {
-  const light = apcaContrast(
-    requireToken(lightTokens, pairing.fgToken).oklch,
-    requireToken(lightTokens, pairing.bgToken).oklch,
-  );
-  const dark = apcaContrast(
-    requireToken(darkTokens, pairing.fgToken).oklch,
-    requireToken(darkTokens, pairing.bgToken).oklch,
-  );
-  return { ...pairing, light, dark };
-});
+const lightThemeCss = `.theme-light{${Object.entries(lightTokens)
+  .map(([name, token]) => `--color-${name}:oklch(${token.oklchText})`)
+  .join(';')}}`;
 ---
 
 <BaseLayout title="Styleguide" description="The colour system." noindex>
   <h1 class="text-2xl font-semibold tracking-tight">Colour system</h1>
   <p class="mt-3 max-w-prose text-ink-muted">
     Figures are parsed from <code class="text-ink">global.css</code> at build time. Hover a
-    swatch for details; click to copy. Sliders in §3 tweak tokens live on this page only —
-    nothing is saved.
+    swatch for details; click to copy. Click a token chip in §3 to tweak it live on this page
+    only — nothing is saved.
   </p>
 
   {/* ===================================================================
@@ -316,78 +309,28 @@ const pairingRows = tokenPairings.map((pairing) => {
   </section>
 
   {/* ===================================================================
-      3. Tokens
+      3. Tokens in use
       =================================================================== */}
   <section class="mt-14 border-t border-rule pt-8">
-    <h2 class="text-xl font-semibold tracking-tight">3. Tokens</h2>
+    <h2 class="text-xl font-semibold tracking-tight">3. Tokens in use</h2>
     <p class="mt-2 max-w-prose text-sm text-ink-muted">
-      Every semantic token. Drag to preview; the whole page follows.
+      Light and dark side by side. Click a chip to edit; APCA follows live.
     </p>
     <div class="mt-3"><ResetColourTweaks client:load /></div>
-
-    <div class="mt-4 overflow-x-auto">
-      <table class="w-full min-w-[52rem] border-collapse text-xs">
-        <thead>
-          <tr class="text-left text-ink-faint">
-            <th class="py-1 pr-3 font-medium">Token</th>
-            <th class="py-1 pr-3 font-medium">Light</th>
-            <th class="py-1 pr-3 font-medium">Dark</th>
-            <th class="py-1 pr-3 font-medium">Purpose</th>
-            <th class="py-1 font-medium">Why this, not the alternative</th>
-          </tr>
-        </thead>
-        <tbody>
-          {
-            semanticTokenRows.map(({ token, purpose, why, usageNote, light, dark }) => (
-              <tr class="border-t border-rule align-top">
-                <td class="py-1.5 pr-3 font-mono text-ink-muted">
-                  {token}
-                  {usageNote && (
-                    <span class="mt-1 block w-fit border border-accent bg-accent-sunk px-1 py-0.5 text-[0.6rem] font-sans font-normal normal-case tracking-normal text-accent-ink">
-                      remove?
-                    </span>
-                  )}
-                </td>
-                <td class="py-1.5 pr-3">
-                  <ColourControl client:load token={token} theme="light" oklch={light.oklch} />
-                </td>
-                <td class="py-1.5 pr-3">
-                  <ColourControl client:load token={token} theme="dark" oklch={dark.oklch} />
-                </td>
-                <td class="py-1.5 pr-3 text-ink-muted">
-                  {purpose}
-                  {usageNote && <span class="mt-1 block text-ink-faint">{usageNote}</span>}
-                </td>
-                <td class="py-1.5 text-ink-muted">{why}</td>
-              </tr>
-            ))
-          }
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  {/* ===================================================================
-      4. Tokens in use
-      =================================================================== */}
-  <section class="mt-14 border-t border-rule pt-8">
-    <h2 class="text-xl font-semibold tracking-tight">4. Tokens in use</h2>
-    <p class="mt-2 max-w-prose text-sm text-ink-muted">
-      Light and dark side by side. APCA Lc is computed from the saved values, not live tweaks.
-    </p>
-    <div class="mt-3"><ResetColourTweaks client:load /></div>
+    <style is:inline set:html={lightThemeCss} />
+    <Wallpaper selector=".light-ground" darkSelector=".never-dark" />
 
     <div class="mt-4 grid gap-4 md:grid-cols-2">
       {
         (['light', 'dark'] as const).map((theme) => (
-          <div class={theme === 'dark' ? 'dark' : ''}>
+          <div class={theme === 'dark' ? 'dark' : 'theme-light'}>
             <div class="flex h-80 flex-col border border-border">
-              <div class="flex items-center gap-2 border-b border-window-edge bg-menu-bar px-2 py-1 text-xs text-ink-muted">
+              <div class="flex items-center gap-2 border-b border-bar-edge bg-menu-bar px-2 py-1 text-xs text-ink-muted">
                 <span class="text-accent">●</span>
                 <span>James Timms</span>
                 <span class="ml-auto">12:00</span>
               </div>
-              <div class="desktop-ground relative flex-1 overflow-hidden">
+              <div class:list={[theme === 'dark' ? 'desktop-ground' : 'light-ground', 'relative flex-1 overflow-hidden']}>
                 <div class="absolute left-3 top-3 flex w-16 flex-col items-center gap-1">
                   <span class="block h-8 w-8 border border-window-edge bg-surface" />
                   <span class="text-[0.65rem] text-desktop-ink">About</span>
@@ -406,7 +349,7 @@ const pairingRows = tokenPairings.map((pairing) => {
                   </div>
                 </div>
               </div>
-              <div class="flex items-center justify-center gap-4 border-t border-window-edge bg-dock px-2 py-1 text-xs text-ink-muted">
+              <div class="flex items-center justify-center gap-4 border-t border-bar-edge bg-dock px-2 py-1 text-xs text-ink-muted">
                 <span><span class="text-accent">●</span> Home</span>
                 <span>Work</span>
                 <span>Writing</span>
@@ -417,62 +360,8 @@ const pairingRows = tokenPairings.map((pairing) => {
       }
     </div>
 
-    <div class="mt-4">
-      {
-        pairingRows.map((pairing) => {
-          const lightPass = Math.abs(pairing.light) >= pairing.target;
-          const darkPass = Math.abs(pairing.dark) >= pairing.target;
-          const boxClass = `flex h-10 w-20 items-center justify-center border border-border p-1 text-[0.65rem] ${pairing.bgClass}`;
-          return (
-            <div class="flex flex-wrap items-center gap-4 border-t border-rule py-3 text-xs">
-              <div class="flex shrink-0 gap-2">
-                <div class={boxClass}>
-                  {pairing.kind === 'text' ? (
-                    <span class={`truncate px-1 ${pairing.fgClass}`}>{pairing.sample}</span>
-                  ) : (
-                    <span class={`block h-6 w-10 border-4 ${pairing.fgClass}`} />
-                  )}
-                </div>
-                <div class="dark">
-                  <div class={boxClass}>
-                    {pairing.kind === 'text' ? (
-                      <span class={`truncate px-1 ${pairing.fgClass}`}>{pairing.sample}</span>
-                    ) : (
-                      <span class={`block h-6 w-10 border-4 ${pairing.fgClass}`} />
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div class="flex shrink-0 gap-1">
-                {[pairing.fgToken, pairing.bgToken].map((token) => (
-                  <span class="flex gap-px">
-                    <span
-                      class="relative block h-4 w-4 border border-border"
-                      style={`background-color:var(--color-${token})`}
-                      data-swatch-info={`${token} (light)`}
-                    />
-                    <span class="dark">
-                      <span
-                        class="relative block h-4 w-4 border border-border"
-                        style={`background-color:var(--color-${token})`}
-                        data-swatch-info={`${token} (dark)`}
-                      />
-                    </span>
-                  </span>
-                ))}
-              </div>
-              <p class="min-w-0 flex-1 font-mono text-ink-muted">{pairing.label}</p>
-              <div class="w-20 shrink-0 text-ink-faint">target {pairing.target}</div>
-              <div class={`w-28 shrink-0 ${lightPass ? 'text-ink' : 'text-accent-ink'}`}>
-                light {pairing.light.toFixed(1)} — {lightPass ? 'pass' : 'fail'}
-              </div>
-              <div class={`w-28 shrink-0 ${darkPass ? 'text-ink' : 'text-accent-ink'}`}>
-                dark {pairing.dark.toFixed(1)} — {darkPass ? 'pass' : 'fail'}
-              </div>
-            </div>
-          );
-        })
-      }
+    <div class="mt-6">
+      <TokenPairings client:load values={tokenValues} rows={tokenPairings} otherTokens={otherTokens} />
     </div>
   </section>
 

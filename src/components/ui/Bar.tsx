@@ -25,7 +25,7 @@ const barVariantClasses: Record<BarPurpose, string> = {
   dock: 'bg-dock grid-cols-[1fr_auto_1fr]',
 };
 
-export const bar = cva('dock z-20 grid items-center gap-3 border-window-edge', {
+export const bar = cva('dock z-20 grid items-center gap-3 border-bar-edge', {
   variants: {
     position: {
       top: 'border-b lg:fixed lg:inset-x-0 lg:top-0',

@@ -110,10 +110,10 @@
   --color-title-bar: oklch(38% 0.105 39);
   --color-title-bar-ink: oklch(96% 0.015 60);
 
-  /* Bars follow the theme: `surface` here, `sunk` in `.dark`. A 1px `window-edge`
-     line carries the boundary, since the fill sits close to the wallpaper. */
-  --color-menu-bar: oklch(98.5% 0.008 55);
-  --color-dock: oklch(98.5% 0.008 55);
+  /* Bars: a pumpkin tint, with a darker (light mode) or lighter (dark mode) pumpkin edge. */
+  --color-menu-bar: oklch(97% 0.026 60);
+  --color-dock: oklch(97% 0.026 60);
+  --color-bar-edge: oklch(70% 0.08 55);
 
   /* The wallpaper the window sits on. Deliberately not `ground`: ground is the
      contrast baseline every text pair is measured against, and the wallpaper is
@@ -167,7 +167,7 @@
   --color-rule: oklch(32% 0.02 55);
   /* Raised from 52% (APCA −23 on `surface`, short of the −30 UI-boundary
      floor) to 60%. */
-  --color-border: oklch(60% 0.02 55);
+  --color-border: oklch(66% 0.02 55);
   /* Higher than the light scale's mirror image. Dark surfaces carry less
      apparent contrast at the same ratio, and these two sit on the window face
      as well as on `ground`. */
@@ -178,7 +178,7 @@
   /* Same drift curve as light mode's accent (see the `@theme` block above),
      evaluated at this theme's own lightness steps rather than switched to a
      second, unrelated hue. */
-  --color-accent: oklch(78% 0.11 51);
+  --color-accent: oklch(82% 0.1 52);
   --color-accent-ink: oklch(87% 0.078 54);
   --color-accent-sunk: oklch(25% 0.032 36);
 
@@ -189,15 +189,16 @@
   --color-title-bar: oklch(38% 0.105 39);
   --color-title-bar-ink: oklch(95% 0.015 60);
 
-  --color-menu-bar: oklch(14% 0.012 55);
-  --color-dock: oklch(14% 0.012 55);
+  --color-menu-bar: oklch(17% 0.03 50);
+  --color-dock: oklch(17% 0.03 50);
+  --color-bar-edge: oklch(60% 0.06 50);
 
-  --color-desktop: oklch(22% 0.05 42);
+  --color-desktop: oklch(24% 0.015 60);
   --color-desktop-ink: oklch(97% 0.008 45);
 
   /* Raised from 55% — the wallpaper lightened (see `Wallpaper.tsx`), so the
      old value's margin against it thinned. */
-  --color-window-edge: oklch(63% 0.018 55);
+  --color-window-edge: oklch(68% 0.018 55);
 
   /* Light edge raised from 56% for the same reason as `window-edge` above. */
   --color-bevel-light: oklch(62% 0.02 55);

@@ -1,23 +1,11 @@
-import { useEffect, useState } from 'react';
+import type { Oklch } from '~/lib/color-tokens';
 
-import { oklchToHex } from '~/lib/color-tokens';
+export type Theme = 'light' | 'dark';
 
-interface Oklch {
-  l: number;
-  c: number;
-  h: number;
-}
-
-export interface ColourControlProps {
-  token: string;
-  theme: 'light' | 'dark';
-  oklch: Oklch;
-}
-
-const RESET_EVENT = 'colour-tweaks-reset';
+export const RESET_EVENT = 'colour-tweaks-reset';
 const overrides = new Map<string, string>();
 
-const formatOklch = ({ l, c, h }: Oklch) => `oklch(${(l * 100).toFixed(1)}% ${c.toFixed(3)} ${Math.round(h)})`;
+export const formatOklch = ({ l, c, h }: Oklch) => `oklch(${(l * 100).toFixed(1)}% ${c.toFixed(3)} ${Math.round(h)})`;
 
 function tweaksStyleElement(): HTMLStyleElement {
   const existing = document.getElementById('colour-tweaks');
@@ -28,47 +16,27 @@ function tweaksStyleElement(): HTMLStyleElement {
   return created;
 }
 
-function writeOverrides() {
+export function setColourOverride(token: string, theme: Theme, oklch: Oklch) {
+  overrides.set(`${token}:${theme}`, formatOklch(oklch));
   const light: string[] = [];
   const dark: string[] = [];
   for (const [key, value] of overrides) {
-    const [token, theme] = key.split(':');
-    (theme === 'dark' ? dark : light).push(`--color-${token}:${value}`);
+    const [name, keyTheme] = key.split(':');
+    (keyTheme === 'dark' ? dark : light).push(`--color-${name}:${value}`);
   }
-  // Doubled/negated selectors outrank global.css's unlayered `.dark {}` regardless of source order.
-  tweaksStyleElement().textContent = `:root:not(.dark){${light.join(';')}}.dark.dark{${dark.join(';')}}`;
+  // Doubled/negated selectors outrank global.css's `.dark {}` and the page's `.theme-light {}`.
+  tweaksStyleElement().textContent = `:root:not(.dark),.theme-light.theme-light{${light.join(';')}}.dark.dark{${dark.join(';')}}`;
 }
 
-export function ColourControl({ token, theme, oklch }: ColourControlProps) {
-  const [value, setValue] = useState(oklch);
+const sliders: { channel: keyof Oklch; max: number; step: number }[] = [
+  { channel: 'l', max: 1, step: 0.001 },
+  { channel: 'c', max: 0.37, step: 0.001 },
+  { channel: 'h', max: 360, step: 1 },
+];
 
-  useEffect(() => {
-    const reset = () => setValue(oklch);
-    window.addEventListener(RESET_EVENT, reset);
-    return () => window.removeEventListener(RESET_EVENT, reset);
-  }, [oklch]);
-
-  function update(channel: keyof Oklch, raw: string) {
-    const next = { ...value, [channel]: Number(raw) };
-    setValue(next);
-    overrides.set(`${token}:${theme}`, formatOklch(next));
-    writeOverrides();
-  }
-
-  const css = formatOklch(value);
-  const sliders: { channel: keyof Oklch; max: number; step: number }[] = [
-    { channel: 'l', max: 1, step: 0.001 },
-    { channel: 'c', max: 0.37, step: 0.001 },
-    { channel: 'h', max: 360, step: 1 },
-  ];
-
+export function ColourSliders({ value, onChange }: { value: Oklch; onChange: (next: Oklch) => void }) {
   return (
-    <div className="flex w-40 flex-col gap-1">
-      <span
-        className="relative block h-5 w-full border border-border"
-        style={{ backgroundColor: css }}
-        data-swatch-info={`${token} (${theme})\n${css}\n${oklchToHex(value)}`}
-      />
+    <div className="flex w-48 flex-col gap-1">
       {sliders.map(({ channel, max, step }) => (
         <label key={channel} className="flex items-center gap-1 text-[0.6rem] text-ink-faint">
           <span className="w-2 font-mono uppercase">{channel}</span>
@@ -78,12 +46,12 @@ export function ColourControl({ token, theme, oklch }: ColourControlProps) {
             max={max}
             step={step}
             value={value[channel]}
-            onChange={(event) => update(channel, event.currentTarget.value)}
+            onChange={(event) => onChange({ ...value, [channel]: Number(event.currentTarget.value) })}
             className="min-w-0 flex-1 accent-accent"
           />
         </label>
       ))}
-      <code className="text-[0.6rem] text-ink-faint">{css}</code>
+      <code className="text-[0.6rem] text-ink-faint">{formatOklch(value)}</code>
     </div>
   );
 }
