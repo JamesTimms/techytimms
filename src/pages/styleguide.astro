@@ -357,7 +357,7 @@ const lightThemeCss = `.theme-light{${Object.entries(lightTokens)
         (['light', 'dark'] as const).map((theme) => (
           <div class={theme === 'dark' ? 'dark' : 'theme-light'}>
             <div class="flex h-80 flex-col border border-border">
-              <div class="flex items-center gap-2 border-b border-menu-bar-edge bg-menu-bar backdrop-blur-sm px-2 py-1 text-xs text-ink">
+              <div class="flex items-center gap-2 border-b border-elevation-1-edge bg-elevation-1 backdrop-blur-sm px-2 py-1 text-xs text-ink">
                 <span class="text-accent">●</span>
                 <span>James Timms</span>
                 <span class="ml-auto">12:00</span>
@@ -381,7 +381,7 @@ const lightThemeCss = `.theme-light{${Object.entries(lightTokens)
                   </div>
                 </div>
               </div>
-              <div class="flex items-center justify-center gap-4 border-t border-bar-edge bg-dock px-2 py-1 text-xs text-ink">
+              <div class="flex items-center justify-center gap-4 border-t border-elevation-2-edge bg-elevation-2 shadow-[inset_0_1px_0_var(--color-elevation-2-highlight)] backdrop-blur-md px-2 py-1 text-xs text-ink">
                 <span><span class="text-accent">●</span> Home</span>
                 <span>Work</span>
                 <span>Writing</span>

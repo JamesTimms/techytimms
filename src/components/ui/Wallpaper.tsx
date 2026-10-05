@@ -64,7 +64,7 @@ export const lightWallpaper: WallpaperTheme = {
 export const darkWallpaper: WallpaperTheme = {
   colour: 'var(--color-desktop)',
   // Warm charcoal, low chroma.
-  gradient: { ...gradient, angle: 135, stops: ['oklch(32% 0.018 60)', 'oklch(15% 0.010 60)'] },
+  gradient: { ...gradient, angle: 135, stops: ['oklch(28% 0.016 60)', 'oklch(15% 0.010 60)'] },
   noise: {
     ...noise,
     frequency: 0.65,

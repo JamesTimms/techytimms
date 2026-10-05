@@ -88,10 +88,10 @@ describe('bar fill and size', () => {
   });
 
   it('couples each purpose with its own theme-aware fill token', () => {
-    // `menu-bar`/`dock` are CSS custom properties that flip under `.dark`
+    // `elevation-1`/`elevation-2` are CSS custom properties that flip under `.dark`
     // themselves, so neither utility needs a `dark:` class of its own.
-    expect(bar({ purpose: 'dock' })).toContain('bg-dock');
-    expect(bar({ purpose: 'menu' })).toContain('bg-menu-bar');
+    expect(bar({ purpose: 'dock' })).toContain('bg-elevation-2');
+    expect(bar({ purpose: 'menu' })).toContain('bg-elevation-1');
     expect(bar({ purpose: 'dock' })).not.toMatch(/\bleaf-\d+\b/);
     expect(bar({ purpose: 'menu' })).not.toMatch(/\bleaf-\d+\b/);
   });

@@ -18,7 +18,7 @@
  *
  * Every value is APCA-verified (src/lib/apca.ts) in both themes — see the
  * table in docs/design-system.md §1. The window's own colours used to be a
- * separate ramp; the chrome tokens below (title-bar, menu-bar, dock) now
+ * separate ramp; the chrome tokens below (title-bar, elevation-*) now
  * carry that job instead, so contrast is checked against what is actually
  * behind the text rather than against a ramp step the chrome no longer uses.
  * ========================================================================== */
@@ -134,11 +134,13 @@
   --color-title-bar: oklch(56% 0.142 53);
   --color-title-bar-ink: oklch(99% 0.01 60);
 
-  /* Bars: a pumpkin tint, with a darker (light mode) or lighter (dark mode) pumpkin edge. */
-  --color-menu-bar: oklch(97% 0.02 60 / 0.55);
-  --color-dock: oklch(97% 0.02 60 / 0.75);
-  --color-bar-edge: oklch(40% 0.02 55 / 0.35);
-  --color-menu-bar-edge: oklch(82% 0.04 58);
+  /* Elevation: 0 desktop, 1 top bar, 2 dock, 3 window (`surface`).
+     Each level is lighter, more opaque and more blurred than the one below, in both themes. */
+  --color-elevation-1: oklch(97% 0.012 60 / 0.6);
+  --color-elevation-1-edge: oklch(79% 0.03 58);
+  --color-elevation-2: oklch(99% 0.006 60 / 0.85);
+  --color-elevation-2-edge: oklch(40% 0.02 55 / 0.28);
+  --color-elevation-2-highlight: oklch(100% 0 60 / 0.9);
 
   /* The wallpaper the window sits on. Deliberately not `ground`: ground is the
      contrast baseline every text pair is measured against, and the wallpaper is
@@ -187,7 +189,7 @@
      (32.9%) instead of this token, well past the point `ink`/`ink-muted`/
      `ink-faint` below were actually checked against. Now the face and the
      checked token are the same value, not two colours with the same name. */
-  --color-surface: oklch(18% 0.016 55);
+  --color-surface: oklch(23% 0.016 55);
   --color-sunk: oklch(14% 0.012 55);
   --color-rule: oklch(47% 0.018 55);
   /* Raised from 52% (APCA −23 on `surface`, short of the −30 UI-boundary
@@ -197,7 +199,7 @@
      apparent contrast at the same ratio, and these two sit on the window face
      as well as on `ground`. */
   --color-ink-faint: oklch(78% 0.02 55);
-  --color-ink-muted: oklch(85% 0.02 55);
+  --color-ink-muted: oklch(86% 0.02 55);
   --color-ink: oklch(94% 0.014 55);
 
   /* Same drift curve as light mode's accent (see the `@theme` block above),
@@ -214,12 +216,13 @@
   --color-title-bar: oklch(56% 0.142 53);
   --color-title-bar-ink: oklch(99% 0.01 60);
 
-  --color-menu-bar: oklch(12% 0.015 50 / 0.55);
-  --color-dock: oklch(12% 0.015 50 / 0.75);
-  --color-bar-edge: oklch(90% 0.01 60 / 0.2);
-  --color-menu-bar-edge: oklch(45% 0.03 50);
+  --color-elevation-1: oklch(30% 0.012 55 / 0.6);
+  --color-elevation-1-edge: oklch(52% 0.03 50);
+  --color-elevation-2: oklch(33% 0.014 55 / 0.85);
+  --color-elevation-2-edge: oklch(90% 0.01 60 / 0.25);
+  --color-elevation-2-highlight: oklch(100% 0 60 / 0.1);
 
-  --color-desktop: oklch(24% 0.015 60);
+  --color-desktop: oklch(21% 0.014 60);
   --color-desktop-ink: oklch(97% 0.008 45);
 
   /* Raised from 55% — the wallpaper lightened (see `Wallpaper.tsx`), so the

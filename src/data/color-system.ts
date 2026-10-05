@@ -34,8 +34,8 @@ export const contrastTargets: Record<string, number> = {
   accent: 30,
   border: 30,
   'window-edge': 30,
-  'bar-edge': 15,
-  'menu-bar-edge': 15,
+  'elevation-1-edge': 15,
+  'elevation-2-edge': 15,
   rule: 15,
 };
 
@@ -89,20 +89,19 @@ export const tokenPairings: BackgroundRow[] = [
     foregrounds: [{ token: 'title-bar-ink', kind: 'text', sample: 'about.txt', use: 'The window title and its controls.' }],
   },
   {
-    background: 'menu-bar',
+    background: 'elevation-1',
     foregrounds: [
-      { token: 'ink', kind: 'text', sample: 'Section', target: 75, use: 'Small text in the top bar.' },
+      { token: 'ink', kind: 'text', sample: 'Section', target: 75, use: 'Small text in the top bar (elevation 1).' },
       { token: 'accent', kind: 'mark', use: 'A status mark in the top bar.' },
-      { token: 'bar-edge', kind: 'boundary', use: 'The line between the top bar and the wallpaper.' },
-      { token: 'menu-bar-edge', kind: 'boundary', target: 15, use: 'The top bar’s own fainter edge, so it recedes behind the dock.' },
+      { token: 'elevation-1-edge', kind: 'boundary', use: 'The top bar’s faint edge against the wallpaper.' },
     ],
   },
   {
-    background: 'dock',
+    background: 'elevation-2',
     foregrounds: [
-      { token: 'ink', kind: 'text', sample: 'Home', target: 75, use: 'Labels in the dock.' },
+      { token: 'ink', kind: 'text', sample: 'Home', target: 75, use: 'Labels in the dock (elevation 2).' },
       { token: 'accent', kind: 'mark', use: 'The current-page mark in the dock.' },
-      { token: 'bar-edge', kind: 'boundary', use: 'The line between the dock and the wallpaper.' },
+      { token: 'elevation-2-edge', kind: 'boundary', use: 'The dock’s edge against the wallpaper.' },
     ],
   },
   {

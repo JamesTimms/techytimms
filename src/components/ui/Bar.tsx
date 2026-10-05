@@ -21,8 +21,8 @@ export type BarPurpose = (typeof barPurposes)[number];
 
 // `dock` always carries the cluster, so its middle track is fixed; `menu` never does.
 const barVariantClasses: Record<BarPurpose, string> = {
-  menu: 'bg-menu-bar border-menu-bar-edge backdrop-blur-sm',
-  dock: 'bg-dock border-bar-edge backdrop-blur-sm grid-cols-[1fr_auto_1fr]',
+  menu: 'bg-elevation-1 border-elevation-1-edge backdrop-blur-sm',
+  dock: 'bg-elevation-2 border-elevation-2-edge shadow-[inset_0_1px_0_var(--color-elevation-2-highlight)] backdrop-blur-md grid-cols-[1fr_auto_1fr]',
 };
 
 export const bar = cva('dock z-20 grid items-center gap-3', {

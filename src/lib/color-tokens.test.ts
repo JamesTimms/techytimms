@@ -57,7 +57,7 @@ describe('parseColorTokens', () => {
   });
 
   it('reads an optional alpha', () => {
-    const menuBar = requireToken(parseColorTokens('--color-menu-bar: oklch(97% 0.02 60 / 0.55);'), 'menu-bar');
+    const menuBar = requireToken(parseColorTokens('--color-elevation-1: oklch(97% 0.02 60 / 0.55);'), 'elevation-1');
     expect(menuBar.oklch).toEqual({ l: 0.97, c: 0.02, h: 60, alpha: 0.55 });
     expect(menuBar.oklchText).toBe('97% 0.02 60 / 0.55');
   });
