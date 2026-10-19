@@ -19,10 +19,9 @@ const barSizeClasses: Record<BarSize, string> = {
 export const barPurposes = ['menu', 'dock'] as const;
 export type BarPurpose = (typeof barPurposes)[number];
 
-// `dock` always carries the cluster, so its middle track is fixed; `menu` never does.
 const barVariantClasses: Record<BarPurpose, string> = {
   menu: 'bg-elevation-1 border-elevation-1-edge backdrop-blur-sm',
-  dock: 'bg-elevation-2 border-elevation-2-edge shadow-[inset_0_1px_0_var(--color-elevation-2-highlight)] backdrop-blur-md grid-cols-[1fr_auto_1fr]',
+  dock: 'bg-elevation-2 border-elevation-2-edge shadow-[inset_0_1px_0_var(--color-elevation-2-highlight)] backdrop-blur-md',
 };
 
 export const bar = cva('dock z-20 grid items-center gap-3', {
@@ -34,35 +33,21 @@ export const bar = cva('dock z-20 grid items-center gap-3', {
       right: 'border-l lg:fixed lg:inset-y-0 lg:right-0 lg:grid-cols-none lg:px-2 lg:py-3',
     },
     purpose: barVariantClasses,
-    middleRegion: { true: '', false: '' },
+    middle: { true: 'grid-cols-[1fr_auto_1fr]', false: 'grid-cols-[1fr_auto]' },
     sticky: { true: 'fixed', false: '' },
     size: barSizeClasses,
   },
   compoundVariants: [
-    { purpose: 'menu', middleRegion: false, class: 'grid-cols-[1fr_auto]' },
-    { purpose: 'menu', middleRegion: true, class: 'grid-cols-[1fr_auto_1fr]' },
-    { position: ['left', 'right'], purpose: 'dock', class: 'lg:grid-rows-[1fr_auto_1fr]' },
-    {
-      position: ['left', 'right'],
-      purpose: 'menu',
-      middleRegion: false,
-      class: 'lg:grid-rows-[1fr_auto]',
-    },
-    {
-      position: ['left', 'right'],
-      purpose: 'menu',
-      middleRegion: true,
-      class: 'lg:grid-rows-[1fr_auto_1fr]',
-    },
+    { position: ['left', 'right'], middle: true, class: 'lg:grid-rows-[1fr_auto_1fr]' },
+    { position: ['left', 'right'], middle: false, class: 'lg:grid-rows-[1fr_auto]' },
     { position: 'top', sticky: true, class: 'inset-x-0 top-0' },
-    /* The vertical stops are the bottom bar at these widths, so they stick to
-       the same edge; from `lg` the pinning takes over and this is moot. */
+    /* Vertical bars are the bottom bar below `lg`, so they stick to that edge. */
     { position: ['bottom', 'left', 'right'], sticky: true, class: 'inset-x-0 bottom-0' },
   ],
   defaultVariants: {
     position: 'bottom',
     purpose: 'dock',
-    middleRegion: false,
+    middle: false,
     sticky: false,
     size: 'regular',
   },
@@ -97,15 +82,10 @@ export function DockItem({ href, label, icon, external = false, current }: DockI
   );
 }
 
-interface WindowTaskButtonProps {
-  windowTitle: string;
-}
-
-function WindowTaskButton({ windowTitle }: WindowTaskButtonProps) {
+export function WindowTaskButton({ windowTitle }: { windowTitle: string }) {
   const { src, width, height } = iconAttributes('document');
 
   return (
-    /* Hide until a window is minimised. */
     <button type="button" className="task-button tooltip-anchor" data-window-task hidden>
       <img src={src} width={width} height={height} alt="" decoding="async" className="pixel-icon" />
       <span className="sr-only">Restore</span>
@@ -139,21 +119,20 @@ export const dockNav = cva('dock-nav flex items-stretch gap-1', {
   defaultVariants: { position: 'bottom' },
 });
 
-interface DockProps {
+interface DockPartProps {
   position: BarPosition;
-  windowTitle?: string | undefined;
   children: ReactNode;
 }
 
-function Dock({ position, windowTitle, children }: DockProps) {
-  return (
-    <div className={dockCluster({ position })}>
-      <nav id="dock-nav" tabIndex={-1} aria-label="Site" className={dockNav({ position })}>
-        {children}
-      </nav>
+export function DockCluster({ position, children }: DockPartProps) {
+  return <div className={dockCluster({ position })}>{children}</div>;
+}
 
-      <WindowTaskButton windowTitle={windowTitle ?? ''} />
-    </div>
+export function DockNav({ position, children }: DockPartProps) {
+  return (
+    <nav id="dock-nav" tabIndex={-1} aria-label="Site" className={dockNav({ position })}>
+      {children}
+    </nav>
   );
 }
 
@@ -186,41 +165,12 @@ export const barRegion = cva('flex min-w-0 items-center gap-2 text-xs text-ink',
   defaultVariants: { position: 'bottom', region: 'start' },
 });
 
-export interface BarProps {
+interface BarRegionProps {
   position: BarPosition;
-  showMiddleRegion: boolean;
-  windowTitle?: string | undefined;
-  start?: ReactNode | undefined;
-  middle?: ReactNode | undefined;
-  end?: ReactNode | undefined;
+  region: 'start' | 'middle' | 'end';
   children?: ReactNode | undefined;
 }
 
-export function Bar({
-  position,
-  showMiddleRegion,
-  windowTitle,
-  start,
-  middle,
-  end,
-  children,
-}: BarProps) {
-  return (
-    <>
-      <div className={barRegion({ position, region: 'start' })}>{start}</div>
-
-      {showMiddleRegion && (
-        <div className={barRegion({ position, region: 'middle' })}>{middle}</div>
-      )}
-
-      {children !== undefined && (
-        // If no dock items are provided, don't render the icon group.
-        <Dock position={position} windowTitle={windowTitle}>
-          {children}
-        </Dock>
-      )}
-
-      <div className={barRegion({ position, region: 'end' })}>{end}</div>
-    </>
-  );
+export function BarRegion({ position, region, children }: BarRegionProps) {
+  return <div className={barRegion({ position, region })}>{children}</div>;
 }

@@ -15,7 +15,7 @@ export function enableDesktopShortcuts(root: ParentNode = document): void {
       openedOnPress = opensOnPress(event);
       if (!openedOnPress) return;
       if (shortcut.target === '_blank') window.open(shortcut.href, '_blank', 'noopener');
-      // navigate(), not location.assign() — the router only intercepts anchor clicks, so assign() would drop the view transition and persisted chrome.
+      // navigate(), not location.assign() — the router only intercepts anchor clicks, so assign() would drop the view transition and the persisted bars.
       else void navigate(shortcut.href);
     });
 
@@ -41,7 +41,7 @@ function taskButton(): HTMLButtonElement | null {
   return document.querySelector<HTMLButtonElement>('[data-window-task]');
 }
 
-// Persisted chrome would otherwise keep stating the previous page's aria-current/selected as fact.
+// Persisted bars would otherwise keep stating the previous page's aria-current/selected as fact.
 export function syncCurrentPage(pathname: string, root: ParentNode = document): void {
   const currentPath = normalisePath(pathname);
 
@@ -87,6 +87,14 @@ function setClosed(closed: boolean): void {
     document.querySelector<HTMLElement>('#dock-nav')?.focus();
   }
   frame.hidden = closed;
+}
+
+function syncTaskButtonTitle(): void {
+  const title = windowFrame()?.querySelector('[data-window-title]')?.textContent?.trim();
+  const task = taskButton();
+  if (!title || !task) return;
+
+  for (const label of task.querySelectorAll('.dock-item-label, .tooltip')) label.textContent = title;
 }
 
 export function enableWindowControls(root: ParentNode = document): void {
@@ -136,6 +144,7 @@ export function enableDesktop(): void {
   document.addEventListener('astro:page-load', () => {
     enableDesktopShortcuts();
     enableWindowControls();
+    syncTaskButtonTitle();
     syncCurrentPage(window.location.pathname);
   });
 }

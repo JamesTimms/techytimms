@@ -1,15 +1,8 @@
 ---
 import TitleBar from '~/components/TitleBar.astro';
-import { cn } from '~/lib/cn';
-import { windowFrame, type WindowPalette } from '~/lib/window';
+import { ResizeHandle, windowFrameClasses, type WindowPalette } from '~/components/ui/Window';
+import { handleDirections } from '~/lib/window';
 
-/*
- * The window that owns the page: one per document, wrapping `<main>`.
- *
- * It alone carries `data-window-frame`, `id="main"` and `transition:name`, so
- * it cannot be rendered twice on a page. The styleguide composes the same
- * variant classes onto plain markup instead.
- */
 interface Props {
   title: string;
   palette?: WindowPalette;
@@ -18,34 +11,8 @@ interface Props {
 const { title, palette = 'fallen-leaf' } = Astro.props;
 ---
 
-{/* pointer-events are disabled on the wrapper so the wallpaper behind it stays
-    clickable, and re-enabled on the frame itself. */}
-{/* `pb-15` clears the bottom dock below `lg`: that bar is `fixed`, not in
-    flow, so nothing else reserves its height — see `Bar.tsx`.
-    `lg:pb-24` replaces it once the dock pins by its own `lg:fixed` instead. */}
 <div class="pointer-events-none relative z-10 flex flex-1 flex-col pb-15 lg:px-10 lg:pt-[6vh] lg:pb-24">
-  {/* transition:name pairs this frame with the next page's, so the window
-      morphs rather than cross-fading and reads as one window showing new
-      content. Deliberately not persisted: it must arrive un-minimised. */}
-  {/* `lg:relative` gives the resize handles a positioning context without
-      affecting flow (an offsetless `relative` behaves like `static`). The
-      `positioned:*` variant (global.css) is what `window-interact.ts` — and
-      the pre-paint script in BaseLayout.astro — switch on via `<html
-      data-positioned>`: it lifts the frame out of the centred, `max-w-4xl`
-      flow and onto explicit geometry read from the `--window-*` custom
-      properties on `<html>`, which `max-w-4xl` would otherwise continue to
-      cap. Gated to `lg` because that JS never runs below it — the frame
-      fills the viewport there instead. */}
-  <div
-    transition:name="window"
-    data-window-frame
-    class={cn(
-      windowFrame({ palette }),
-      'pointer-events-auto mx-auto flex w-full flex-1 flex-col lg:relative lg:max-w-4xl lg:flex-none',
-      'lg:positioned:fixed lg:positioned:m-0 lg:positioned:max-w-none lg:positioned:min-w-80',
-      'lg:positioned:left-(--window-left) lg:positioned:top-(--window-top) lg:positioned:w-(--window-width) lg:positioned:h-(--window-height)',
-    )}
-  >
+  <div transition:name="window" data-window-frame class={windowFrameClasses(palette)}>
     <TitleBar
       title={title}
       icon="document"
@@ -56,20 +23,7 @@ const { title, palette = 'fallen-leaf' } = Astro.props;
       palette={palette}
     />
 
-    {/* `min-w-0` stops a wide table or code block forcing the frame wider
-        than a keyboard/edge resize just made it; `max-w-4xl` keeps prose
-        readable rather than stretching edge-to-edge in a window resized
-        past its default width — individual pages additionally cap running
-        text at `max-w-prose` (65ch), this is the coarser, whole-content
-        floor/ceiling that applies however wide the frame itself gets. */}
-    {/* Scrolling only switches on once the frame leaves flow for explicit
-        pixel geometry (`data-positioned`, set by drag/resize/maximise, `lg`
-        only — see window-interact.ts). In flow, and below `lg` where that
-        attribute is never set, the frame has no fixed height to overflow, so
-        the document scrolls as normal. `min-h-0` overrides the flex item's
-        default `min-height: auto`, which otherwise refuses to shrink below
-        this content's height and defeats `overflow-y-auto` — the frame would
-        grow past its fixed size instead of this element scrolling inside it. */}
+    {/* min-h-0 lets overflow-y-auto work once the frame has fixed geometry. */}
     <main
       id="main"
       transition:animate="fade"
@@ -78,70 +32,6 @@ const { title, palette = 'fallen-leaf' } = Astro.props;
       <slot />
     </main>
 
-    {/* Resize handles: `lg` only, matching the drag surface above. Each is a
-        hit target plus a cursor affordance, not a drawn line — an OS window
-        border convention with no visible new colour of its own, so it does
-        not add a fresh contrast question of its own. Keyboard focus still
-        needs one: the existing site-wide `:focus-visible` outline
-        (`--color-accent`, global.css) applies unchanged, and clears the
-        WCAG 1.4.11 non-text 3:1 floor against every frame face it can land
-        on here by 6.6:1 or more in both themes and both palettes (computed
-        via OKLCH → sRGB → relative luminance, not estimated). */}
-    <div
-      data-resize-handle="n"
-      tabindex="0"
-      role="button"
-      aria-label="Resize window: top edge. Arrow keys resize, hold Shift for larger steps."
-      class="absolute inset-x-3 top-0 hidden h-2 cursor-ns-resize lg:block"
-    />
-    <div
-      data-resize-handle="s"
-      tabindex="0"
-      role="button"
-      aria-label="Resize window: bottom edge. Arrow keys resize, hold Shift for larger steps."
-      class="absolute inset-x-3 bottom-0 hidden h-2 cursor-ns-resize lg:block"
-    />
-    <div
-      data-resize-handle="w"
-      tabindex="0"
-      role="button"
-      aria-label="Resize window: left edge. Arrow keys resize, hold Shift for larger steps."
-      class="absolute inset-y-3 left-0 hidden w-2 cursor-ew-resize lg:block"
-    />
-    <div
-      data-resize-handle="e"
-      tabindex="0"
-      role="button"
-      aria-label="Resize window: right edge. Arrow keys resize, hold Shift for larger steps."
-      class="absolute inset-y-3 right-0 hidden w-2 cursor-ew-resize lg:block"
-    />
-    <div
-      data-resize-handle="nw"
-      tabindex="0"
-      role="button"
-      aria-label="Resize window: top-left corner. Arrow keys resize, hold Shift for larger steps."
-      class="absolute left-0 top-0 hidden h-3 w-3 cursor-nwse-resize lg:block"
-    />
-    <div
-      data-resize-handle="ne"
-      tabindex="0"
-      role="button"
-      aria-label="Resize window: top-right corner. Arrow keys resize, hold Shift for larger steps."
-      class="absolute right-0 top-0 hidden h-3 w-3 cursor-nesw-resize lg:block"
-    />
-    <div
-      data-resize-handle="sw"
-      tabindex="0"
-      role="button"
-      aria-label="Resize window: bottom-left corner. Arrow keys resize, hold Shift for larger steps."
-      class="absolute bottom-0 left-0 hidden h-3 w-3 cursor-nesw-resize lg:block"
-    />
-    <div
-      data-resize-handle="se"
-      tabindex="0"
-      role="button"
-      aria-label="Resize window: bottom-right corner. Arrow keys resize, hold Shift for larger steps."
-      class="absolute bottom-0 right-0 hidden h-3 w-3 cursor-nwse-resize lg:block"
-    />
+    {handleDirections.map((direction) => <ResizeHandle direction={direction} />)}
   </div>
 </div>

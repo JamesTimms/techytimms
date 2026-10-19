@@ -2,7 +2,7 @@ import { describeSky, solarElevation } from '~/lib/solar';
 
 // Server renders build time; enableClock() corrects it client-side, in the reader's own time zone.
 
-const clockFormat = new Intl.DateTimeFormat('en-US', {
+const clockFormat = new Intl.DateTimeFormat('en-GB', {
   month: 'short',
   day: 'numeric',
   hour: 'numeric',
@@ -26,7 +26,7 @@ export function clockDateTime(when: Date): string {
 
 const minute = 60_000;
 
-// Re-queries the DOM each tick rather than caching refs — the bars persist across navigation, the rest of the chrome doesn't.
+// Re-queries the DOM each tick rather than caching refs — the bars persist across navigation, the rest doesn't.
 function render(): void {
   const now = new Date();
 

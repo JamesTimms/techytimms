@@ -31,8 +31,7 @@ export function DesktopShortcut({
   return (
     <a
       href={href}
-      // Open external link in new tab, but don't allow it to access the opener's window.
-      rel={external ? 'noopener' : undefined}
+      rel={external ? 'me noopener' : undefined}
       target={external ? '_blank' : undefined}
       aria-current={selected ? 'page' : undefined}
       className={classes}

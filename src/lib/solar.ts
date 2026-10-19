@@ -1,23 +1,10 @@
-/*
- * Where the sun is, from the UK, at a given instant.
- *
- * The low-precision model: a declination from the day of the year, an hour
- * angle from mean solar time, and the standard elevation identity. It ignores
- * the equation of time and refraction, so it is a few minutes out at the
- * solstices — which is invisible in a 20px dial, and the reason nothing here
- * pretends to be an ephemeris.
- *
- * Everything works from UTC, so the answer is the same wherever the page is
- * being read from. The sky over London does not move because a visitor is in
- * Sydney.
- */
+/* Low-precision sun position over the UK, in UTC; ignores equation of time and refraction (minutes out at solstices). */
 
 export interface Observer {
   latitude: number;
   longitude: number;
 }
 
-/* Roughly Greenwich, which is as specific as "the UK" gets to be. */
 export const ukObserver: Observer = { latitude: 51.5, longitude: -0.1 };
 
 const degreesPerRadian = 180 / Math.PI;
@@ -62,8 +49,7 @@ export interface Sky {
   label: string;
 }
 
-/* The highest the sun reaches from these latitudes. Midnight in midwinter is
-   about as far the other side, so one number does for both bodies. */
+/* Peak elevation; midwinter midnight is symmetric, so it serves both bodies. */
 const peakElevation = 62;
 
 export function describeSky(elevation: number): Sky {

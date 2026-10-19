@@ -16,29 +16,21 @@ describe('bar', () => {
     expect(bar()).toBe(bar({ position: 'bottom', purpose: 'dock' }));
   });
 
-  it('centres the navigation cluster on the bar in every position', () => {
-    // A three-track grid with the cluster in the middle `auto` track: the side
-    // regions cannot push it off centre however long their contents run.
+  it('centres a middle region on the bar in every position', () => {
+    // Three tracks with the middle one `auto`: side regions cannot push it off centre.
     for (const position of barPositions) {
-      expect(bar({ position, purpose: 'dock' })).toContain('grid-cols-[1fr_auto_1fr]');
+      expect(bar({ position, middle: true })).toContain('grid-cols-[1fr_auto_1fr]');
     }
 
     for (const position of verticalPositions) {
-      expect(bar({ position, purpose: 'dock' })).toContain('lg:grid-rows-[1fr_auto_1fr]');
+      expect(bar({ position, middle: true })).toContain('lg:grid-rows-[1fr_auto_1fr]');
     }
   });
 
-  it('lays out two tracks, not three, for a primary bar with no middle region', () => {
-    expect(bar({ purpose: 'menu' })).toContain('grid-cols-[1fr_auto]');
-    expect(bar({ purpose: 'menu' })).not.toContain('grid-cols-[1fr_auto_1fr]');
-    expect(bar({ position: 'left', purpose: 'menu' })).toContain('lg:grid-rows-[1fr_auto]');
-  });
-
-  it('gives a primary bar a third track when it carries a middle region', () => {
-    expect(bar({ purpose: 'menu', middleRegion: true })).toContain('grid-cols-[1fr_auto_1fr]');
-    expect(bar({ position: 'left', purpose: 'menu', middleRegion: true })).toContain(
-      'lg:grid-rows-[1fr_auto_1fr]',
-    );
+  it('lays out two tracks, not three, with no middle region', () => {
+    expect(bar()).toContain('grid-cols-[1fr_auto]');
+    expect(bar()).not.toContain('grid-cols-[1fr_auto_1fr]');
+    expect(bar({ position: 'left' })).toContain('lg:grid-rows-[1fr_auto]');
   });
 
   it('pins a bar to its own edge, and only when asked', () => {

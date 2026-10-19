@@ -1,9 +1,60 @@
 import { Fragment, useEffect, useState, type CSSProperties } from 'react';
 
-import { apcaContrast } from '~/lib/apca';
-import { linearSrgbToOklch, oklchToLinearSrgb, type Oklch } from '~/lib/color-tokens';
+import { linearSrgbToOklch, linearToGammaSrgb, oklchToLinearSrgb, type Oklch } from '~/lib/color-tokens';
 import { contrastTargets, type BackgroundRow, type ForegroundPairing } from '~/data/color-system';
 import { ColourSliders, formatOklch, RESET_EVENT, setColourOverride, type Theme } from '~/components/ui/ColourControl';
+
+// APCA-W3 0.1.9 constants, not WCAG 2's ratio.
+
+const RED_WEIGHT = 0.2126729;
+const GREEN_WEIGHT = 0.7151522;
+const BLUE_WEIGHT = 0.072175;
+const GAMMA = 2.4;
+
+// APCA's soft clamp near black.
+const BLACK_CLAMP_THRESHOLD = 0.022;
+const BLACK_CLAMP_EXPONENT = 1.414;
+const MIN_DISCERNIBLE_DELTA = 0.0005;
+
+const NORMAL_BACKGROUND_EXPONENT = 0.56;
+const NORMAL_TEXT_EXPONENT = 0.57;
+const REVERSE_TEXT_EXPONENT = 0.62;
+const REVERSE_BACKGROUND_EXPONENT = 0.65;
+const SCALE = 1.14;
+const LOW_CONTRAST_CLIP = 0.1;
+const OFFSET = 0.027;
+
+// Per spec, the power curve is applied to the gamma-encoded channel.
+function apcaLuminanceFromGamma([r, g, b]: [number, number, number]): number {
+  return r ** GAMMA * RED_WEIGHT + g ** GAMMA * GREEN_WEIGHT + b ** GAMMA * BLUE_WEIGHT;
+}
+
+function apcaLuminance(oklch: Oklch): number {
+  return apcaLuminanceFromGamma(oklchToLinearSrgb(oklch).map(linearToGammaSrgb) as [number, number, number]);
+}
+
+function clampNearBlack(y: number): number {
+  return y > BLACK_CLAMP_THRESHOLD ? y : y + (BLACK_CLAMP_THRESHOLD - y) ** BLACK_CLAMP_EXPONENT;
+}
+
+// Positive: dark on light; negative: light on dark (different exponents).
+function apcaContrastFromLuminance(textY: number, backgroundY: number): number {
+  if (Math.abs(backgroundY - textY) < MIN_DISCERNIBLE_DELTA) return 0;
+
+  if (backgroundY > textY) {
+    const contrast =
+      (backgroundY ** NORMAL_BACKGROUND_EXPONENT - textY ** NORMAL_TEXT_EXPONENT) * SCALE;
+    return (contrast < LOW_CONTRAST_CLIP ? 0 : contrast - OFFSET) * 100;
+  }
+
+  const contrast =
+    (backgroundY ** REVERSE_BACKGROUND_EXPONENT - textY ** REVERSE_TEXT_EXPONENT) * SCALE;
+  return (contrast > -LOW_CONTRAST_CLIP ? 0 : contrast + OFFSET) * 100;
+}
+
+function apcaContrast(text: Oklch, background: Oklch): number {
+  return apcaContrastFromLuminance(clampNearBlack(apcaLuminance(text)), clampNearBlack(apcaLuminance(background)));
+}
 
 type ThemedValues = Record<string, Record<Theme, Oklch>>;
 

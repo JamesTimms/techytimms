@@ -1,5 +1,5 @@
 ---
-import { Bar, bar, type BarPosition, type BarSize } from '~/components/ui/Bar.tsx';
+import { BarRegion, bar, type BarPosition, type BarSize } from '~/components/ui/Bar.tsx';
 import { Clock, SunDial } from '~/components/ui/Bar.time.tsx';
 import { ThemeToggle } from '~/components/ui/Bar.ThemeToggle.tsx';
 import { sectionLabel } from '~/lib/navigation';
@@ -21,21 +21,19 @@ const renderedAt = new Date();
   transition:name="status-bar"
   transition:animate="none"
   data-position={position}
-  class={bar({ position, purpose: 'menu', middleRegion: true, size })}
+  class={bar({ position, purpose: 'menu', middle: true, size })}
 >
-  <Bar position={position} showMiddleRegion={true}>
-    <span slot="start" data-dock-section class="truncate">
-      {sectionLabel(currentPath)}
-    </span>
+  <BarRegion position={position} region="start">
+    <span data-dock-section class="truncate">{sectionLabel(currentPath)}</span>
+  </BarRegion>
 
-    <Fragment slot="middle">
-      <SunDial now={renderedAt} />
-      <Clock now={renderedAt} />
-    </Fragment>
+  <BarRegion position={position} region="middle">
+    <SunDial now={renderedAt} />
+    <Clock now={renderedAt} />
+  </BarRegion>
 
-    <Fragment slot="end">
-      <ThemeToggle />
-      <span class="hidden sm:inline">&copy; {new Date().getFullYear()}</span>
-    </Fragment>
-  </Bar>
+  <BarRegion position={position} region="end">
+    <ThemeToggle />
+    <span class="hidden sm:inline">&copy; {new Date().getFullYear()}</span>
+  </BarRegion>
 </div>

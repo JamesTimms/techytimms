@@ -29,10 +29,7 @@ const dockPosition: BarPosition = 'bottom';
 const statusPosition: BarPosition = 'top';
 ---
 
-{/*
-  transition:animate="none" turns off Astro's page-wide default fade to avoid flickering.
-  Elements that should animate opt in explicitly.
-*/}
+{/* Page-wide fade off to avoid flicker; elements opt in. */}
 <html lang="en-GB" transition:animate="none">
   <head>
     <meta charset="utf-8" />
@@ -58,7 +55,6 @@ const statusPosition: BarPosition = 'top';
     <Wallpaper />
 
     <script is:inline>
-      // Must be inline and in <head> to run before first paint.
       (() => {
         function applyTheme() {
           const stored = localStorage.getItem('theme');
@@ -69,10 +65,7 @@ const statusPosition: BarPosition = 'top';
           );
         }
 
-        // Desktop only (matches window-interact.ts's lg gate) — mirrors its
-        // `applyRect`, but unclamped: the bars aren't in the DOM yet here, so
-        // bar-aware clamping stays on `astro:page-load`, which re-clamps and
-        // rewrites both this and sessionStorage once they exist.
+        // Unclamped copy of applyRect in ~/lib/window; the bars don't exist yet, so it re-clamps on astro:page-load.
         function applyWindowRect() {
           const html = document.documentElement;
           if (!window.matchMedia('(min-width: 64rem)').matches) return;
@@ -100,9 +93,7 @@ const statusPosition: BarPosition = 'top';
         applyWindowRect();
 
         if (!window.preRenderSwapBound) {
-          // The router swaps the root element's attributes, which drops both
-          // the theme class and the window-rect flag/properties above.
-          // after-swap is the last moment before the new page paints.
+          // The router swaps root attributes, dropping the theme class and window rect.
           window.preRenderSwapBound = true;
           document.addEventListener('astro:after-swap', () => {
             applyTheme();

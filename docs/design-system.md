@@ -77,7 +77,7 @@ draft — see `/styleguide` §3 for the method.
 - **Fixed — `accent` hue now drifts with lightness on purpose**: one curve,
   hue(L) = clamp(38, 60, 40 + 0.3·(L% − 40)), ≈57 at the palest step down to
   ≈39 at the darkest, both themes read off it. Verified against APCA
-  (`src/lib/apca.ts`), not WCAG — see the table below.
+  (`src/components/ui/TokenPairings.tsx`), not WCAG — see the table below.
 - **Fixed — `accent-ink` is now darker than `accent`** in light mode (38%
   vs. 52%).
 - **Fixed — chrome (title bar, menu bar, dock, window face/edge) now uses

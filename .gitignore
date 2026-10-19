@@ -20,5 +20,9 @@ assets/
 .config/
 docs/personal-site-inspiration.md
 
+# temporary scripts and output (contrast checks, one-off analysis)
+tmp/
+*.tmp.*
+
 # machine-specific Claude Code permissions
 .claude/settings.local.json

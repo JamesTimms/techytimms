@@ -1,9 +1,4 @@
-/*
- * Reference data for the styleguide's colour section. Nothing here changes a
- * colour value — every OKLCH figure the page shows is parsed from
- * src/styles/global.css at build time (see src/lib/color-tokens.ts); this
- * file only records which hue each ramp uses, and which tokens pair.
- */
+/* Which hue each ramp uses and which tokens pair; OKLCH values are parsed from global.css. */
 
 export type MainHueKey = 'leaf' | 'pumpkin' | 'umber' | 'ash' | 'accent';
 

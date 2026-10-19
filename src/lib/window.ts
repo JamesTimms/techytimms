@@ -1,89 +1,3 @@
-import { cva, type VariantProps } from 'class-variance-authority';
-
-// Window chrome: palette variants (CVA) below, the page-owning frame's drag/resize/maximise geometry and DOM wiring further down.
-
-// One palette axis, two stops — each a 10-step (50–900) OKLCH ramp off that palette's main colour. Chrome is modern and flat, but keeps Win9x anatomy: icon+title left, minimise/restore/close right.
-export const windowPalettes = ['fallen-leaf', 'pumpkin'] as const;
-
-export type WindowPalette = (typeof windowPalettes)[number];
-
-// Face is a light tint (step 50), not the main colour, so ink-faint clears contrast; side border/radius drop below lg since there's no wallpaper there to sit against.
-// `pumpkin`, the live palette, reads its face and edge off semantic tokens
-// (`surface`, `window-edge`) rather than ramp steps — see the PALETTE block
-// in global.css for why. `fallen-leaf` is unmeasured and unused; it keeps its
-// own ramp steps rather than being folded into tokens tuned for the other.
-export const windowFrame = cva('border border-x-0 lg:border-x lg:rounded-window', {
-  variants: {
-    palette: {
-      'fallen-leaf': 'bg-leaf-50 border-leaf-500 dark:bg-leaf-700',
-      pumpkin: 'bg-surface border-window-edge',
-    },
-  },
-  defaultVariants: { palette: 'fallen-leaf' },
-});
-
-// No border-b: the frame's own outer border is the only boundary a window
-// draws now — an internal divide between the bar and the face read as a
-// second, redundant edge. Corners use radius-window-inner to nest inside the
-// frame's own.
-export const titleBar = cva(
-  'flex items-center justify-between gap-3 px-3 py-1.5 lg:rounded-t-window-inner',
-  {
-    variants: {
-      palette: {
-        'fallen-leaf': 'bg-leaf-900 text-leaf-50',
-        pumpkin: 'bg-title-bar text-title-bar-ink',
-      },
-    },
-    defaultVariants: { palette: 'fallen-leaf' },
-  },
-);
-
-// 24px touch target (not Win9x's 16x14) around a glyph at step 100, one below the title text; hover brings the fill up and the glyph to step 50.
-export const titleControl = cva(
-  'flex size-6 shrink-0 items-center justify-center rounded-control p-0',
-  {
-    variants: {
-      palette: {
-        'fallen-leaf': 'text-leaf-100',
-        pumpkin: 'text-title-bar-ink',
-      },
-      pressable: { true: 'cursor-pointer', false: '' },
-    },
-    compoundVariants: [
-      {
-        palette: 'fallen-leaf',
-        pressable: true,
-        class: 'hover:bg-leaf-500 hover:text-leaf-50 active:bg-leaf-200 active:text-leaf-900',
-      },
-      {
-        // One fill for both hover and active — accent/title-bar sit close
-        // enough in lightness that a three-way split (resting/hover/pressed)
-        // couldn't clear Lc 75 in both themes at once; accent-sunk + ink can.
-        palette: 'pumpkin',
-        pressable: true,
-        class: 'hover:bg-accent-sunk hover:text-ink active:bg-accent-sunk active:text-ink',
-      },
-    ],
-    defaultVariants: { palette: 'fallen-leaf', pressable: false },
-  },
-);
-
-// 1.5px boxes, not font glyphs, so all three controls align identically.
-export const glyphMinimise = 'block h-[1.5px] w-[10px] bg-current';
-// The heavier top edge reads as a title bar — the one period detail worth keeping.
-export const glyphRestore = 'block h-[9px] w-[9px] border border-current border-t-2';
-
-export const paletteDescriptions: Record<WindowPalette, string> = {
-  'fallen-leaf':
-    'Straw at 80% as the main colour. The calmest of the two: the face is barely tinted and the edge is a warm brown rather than a line of colour.',
-  pumpkin:
-    'The live palette. Rust red off the accent hue-drift curve, not the pumpkin ramp — the face is a pumpkin-tinted `surface`, the edge is `window-edge`.',
-};
-
-export type PaletteVariantProps = VariantProps<typeof windowFrame>;
-
-// Geometry below is unit tested; the DOM wiring is thin glue, untested — desktop-only, gated live via matchMedia so crossing the breakpoint mid-session still resets flow.
 
 export interface Rect {
   left: number;
@@ -112,7 +26,7 @@ export interface Constraints {
   visibleEdge: number;
 }
 
-// minWidth doubles as the readable-content floor; WindowFrame.astro's lg:positioned:min-w-80 holds it even if this module fails to load.
+// minWidth doubles as the readable-content floor; the frame's CSS min-width holds it even if this module fails to load.
 export const defaultConstraints: Constraints = {
   minWidth: 320,
   minHeight: 240,
@@ -359,6 +273,8 @@ export function resetWindow(frame: HTMLElement): void {
   clearStoredRect();
 }
 
+const DRAG_START_THRESHOLD = 3;
+
 // Shared by drag and resize: locks the frame into a stable base rect, captures one pointer, and disables the transition for the duration.
 function beginPointerInteraction(
   frame: HTMLElement,
@@ -369,19 +285,25 @@ function beginPointerInteraction(
   if (event.pointerType === 'mouse' && event.button !== 0) return;
   event.preventDefault();
 
-  exitMaximised(frame);
   const base = currentRect(frame);
-  applyRect(base);
   const startX = event.clientX;
   const startY = event.clientY;
   const pointerId = event.pointerId;
   target.setPointerCapture(pointerId);
   const previousTransition = frame.style.transition;
-  frame.style.transition = 'none';
+  let hasMoved = false;
 
   function move(e: PointerEvent): void {
     if (e.pointerId !== pointerId) return;
-    applyRect(compute(e.clientX - startX, e.clientY - startY, base));
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (!hasMoved) {
+      if (Math.hypot(dx, dy) < DRAG_START_THRESHOLD) return;
+      hasMoved = true;
+      exitMaximised(frame);
+      frame.style.transition = 'none';
+    }
+    applyRect(compute(dx, dy, base));
   }
 
   function stop(e: PointerEvent): void {
@@ -390,6 +312,7 @@ function beginPointerInteraction(
     target.removeEventListener('pointermove', move);
     target.removeEventListener('pointerup', stop);
     target.removeEventListener('pointercancel', stop);
+    if (!hasMoved) return;
     frame.style.transition = previousTransition;
     writeStoredRect(currentRect(frame));
   }
@@ -399,13 +322,18 @@ function beginPointerInteraction(
   target.addEventListener('pointercancel', stop);
 }
 
+const TITLE_CONTROL_SELECTOR = '[data-window-minimise], [data-window-maximise], [data-window-close]';
+
+function isTitleControl(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest(TITLE_CONTROL_SELECTOR) !== null;
+}
+
 function wireDrag(frame: HTMLElement): void {
   const surface = document.querySelector<HTMLElement>('[data-window-drag]');
   if (surface && !surface.dataset.wired) {
     surface.dataset.wired = 'true';
     surface.addEventListener('pointerdown', (event) => {
-      // The minimise button lives inside this surface; let its own click fire.
-      if ((event.target as Element).closest('button')) return;
+      if (isTitleControl(event.target)) return;
       beginPointerInteraction(frame, surface, event, (dx, dy, base) =>
         clampRect(
           { left: base.left + dx, top: base.top + dy, width: base.width, height: base.height },
@@ -417,7 +345,7 @@ function wireDrag(frame: HTMLElement): void {
 
     // Each click already ran its own harmless no-op drag; dblclick fires last and resets on top of that.
     surface.addEventListener('dblclick', (event) => {
-      if ((event.target as Element).closest('button')) return;
+      if (isTitleControl(event.target)) return;
       event.preventDefault();
       resetWindow(frame);
     });

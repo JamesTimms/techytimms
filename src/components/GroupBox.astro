@@ -1,24 +1,5 @@
 ---
-/*
- * Groups a section of content *within* a page, the way Win9x group boxes did:
- * an inset groove with the label breaking its top edge.
- *
- * Replaces the former `Window.astro`. A window nested inside a window
- * undermines the metaphor — a window means a page, so everything smaller than
- * a page needs a different device.
- *
- * `<section>` and a real heading rather than `<fieldset>`/`<legend>`, despite
- * the group box being literally what a fieldset renders. Three reasons:
- * assistive technology announces a fieldset as a form "group", which is
- * misleading wrapped around prose; `<fieldset>` carries a `min-width:
- * min-content` default that breaks flex and grid children; and none of this
- * content is form controls. The groove is a visual treatment, and the heading
- * is what carries the structure.
- *
- * The heading is also a fix rather than a like-for-like swap: the window titles
- * it replaces were `<span>`s, so page sections were absent from the heading
- * outline entirely.
- */
+/* Win9x group box: an inset groove with the label breaking its top edge. <section> + heading, not <fieldset>, for outline and layout. */
 interface Props {
   label: string;
   /* Shift down where the section's own content already starts at h2. */

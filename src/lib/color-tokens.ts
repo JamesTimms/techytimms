@@ -1,6 +1,4 @@
-// OKLCH → sRGB conversion and `--color-*` token parsing, shared by the
-// styleguide's colour-system reference and by `apca.ts`. Kept separate from
-// `apca.ts` so the APCA formula file stays a direct transcription of the spec.
+// OKLCH ↔ sRGB conversion and `--color-*` token parsing.
 
 export interface Oklch {
   l: number; // 0–1
@@ -9,11 +7,7 @@ export interface Oklch {
   alpha?: number; // 0–1, absent when opaque
 }
 
-// OKLab → linear sRGB, Björn Ottosson's published matrices — the same ones
-// `scripts/contrast.mjs` uses, duplicated there rather than imported because
-// that script runs outside Vite's module resolution. Unclamped, so a caller
-// that needs to know whether a colour actually fits sRGB (`isInSrgbGamut`)
-// can see the out-of-range channel before it gets clipped away.
+// OKLab → linear sRGB (Ottosson's matrices), unclamped so `isInSrgbGamut` sees out-of-range channels.
 function oklchToLinearSrgbUnclamped({ l, c, h }: Oklch): [number, number, number] {
   const hueRadians = (h * Math.PI) / 180;
   const a = c * Math.cos(hueRadians);
@@ -36,8 +30,7 @@ export function oklchToLinearSrgb(oklch: Oklch): [number, number, number] {
   ) as [number, number, number];
 }
 
-// Whether a colour renders without channel clipping, i.e. without silently
-// being pulled onto the gamut boundary by oklchToLinearSrgb's clamp.
+// Renders without channel clipping.
 export function isInSrgbGamut(oklch: Oklch, epsilon = 1e-4): boolean {
   return oklchToLinearSrgbUnclamped(oklch).every(
     (channel) => channel >= -epsilon && channel <= 1 + epsilon,
@@ -49,9 +42,8 @@ export function linearToGammaSrgb(channel: number): number {
   return clamped <= 0.0031308 ? clamped * 12.92 : 1.055 * clamped ** (1 / 2.4) - 0.055;
 }
 
-// The inverse of oklchToHex's own byte step — parses `#rrggbb` back to gamma
-// sRGB 0–1, for callers (APCA on hex palette candidates) that never touch OKLCH.
-export function hexToRgb01(hex: string): [number, number, number] {
+// Inverse of oklchToHex's byte step: `#rrggbb` to gamma sRGB 0–1.
+function hexToRgb01(hex: string): [number, number, number] {
   const match = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
   if (!match) throw new Error(`not a #rrggbb hex colour: ${hex}`);
   const [r, g, b] = [match[1]!, match[2]!, match[3]!];
@@ -95,7 +87,7 @@ export interface ColorToken {
 const TOKEN_PATTERN =
   /--color-([a-z0-9-]+):\s*oklch\(\s*([\d.]+)%\s+([\d.]+)\s+([\d.]+)\s*(?:\/\s*([\d.]+)\s*)?\)/g;
 
-export function parseColorTokens(css: string): Record<string, ColorToken> {
+function parseColorTokens(css: string): Record<string, ColorToken> {
   return Object.fromEntries(
     [...css.matchAll(TOKEN_PATTERN)].map(([, name, l, c, h, alpha]) => {
       const oklch: Oklch = { l: Number(l) / 100, c: Number(c), h: Number(h) };
@@ -129,9 +121,7 @@ export interface ThemedColorTokens {
   dark: Record<string, ColorToken>;
 }
 
-// The ramps (`leaf-*`, `pumpkin-*`) never appear in `.dark` — they don't flip
-// with the theme, the roles pick different steps instead — so `dark` here
-// starts from every light token and layers the `.dark` overrides on top.
+// Ramps don't flip in `.dark`, so dark starts from all light tokens plus the overrides.
 export function parseThemedColorTokens(css: string): ThemedColorTokens {
   const light = parseColorTokens(cssBlock(css, '@theme'));
   const dark = { ...light, ...parseColorTokens(cssBlock(css, '.dark', css.indexOf('@theme'))) };

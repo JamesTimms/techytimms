@@ -17,8 +17,7 @@ export const primaryNav: NavItem[] = [
   { href: '/blog', label: 'Blog', icon: 'blog', onDesktop: true },
 ];
 
-/* After the dock's separator, where logoff and shutdown used to sit: reachable,
- * and plainly not the headline — see blueprint decision 12. */
+/* After the dock's separator; reachable but not the headline (blueprint decision 12). */
 export const secondaryNav: NavItem[] = [
   { href: '/cv', label: 'CV', icon: 'cv', onDesktop: true },
   {
@@ -43,8 +42,7 @@ export function isCurrent(item: NavItem, currentPath: string): boolean {
   return !item.external && item.href === currentPath;
 }
 
-/* Trailing slashes vary between the server render and `location.pathname`, and
- * the two are compared against each other once the chrome is persisted. */
+/* Trailing slashes differ between server render and `location.pathname`. */
 export function normalisePath(pathname: string): string {
   return pathname.replace(/\/+$/, '') || '/';
 }
@@ -54,12 +52,7 @@ export type Press = Pick<
   'pointerType' | 'button' | 'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey'
 >;
 
-/*
- * Desktop shortcuts open on mouse down, like a desktop icon rather than a web
- * link. Touch and pen are left to the ordinary click, because a finger landing
- * on an icon may be the start of a scroll. A modified or non-primary press is
- * left alone so middle-click and cmd-click still open a new tab.
- */
+/* Mouse-down opens, like a desktop icon; touch/pen and modified or non-primary presses keep the ordinary click. */
 export function opensOnPress(press: Press): boolean {
   return (
     press.pointerType === 'mouse' &&
@@ -71,12 +64,7 @@ export function opensOnPress(press: Press): boolean {
   );
 }
 
-/*
- * What the dock's side region names: the section, not the page. `/blog/hello`
- * is still Blog, because the first segment is what the navigation is keyed on.
- * A path with no nav entry falls back to its own segment rather than to a
- * blank region.
- */
+/* The section, not the page: `/blog/hello` is Blog. Unknown paths fall back to their own segment. */
 export function sectionLabel(currentPath: string): string {
   const [segment = ''] = normalisePath(currentPath).slice(1).split('/');
   const entry = [...primaryNav, ...secondaryNav].find(

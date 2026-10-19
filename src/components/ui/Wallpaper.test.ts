@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { darkWallpaper, lightWallpaper } from '~/components/ui/Wallpaper';
-import { wallpaperCss, type WallpaperCssOptions } from '~/lib/wallpaper';
+import { darkWallpaper, lightWallpaper, wallpaperCss, type WallpaperCssOptions } from '~/components/ui/Wallpaper';
 
 const options: WallpaperCssOptions = {
   selector: '.desktop-ground',

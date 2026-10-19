@@ -1,5 +1,14 @@
 ---
-import { Bar, DockItem, bar, type BarPosition, type BarSize } from '~/components/ui/Bar.tsx';
+import {
+  BarRegion,
+  DockCluster,
+  DockItem,
+  DockNav,
+  WindowTaskButton,
+  bar,
+  type BarPosition,
+  type BarSize,
+} from '~/components/ui/Bar.tsx';
 import { isCurrent, primaryNav, secondaryNav } from '~/lib/navigation';
 
 interface Props {
@@ -18,7 +27,7 @@ const {
   size = 'regular',
 } = Astro.props;
 
-const showMiddleRegion = Astro.slots.has('middle');
+const hasMiddle = Astro.slots.has('middle');
 ---
 
 <div
@@ -26,44 +35,25 @@ const showMiddleRegion = Astro.slots.has('middle');
   transition:name="dock"
   transition:animate="none"
   data-position={position}
-  class={bar({
-    position,
-    purpose: 'dock',
-    middleRegion: showMiddleRegion,
-    sticky,
-    size,
-  })}
+  class={bar({ position, purpose: 'dock', middle: true, sticky, size })}
 >
-  <Bar position={position} showMiddleRegion={showMiddleRegion} windowTitle={windowTitle}>
-    <Fragment slot="start">
-      <slot name="start" />
-    </Fragment>
-    {showMiddleRegion && (
-      <Fragment slot="middle">
-        <slot name="middle" />
-      </Fragment>
-    )}
-    <Fragment slot="end">
-      <slot name="end" />
-    </Fragment>
+  <BarRegion position={position} region="start"><slot name="start" /></BarRegion>
+  {hasMiddle && <BarRegion position={position} region="middle"><slot name="middle" /></BarRegion>}
 
-    {[
-      ...primaryNav.map((item) => <DockItem {...item} current={isCurrent(item, currentPath)} />),
-      <span class="dock-separator" aria-hidden="true" />,
-      ...secondaryNav.map((item) => <DockItem {...item} current={isCurrent(item, currentPath)} />),
-    ]}
-  </Bar>
+  <DockCluster position={position}>
+    <DockNav position={position}>
+      {primaryNav.map((item) => <DockItem {...item} current={isCurrent(item, currentPath)} />)}
+      <span class="dock-separator" aria-hidden="true"></span>
+      {secondaryNav.map((item) => <DockItem {...item} current={isCurrent(item, currentPath)} />)}
+    </DockNav>
+    <WindowTaskButton windowTitle={windowTitle} />
+  </DockCluster>
+
+  <BarRegion position={position} region="end"><slot name="end" /></BarRegion>
 </div>
 
 <style>
-  /*
-   * A dock item is a square target around its icon, not a text button with an
-   * icon in front of it, so the width that used to hold a label becomes room
-   * around the icon instead. Overrides `@layer components` in global.css: a
-   * component style is unlayered and so wins outright. Fully `:global`, not
-   * just the nested selector — `.dock-cluster` is rendered by `Bar.tsx` now,
-   * outside this file's own template, so Astro never scopes it.
-   */
+  /* Square icon target; unlayered, so it beats `@layer components`. `:global` because Bar.tsx renders `.dock-cluster`. */
   :global(.dock-cluster .task-button) {
     justify-content: center;
     gap: 0;
@@ -72,8 +62,7 @@ const showMiddleRegion = Astro.slots.has('middle');
     padding-inline: 0.625rem;
   }
 
-  /* `border`, not `rule`: on the dock's own fill (bottom bar, both themes) a
-     rule would vanish where border holds 5.69 light / 5.35 dark. */
+  /* `border`, not `rule`: rule vanishes on the dock fill. */
   .dock-separator {
     align-self: center;
     flex: none;
@@ -83,17 +72,8 @@ const showMiddleRegion = Astro.slots.has('middle');
     background-color: var(--color-border);
   }
 
-  /*
-   * Vertical placements only exist from the breakpoint; below it the dock is
-   * the same bottom bar and the tooltip stays above its icon. On a side bar it
-   * has to flip, or it covers the neighbouring item — and the topmost item's
-   * bubble would sit off the top of the screen.
-   *
-   * The `[data-placement]` is there for weight, not for matching: it puts this
-   * pair above the default the tooltip sets for itself.
-   */
+  /* Side bars flip the tooltip so it doesn't cover neighbours; `[data-placement]` adds specificity over the tooltip default. */
   @media (min-width: 64rem) {
-    /* The row turns with the bar, so the divider across it turns too. */
     .dock[data-position='left'] .dock-separator,
     .dock[data-position='right'] .dock-separator {
       width: 1.75rem;

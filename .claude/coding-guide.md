@@ -4,7 +4,7 @@ How code is written in this repo. Read before writing any.
 
 ## Structure
 
-**`.astro` is the data layer. `.tsx` is the UI layer. `src/lib/` is shared logic.**
+**`.astro` is the data layer. `.tsx` is the UI layer. `src/lib/` is shared logic.** `.tsx` holds UI logic only; business and application logic lives in `.astro` (or `src/lib/` once shared).
 
 - `.astro` — pages, layouts, and thin wrappers. Owns data access (`getCollection`, `Astro.url`), Astro directives (`transition:*`, `is:inline`, `client:*`), `<head>`, and inline scripts. A component-level `.astro` file is a wrapper, not a component.
 - `.tsx` — the component library, in `src/components/ui/`. Grouped, composable components with CVA variants. Renders to static HTML.
@@ -77,7 +77,7 @@ pnpm contrast
 
 Not optional, and computed rather than asserted.
 
-- WCAG AA in **both** themes: 4.5:1 text, 3:1 large text and UI boundaries.
+- Contrast in **both** themes. **APCA Lc is the authority**; WCAG AA (4.5:1 text, 3:1 large text and UI boundaries) is advisory — report it, but APCA decides.
 - A control that does something is a `<button>` with an accessible name. Decorative chrome is `aria-hidden`.
 - Hiding something uses `hidden`, not offscreen positioning, so it leaves the accessibility tree.
 - Moving or hiding a focused element drops focus to `<body>` — move focus deliberately.
