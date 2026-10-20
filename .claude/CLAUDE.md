@@ -76,6 +76,20 @@ Prettier is configured (`.prettierrc.mjs`) but is not wired into a script and ha
 - **Temporary files stay out of git.** One-off scripts and their output (contrast checks, analysis) go in the session scratchpad, or `tmp/` if they must live in the repo. Both `tmp/` and `*.tmp.*` are gitignored.
 - Deferred by decision, do not introduce unasked: hand-written CSS, a headless CMS, newsletter capture, comments, E2E tests, interactive MDX components.
 
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `JamesTimms/techytimms`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root, created lazily. See `docs/agents/domain.md`.
+
 ## Status
 
 Working desktop-metaphor UI: framed window, icon dock, status bar, desktop shortcuts,
