@@ -20,7 +20,7 @@ pnpm preview               # serve dist/
 pnpm check                 # astro check (type check only, no build)
 pnpm test                  # vitest run
 pnpm test:watch
-pnpm test src/lib/__tests__/content.test.ts   # a single file
+pnpm test src/lib/content.test.ts             # a single file
 pnpm test -t "drops drafts in production"      # a single test by name
 ```
 
@@ -30,7 +30,9 @@ Prettier is configured (`.prettierrc.mjs`) but is not wired into a script and ha
 
 **Content is files, not a CMS.** MDX under `src/content/posts/` and `src/content/work/`, loaded by glob loaders in `src/content.config.ts`. Slugs come from filenames. Frontmatter is validated by Zod at build time, so a malformed date or an over-long `summary` fails `pnpm build` rather than reaching a page. The `summary` cap of 160 chars is deliberate — it feeds the meta description, RSS and social cards.
 
-**Logic lives in `src/lib/`, not in components.** `.astro` files are awkward to unit test, so filtering, sorting and formatting are pure functions in `src/lib/content.ts` and the page templates stay thin. Tests target `src/lib/` only. New page logic belongs in a lib function with a test, not inline in the template.
+**`.astro` is the data layer, `.tsx` is the UI layer.** `.astro` owns data access (`getCollection`, `Astro.url`), Astro directives (`transition:*`, `is:inline`, `client:*`) and `<head>`; a component-level `.astro` file should be a thin wrapper, not a component. `.tsx` holds the grouped, composable component library with CVA variants, rendered to static HTML — **no `client:*` unless interaction genuinely requires it**, because the first one loads React's renderer on every page containing that component. Directives do not exist in `.tsx` and silently do nothing on a component tag, which is what the wrappers are for.
+
+**Code lives beside its use.** Declare a helper in the file that uses it; move it to `src/lib/` only once a second caller exists. Page templates stay thin: logic too complex for a template goes into a pure, tested function, not inline markup. No folders sorted by file type. Tests sit next to the file under test (`Bar.test.ts` beside `Bar.tsx`); no `__tests__/`.
 
 **Draft handling is a correctness concern.** `excludeDrafts()` passes drafts through in dev and filters them in production (`import.meta.env.PROD`). A bug here silently publishes unfinished work, which is why it is tested. It takes the production flag as an injectable argument so tests can drive both branches.
 
@@ -40,7 +42,7 @@ Prettier is configured (`.prettierrc.mjs`) but is not wired into a script and ha
 
 **Theme** is applied by a blocking `is:inline` script in `<head>` (`src/layouts/BaseLayout.astro`) reading `localStorage` then `prefers-color-scheme`. It must stay inline and in `<head>` — bundling it runs it after first paint and the theme flashes.
 
-**Colour** is semantic OKLCH tokens in `src/styles/global.css`: slate neutrals at hue 250, amber accent at hue 70. Retune by changing the hue angles, not individual values. Use the tokens (`ink`, `ink-muted`, `ink-faint`, `ground`, `surface`, `sunk`, `border`, `accent`, `accent-ink`) rather than raw Tailwind palette colours. `--color-accent` is for marks, borders and rings; `--color-accent-ink` is the darkened variant for text, because amber at full chroma does not reach 4.5:1 on a light ground.
+**Colour** is semantic OKLCH tokens in `src/styles/global.css` (Pumpkin palette): warm neutrals at hue 85, rust/pumpkin accent at hue 40–55, leaf and pumpkin ramps 50–900. `/styleguide` and `docs/design-system.md` §1 hold the reasons and open issues. Use the tokens rather than raw ramp steps or Tailwind palette colours. `--color-accent` is for marks, borders and rings; `--color-accent-ink` is meant to be the darker, text-safe variant.
 
 ## Gotchas
 
@@ -52,15 +54,54 @@ Prettier is configured (`.prettierrc.mjs`) but is not wired into a script and ha
 
 ## Conventions
 
+**Read `.claude/coding-guide.md` before writing code.** It is the full statement of how code is written here; what follows is the short form.
+
+- **Documents and reports are extremely concise, even at the cost of accuracy.** State conclusions, not reasoning. No "considered but rejected", no restating the brief, no narration. Tables over prose. A design note is a reference, not a transcript.
+- **One element at a time.** Iterate on a single component per task rather than making sweeping changes across the site.
 - **No i18n.** Decided and closed; do not add scaffolding for it.
-- **Comments explain why, not what** — a non-obvious workaround or a rule the code cannot express. No comments restating the line below.
+- **Self-documenting code first, comments last.** Before writing a comment, make the code explain itself: better names, a smaller function, an extracted variable. Comment only what is still unintuitive after that, and keep it **extremely brief, even at the cost of accuracy**. One line beats three; a comment restating the code is worse than none. A comment that fits on one line within 100 chars (Prettier `printWidth`) is one line. Comments live inside what they describe: a function's or class's comment is the first line of its body; a field's is a trailing `//` on its line.
+- **Compose React components with the children pattern.** Container components take `children`; the call site does the mapping:
+  ```tsx
+  <DesktopSection rows={n}>
+    {items.map((item) => <DesktopShortcut {...item} />)}
+  </DesktopSection>
+  ```
+  Not a wrapper that takes the data and maps internally (`<DesktopGroup items={items} />`). This avoids prop drilling and global state, and keeps the composition readable in one file. Do not introduce a data-prop wrapper to shorten a call site.
+- **`key` is not a prop in `.astro` templates.** Astro has no reconciliation, so `key` is passed through as an unknown prop and fails type checking. Omit it when mapping inside `.astro` files; it is only meaningful inside `.tsx`.
+- **Extract a variable only at three or more uses**; otherwise inline it (CVA variant maps included). When refactoring, inline or delete whatever the change left unused or single-use.
 - **Names carry their use without abbreviation or padding**: `publishedPosts`, not `pp`, not `postsFilteredByPublishedStatus`. A name needing a comment is the wrong name.
-- **Tests stay deliberately small** — draft exclusion, ordering, the CV schema rejecting bad data, date and slug formatting. Do not add coverage for thin templates.
+- **Tests stay deliberately small** — draft exclusion, ordering, the CV schema rejecting bad data, date and slug formatting. Do not add coverage for thin templates, or for colour tooling (a design question, not a coding one). Contrast: APCA Lc is the authority, WCAG AA advisory.
+- **Subagents** use the **cheapest model that will still do the job** (Haiku for mechanical edits, Sonnet for scoped fixes and refactors, Opus only for judgement-heavy work), or the model James names. Never fork; give a minimal, self-contained brief that tells the agent to be brief, run one verification pass and not loop. Agents may run in parallel only when their file sets are disjoint; sequence any that share a file. Verify the result.
+- **Report every subagent** on completion: runtime, model, tokens used, and anything else relevant (failures, retries, claims not verified, deviations from the brief).
+- **Temporary files stay out of git.** One-off scripts and their output (contrast checks, analysis) go in the session scratchpad, or `tmp/` if they must live in the repo. Both `tmp/` and `*.tmp.*` are gitignored.
 - Deferred by decision, do not introduce unasked: hand-written CSS, a headless CMS, newsletter capture, comments, E2E tests, interactive MDX components.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `JamesTimms/techytimms`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root, created lazily. See `docs/agents/domain.md`.
 
 ## Status
 
-Scaffolded, with placeholder copy on several pages. `docs/personal-site-blueprint.md` §6 tracks the todo list; §8 lists the content still missing. The two items that genuinely block a launch are the home-page pitch and a contact route.
+Working desktop-metaphor UI: framed window, icon dock, status bar, desktop shortcuts,
+client-side routing, draggable/resizable windows. Build passes, 92 tests, ~9.1 KB gz JS.
+
+`.claude/handover.md` is the current-state summary — read it first. `docs/personal-site-blueprint.md`
+§6 tracks the todo list and §9 what is out of scope; `docs/design-blueprint.md` holds the
+numbered design decisions. The two items blocking a launch are the home-page pitch and a
+contact route.
+
+**Nothing has been verified in a browser.** Contrast is computed and markup asserted;
+appearance is not.
 
 ## Notes from James
 

@@ -1,0 +1,37 @@
+---
+import TitleBar from '~/components/TitleBar.astro';
+import { ResizeHandle, windowFrameClasses, type WindowPalette } from '~/components/ui/Window';
+import { handleDirections } from '~/lib/window';
+
+interface Props {
+  title: string;
+  palette?: WindowPalette;
+}
+
+const { title, palette = 'fallen-leaf' } = Astro.props;
+---
+
+<div class="pointer-events-none relative z-10 flex flex-1 flex-col pb-15 lg:h-dvh lg:flex-none lg:px-10 lg:pt-[6vh] lg:pb-24">
+  <div transition:name="window" data-window-frame class={windowFrameClasses(palette)}>
+    <TitleBar
+      title={title}
+      icon="document"
+      minimisable
+      maximisable
+      closable
+      draggable
+      palette={palette}
+    />
+
+    {/* min-h-0 lets main scroll once the frame reaches its height cap. */}
+    <main
+      id="main"
+      transition:animate="fade"
+      class="min-w-0 flex-1 px-4 py-8 sm:px-6 lg:mx-auto lg:w-full lg:max-w-4xl lg:min-h-0 lg:overflow-y-auto"
+    >
+      <slot />
+    </main>
+
+    {handleDirections.map((direction) => <ResizeHandle direction={direction} />)}
+  </div>
+</div>

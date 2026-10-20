@@ -6,165 +6,113 @@ implements. If the two disagree, the blueprint's section 6 wins and this file
 is wrong.
 
 Every contrast ratio below was computed, not estimated — OKLCH converted to
-sRGB and run through the WCAG relative-luminance formula. All 42 checked pairs
-pass.
+sRGB and run through the WCAG relative-luminance formula. `/styleguide` is the
+live source of truth for the palette: it parses `global.css` at build time, so
+it can't go stale the way a hand-copied number in this file can.
 
 ---
 
 ## 1. Palette
 
-Warm neutrals at **hue 70**, amber accent at **hue 70**. One hue for the whole
-system: the neutrals are the accent hue at very low chroma, which is why the
-greys read as warm paper rather than as dirty grey.
+**Live scheme: Fallen Leaf.** Pale straw wallpaper, warm greys at **hue 85**.
+The accent changes hue by theme — **hue 40 light, hue 55 (pumpkin's own hue)
+dark** — see Open issues. Neutrals stay low-chroma warm rather than achromatic,
+which is what makes them read as paper rather than as dirty grey.
+
+An alternative scheme (Pumpkin) is specified in `docs/palette-exploration.md`
+and rendered as swatches at `/styleguide`, alongside a clean-room candidate
+built from nothing but the two live ramps. Swapping is a block replacement:
+everything colour-bearing in `global.css` sits between the two `PALETTE`
+markers.
+
+### Goals and dials
+
+| Dial | Rule |
+|---|---|
+| Priority | Contrast first — the APCA pair fixes lightness before chroma or hue move |
+| Order | L → C → H, always in that order |
+| 1 JND | 0.02 in OKLCH — CSS Color 4's own gamut-mapping threshold |
+| Chroma | Capped by the gamut; peaks at each hue's own cusp lightness, not a fixed L |
+| Hue | Only visible in proportion to chroma — drift at low chroma is inert |
+| Hue drift | Stays inside the colour family it started in |
+
+### The ramps
+
+Two live, hand-built, ten-step (50–900) OKLCH ramps — `leaf` (hue 80) and
+`pumpkin` (hue 55) — plus two comparison-only ramps at the same ten lightness
+steps for hues with no ramp of their own: `neutral / ink` (hue 85) and
+`accent` (hue 40, light mode's own accent hue). Full values, huetone links and
+every deviation between a semantic token and its nearest ramp step are at
+`/styleguide` §2 — generated from `global.css`, not copied here, so they can't
+drift out of sync with it.
 
 ### Tokens
 
-| Token | Light | Dark | Role |
-|---|---|---|---|
-| `ground` | `oklch(98.5% 0.006 70)` | `oklch(17% 0.012 70)` | Contrast baseline; no current markup use |
-| `surface` | `oklch(100% 0 70)` | `oklch(21% 0.014 70)` | Panel and window fill |
-| `sunk` | `oklch(96% 0.010 70)` | `oklch(14% 0.010 70)` | Inset areas, code blocks, title bars |
-| `rule` | `oklch(88.5% 0.014 70)` | `oklch(32% 0.018 70)` | Decorative dividers only |
-| `border` | `oklch(63% 0.016 70)` | `oklch(52% 0.018 70)` | Structural borders — the signature |
-| `ink-faint` | `oklch(55.5% 0.022 70)` | `oklch(62% 0.020 70)` | Tertiary text: dates, metadata |
-| `ink-muted` | `oklch(47% 0.026 70)` | `oklch(74% 0.020 70)` | Secondary body text |
-| `ink` | `oklch(24% 0.028 70)` | `oklch(93% 0.014 70)` | Primary text |
-| `accent` | `oklch(58% 0.130 70)` | `oklch(78% 0.110 70)` | Marks, rings, borders — **never text** |
-| `accent-ink` | `oklch(45% 0.110 70)` | `oklch(80% 0.105 70)` | Accent **text** |
-| `accent-sunk` | `oklch(95% 0.030 70)` | `oklch(24% 0.035 70)` | Tinted panel fill |
-| `desktop` | `oklch(72% 0.055 70)` | `oklch(13.5% 0.018 70)` | The wallpaper — now carries shortcut labels |
-| `bevel-light` | `oklch(100% 0 70)` | `oklch(54% 0.020 70)` | Raised top/left edge |
-| `bevel-dark` | `oklch(38% 0.020 70)` | `oklch(8% 0.010 70)` | Raised bottom/right edge |
+| Token | Purpose | Why this, not the alternative |
+|---|---|---|
+| `ground` | Contrast baseline text was solved against | vs `surface` filling the same role: a future surface between wallpaper and panel needs its own reference point. **0 uses in real markup — removal candidate.** |
+| `surface` | Window/panel fill | vs one fill shared with `sunk`: an inset region has to read as recessed against it |
+| `sunk` | Inset regions — title bars, code blocks, empty states | vs no inset level: depth here comes from borders alone (no shadows) |
+| `rule` | Decorative divider, no boundary meaning | vs `border` for every divider: `border` is deliberately dark to clear 3:1 (WCAG 1.4.11); a hairline that means nothing shouldn't borrow that |
+| `border` | Panel/UI boundary, 3:1 minimum | vs a plain hairline: 1.4.11 requires boundaries to clear 3:1 |
+| `ink-faint` | Tertiary text — dates, metadata | vs `ink-muted` doing both jobs: secondary and tertiary text need different floors |
+| `ink-muted` | Secondary body text | see above |
+| `ink` | Primary text | — |
+| `accent` | Marks, rings, borders — never text | vs one value for marks and text: saturated enough to read as a mark, it doesn't reach 4.5:1 as text |
+| `accent-ink` | Accent-coloured text — links, current-page state | The text-safe half of the pair above. **Currently lighter than `accent`, not darker — see Open issues.** |
+| `accent-sunk` | Tinted panel fill — callouts, active dock state | vs plain `sunk`: needs to read as accent-flavoured |
+| `bar-ink-muted` | Text/icons on a bar whose fill runs opposite the site theme | vs reusing `ink-muted`: that assumes a surface matching the current theme; the bars invert |
+| `bar-accent` | Marks/icons on that inverted bar fill | same inversion, for accent |
+| `desktop` | The wallpaper fill | vs `ground`: the wallpaper never carries text, so retuning it can't move the text baseline |
+| `desktop-ink` | Shortcut labels — the only text the wallpaper carries | vs `ink`: tuned against `ground`; the wallpaper sits at a different, theme-flipping lightness |
+| `window-edge` | Window's outer edge on the wallpaper, where no bevel draws it | vs a borderless window: without it, face and wallpaper separate by lightness alone. **0 uses — defined, referenced nowhere — removal candidate.** |
+| `bevel-light` | Raised top/left edge | vs one border colour: a raised control needs only one of its two edges to clear 3:1, and which one flips with the surround/theme |
+| `bevel-dark` | Raised bottom/right edge | same pair, other side |
 
-### `desktop` is not `ground`
+Both usage counts are recomputed by grep, not carried over from an earlier
+draft — see `/styleguide` §3 for the method.
 
-`ground` is the contrast baseline — seventeen pairs per theme are measured
-against it. `desktop` is the wallpaper the window sits on, and it never carries
-text. They are separate tokens so that retuning the wallpaper cannot silently
-invalidate the text contrast table.
+### Open issues
 
-`ground` is currently referenced by no markup at all; `body` paints `desktop`.
-It stays because it is the baseline the type tokens were solved against, and
-because any future surface that sits between the wallpaper and a panel will
-want it.
+- **Fixed — `accent` hue now drifts with lightness on purpose**: one curve,
+  hue(L) = clamp(38, 60, 40 + 0.3·(L% − 40)), ≈57 at the palest step down to
+  ≈39 at the darkest, both themes read off it. Verified against APCA
+  (`src/components/ui/TokenPairings.tsx`), not WCAG — see the table below.
+- **Fixed — `accent-ink` is now darker than `accent`** in light mode (38%
+  vs. 52%).
+- **Fixed — chrome (title bar, menu bar, dock, window face/edge) now uses
+  semantic tokens** (`title-bar`, `title-bar-ink`, `menu-bar`, `dock`,
+  `surface`, `window-edge`), not raw `leaf-*`/`pumpkin-*` ramp steps — the
+  live title bar previously had no `dark:` override at all, so light mode
+  silently wore dark mode's near-black fill. `window-edge` (0 uses) is now
+  the live window frame's border; `ground` remains unused.
+- **The accent-on-wallpaper 3:1 margin below was measured against a flat
+  `--color-desktop` fill.** The live wallpaper is now `Wallpaper.tsx`'s
+  gradient-plus-noise-plus-lighting composite; the two gradient stops in each
+  theme are now individually APCA-checked against `accent` and `desktop-ink`
+  (both ≥ Lc 30 / 75), but the grain overlay's extremes are not.
+- **Neutral hue moved from 85 to 55** (pumpkin's own hue) so the window face
+  and every ordinary surface read as pumpkin-tinted, not just the accent.
+- **Dark-mode `surface` darkened (21% → 18%) and `border` raised (52% → 60%
+  Lc, was −23, now −34)**: the live dark window face previously rendered
+  `pumpkin-700` (32.9%) instead of `surface`, well past where `ink`/
+  `ink-muted`/`ink-faint` were actually contrast-checked.
+- **Dark wallpaper lightened** (`#491304 → #080200` to `#581e00 → #140200`);
+  `window-edge`/`bevel-light` raised (55%/56% → 63%/62%) to hold their margin
+  against it.
 
-### Two tokens that need explaining
+### Accent on the wallpaper is a lightness problem
 
-**`border` vs `rule`.** `border` is deliberately dark — mid-grey in light mode,
-not a hairline. Two reasons, and they agree: WCAG 1.4.11 requires 3:1 for UI
-boundaries, and the design's whole thesis is *visible borders, flat fills, no
-shadows*. A hairline would fail the guideline and undersell the look. `rule` is
-the hairline, reserved for decorative separation where no boundary is being
-communicated — it is exempt from 1.4.11 precisely because it carries no meaning.
+**`accent` on `desktop` clears 3:1 in both themes** — usable, where earlier
+schemes could not manage it at all (see the margin caveat above).
 
-If you find yourself reaching for `rule` to separate two panels, use `border`.
-`rule` is for dividing a list, not for defining an object.
-
-**`accent` vs `accent-ink`.** Amber at the chroma that looks right as a mark
-does not reach 4.5:1 as text on a light ground. `accent` is for underlines,
-focus rings, borders and marks. `accent-ink` is the only accent value allowed
-on text. This split is the most common way a palette that looks fine fails an
-audit.
-
-### Verified contrast
-
-Light theme:
-
-| Pair | Ratio | Min | |
-|---|---|---|---|
-| `ink` on `ground` | 15.80 | 4.5 | ✅ |
-| `ink` on `surface` | 16.51 | 4.5 | ✅ |
-| `ink` on `sunk` | 14.68 | 4.5 | ✅ |
-| `ink-muted` on `ground` | 6.56 | 4.5 | ✅ |
-| `ink-muted` on `surface` | 6.85 | 4.5 | ✅ |
-| `ink-muted` on `sunk` | 6.10 | 4.5 | ✅ |
-| `ink-faint` on `ground` | 4.56 | 4.5 | ✅ |
-| `ink-faint` on `surface` | 4.77 | 4.5 | ✅ |
-| `accent-ink` on `ground` | 7.28 | 4.5 | ✅ |
-| `accent-ink` on `surface` | 7.61 | 4.5 | ✅ |
-| `accent-ink` on `accent-sunk` | 6.55 | 4.5 | ✅ |
-| `ink` on `accent-sunk` | 14.22 | 4.5 | ✅ |
-| `border` on `surface` | 3.51 | 3.0 | ✅ |
-| `border` on `ground` | 3.36 | 3.0 | ✅ |
-| `border` on `sunk` | 3.12 | 3.0 | ✅ |
-| `accent` on `ground` | 4.21 | 3.0 | ✅ |
-| `accent` on `surface` | 4.40 | 3.0 | ✅ |
-
-Dark theme:
-
-| Pair | Ratio | Min | |
-|---|---|---|---|
-| `ink` on `ground` | 15.55 | 4.5 | ✅ |
-| `ink` on `surface` | 14.41 | 4.5 | ✅ |
-| `ink` on `sunk` | 16.18 | 4.5 | ✅ |
-| `ink-muted` on `ground` | 8.28 | 4.5 | ✅ |
-| `ink-muted` on `surface` | 7.67 | 4.5 | ✅ |
-| `ink-muted` on `sunk` | 8.61 | 4.5 | ✅ |
-| `ink-faint` on `ground` | 5.24 | 4.5 | ✅ |
-| `ink-faint` on `surface` | 4.86 | 4.5 | ✅ |
-| `accent-ink` on `ground` | 10.08 | 4.5 | ✅ |
-| `accent-ink` on `surface` | 9.34 | 4.5 | ✅ |
-| `accent-ink` on `accent-sunk` | 8.70 | 4.5 | ✅ |
-| `ink` on `accent-sunk` | 13.43 | 4.5 | ✅ |
-| `border` on `surface` | 3.21 | 3.0 | ✅ |
-| `border` on `ground` | 3.46 | 3.0 | ✅ |
-| `border` on `sunk` | 3.61 | 3.0 | ✅ |
-| `accent` on `ground` | 9.39 | 3.0 | ✅ |
-| `accent` on `surface` | 8.71 | 3.0 | ✅ |
-
-Wallpaper and taskbar pairs:
-
-| Pair | Light | Dark | Min | |
-|---|---|---|---|---|
-| `ink` on `desktop` (shortcut label) | 6.60 | 16.28 | 4.5 | ✅ |
-| `surface` on `ink` (selected label) | 16.51 | 14.41 | 4.5 | ✅ |
-| `bevel-light` on `desktop` | 2.50 | 3.95 | 3.0 | one edge |
-| `bevel-dark` on `desktop` | 4.02 | 1.04 | 3.0 | one edge |
-| `bevel-light` on `sunk` | 1.12 | 3.92 | 3.0 | one edge |
-| `bevel-dark` on `sunk` | 8.93 | 1.04 | 3.0 | one edge |
-| `ink` on `sunk` | 14.68 | 16.18 | 4.5 | ✅ |
-| `ink-muted` on `sunk` | 6.10 | 8.61 | 4.5 | ✅ |
-| `border` on `sunk` | 3.12 | 3.61 | 3.0 | ✅ |
-
-`ink-faint` on `ground` at 4.56 (light) is the tightest pair in the system. If
-you darken `ground` or lighten `ink-faint`, recheck it.
-
-**`accent` is not usable on `desktop` in light mode** — it lands at 1.76. The
-accent and the wallpaper are both hue 70, and at 58%/72% lightness they are
-nearly the same colour. This is the cost of a one-hue system: any mid-light warm
-surface collides with the accent. Desktop shortcut focus and selection therefore
-use `ink`, not `accent`. Check this pair before putting an accent mark anywhere
-on the wallpaper.
-
-**`ink-faint` is not usable on `sunk` in light mode** — it lands at 4.24. The
-taskbar's secondary text uses `ink-muted` for that reason. `sunk` is a darker
-fill than `ground`, so any pair verified only against `ground` needs rechecking
-before it moves onto a sunk surface.
-
-Dark-theme separation between the wallpaper and the fills above it is low as a
-WCAG ratio, and that ratio is a poor model at the dark end of the range. The
-perceptual gap is real (21% and 14% against 13.5% lightness), but the boundary
-that carries the signal is the raised edge at 3.95, not the fill.
-
-### Extending to full ramps later
-
-Plan §9 defers hand-built ramps of ~5 steps per hue. The tokens above are
-*already* a 5-step neutral ramp with semantic names rather than numeric ones:
-
-```
-surface → ground → sunk → rule → border → ink-faint → ink-muted → ink
-```
-
-When the ramps arrive, the change is to add a numeric layer underneath and
-redefine the semantic tokens as aliases:
-
-```css
---neutral-0: …;  --neutral-1: …;  /* etc. */
---color-ground: var(--neutral-1);
-```
-
-Nothing in the markup changes, because the markup only ever names semantic
-tokens. That is the reason for the rule below.
+Two earlier schemes failed this pair, and the first diagnosis was wrong. It
+blamed the shared hue. Sweeping the wallpaper across the entire hue wheel at
+fixed lightness moves the ratio by less than 0.1; sweeping *lightness* at fixed
+hue moves it far more. **It is entirely a lightness collision:** an accent
+needs roughly 26–30 points of lightness separation from the wallpaper to clear
+3:1, in either direction. A mid-lightness wallpaper (44–55%) is the worst
+case — too light for light text, too dark for dark text.
 
 > **Never use a raw Tailwind palette colour in markup.** Not `text-stone-600`,
 > not `border-gray-200`. Only the semantic tokens. This is what makes a palette
@@ -250,6 +198,73 @@ explicit note from the blueprint about Sara Soueidan's callouts.
 
 The signature element. A panel with a title bar.
 
+### Palette ramps
+
+Modern chrome, period anatomy: thin edge, flat bar, flat controls. Two CVA
+stops in `window-variants.ts`, one per palette; each is a ten-step (50–900)
+OKLCH ramp of tints and shades of that palette's main colour — the colour the
+wallpaper used to be, evenly spaced in lightness from 99% to 14%. Neither ramp
+flips; the roles pick different steps. Both are rendered on the wallpaper at
+`/styleguide`. Only six of the ten steps are used by the window; the dock
+(§5) uses 800–900 and their mirrors, 100–50.
+
+Respaced from an earlier six-step ramp with irregular gaps (99/88/80/50/30/14%
+lightness). Old steps 1, 2, 4, 5 and 6 land within 3 points of their old
+lightness (900 and 50 are exact); old step 3 was two different lightnesses
+under one role (leaf 80%, pumpkin 70%) and so lands on two different new
+steps.
+
+| Step | `leaf` (hue 80) | `pumpkin` (hue 55) | Role |
+|---|---|---|---|
+| 50 | `oklch(99% 0.008 80)` | `oklch(99% 0.0055 55)` | Face, light; title text |
+| 100 | `oklch(89.6% 0.0285 80)` | `oklch(89.6% 0.041 55)` | Wallpaper, light; glyphs |
+| 200 | `oklch(80.1% 0.06 80)` | — | **Main, leaf.** Rule under bar, light only |
+| 300 | — | `oklch(70.7% 0.098 55)` | **Main, pumpkin.** Same role, one step darker |
+| 500 | `oklch(51.8% 0.0506 80)` | `oklch(51.8% 0.091 55)` | Edge, both themes; control hover fill |
+| 700 | `oklch(32.9% 0.0415 80)` | `oklch(32.9% 0.0558 55)` | Face, dark |
+| 900 | `oklch(14% 0.025 80)` | `oklch(14% 0.03 55)` | Bar, both themes; wallpaper, dark |
+
+400/600/800 are defined (evenly spaced, gamut-checked) but unused by the
+window — see `global.css` for the full ten-step values of both ramps.
+
+**The face is step 50, not the main colour.** At the main colour's own
+lightness `ink-muted` is 3.65 and `ink-faint` 2.54; ink-faint needs 99%. The
+alternative, a muted and faint step per palette, makes the neutral ink scale
+palette-dependent for one surface.
+
+**One edge step, both themes.** A 1px edge must clear 3:1 against a wallpaper
+that is pale in light and near-black in dark; ~52% is the band that clears
+both, and the nearest tint to the bar the dark wallpaper allows. The bar stays
+at step 900 in both, because a light bar in dark mode reads as a different
+component. Its rule (200 leaf, 300 pumpkin) is light-mode only: in dark the
+window draws one border, on its outside edge, and the bar's own colour
+separates it from the face at ~1.6 — no dark bar reaches 3:1 against any dark
+face, and the bar is chrome, not a control boundary.
+
+| Pair (light · dark) | Leaf | Pumpkin | Min |
+|---|---|---|---|
+| `ink` / face | 16.00 · 10.02 | 15.99 · 10.14 | 4.5 |
+| `ink-muted` / face | 6.64 · 7.05 | 6.63 · 7.14 | 4.5 |
+| `ink-faint` / face | 4.62 · 4.96 | 4.61 · 5.02 | 4.5 |
+| Title text · glyph / bar | 19.36 · 14.58 | 19.38 · 14.50 | 4.5 |
+| Edge / wallpaper | 3.88 · 3.57 | 3.98 · 3.48 | 3.0 |
+| Edge / bar · bar / face (dark) | 3.57 · 1.62 | 3.49 · 1.60 | — |
+| Bar rule / bar (light) · focus ring / face | 10.66 · 6.71 | 7.46 · 6.71 | 3.0 |
+
+All recomputed from the OKLCH values after respacing; no pair lost headroom
+against its floor (dark-face `ink` dropped the most, from 11.13 to 10.02 on
+leaf, still 2.2× the 4.5 floor).
+
+### One window per page
+
+`WindowFrame.astro` is the only window. One per document, rendered by
+`BaseLayout`, wrapping `<main>`, carrying `transition:name="window"` and
+`data-window-frame`.
+
+**`Window.astro` is deleted.** It was an inner content panel used several times
+per page, which made a window mean "a section" and a window mean "a page" at the
+same time. Sections now use the group box — see §13. A window means a page.
+
 ### Anatomy
 
 ```
@@ -262,16 +277,39 @@ The signature element. A panel with a title bar.
 └──────────────────────────────────────┘
 ```
 
-- **Title bar.** `sunk` fill, `border` bottom edge, a 16px pixel icon, then the title in `ink` at small size, uppercase, letter-spaced, monospace. Active windows may tint the bar `accent-sunk`.
-- **Controls.** `–`, `□`, `×` at the right, in bevel panels.
-- **Body.** `surface` fill, padding on Tailwind's scale.
+- **Title bar.** Flat, ramp step 900, a rule (200 leaf / 300 pumpkin) along its bottom edge, a 16px pixel icon, then the title in step 50.
+- **Controls.** Minimise, restore and close at the right: 24px hit areas, step-100 glyphs, no box of their own.
+- **Body.** Ramp step 50 in light, step 700 in dark; padding on Tailwind's scale.
+
+### The gradient is gone
+
+Superseded by the ramps above. The Win2000 bar ran `#101b4c` to `#a3c8ee`,
+putting white text at 1.74:1 at its pale end; ours had to be compressed to
+fourteen lightness points to clear 4.5:1 at both ends, and its direction was
+load-bearing because the controls sit at the light end. A flat bar at step 900
+removes the constraint rather than solving it.
+
+### Glyphs are drawn, not typed
+
+`–`, `□` and `×` as characters are sized by the font, centred on their own
+baseline, and vary by platform. All three needed to sit at specific places at
+specific sizes, so they are boxes:
+
+| Glyph | Construction | Why |
+|---|---|---|
+| Minimise | 7×2px bar, flex-end, 2px from the bottom | **Sits on the button's lower edge, not centred.** The single detail that most marks a title bar as Win9x rather than generic |
+| Restore | 9×8px outline, `border-top-width: 2px` | It is a window, not a square — the heavy top edge is its title bar |
+| Close | Two 9×2px bars at ±45° | Fills the button the way the character never did |
+
+Controls are 16×14px — sized to the bar rather than to their glyph, which is
+what makes them read as a set.
 
 ### The title bar is the window's only chrome
 
 Navigation lives in the Start menu (blueprint decision 8), so the window has no
 header row, no menu bar and no in-window nav. What remains is content identity:
 icon, title, decorative controls. A window that also carried navigation would be
-competing with the taskbar for the same job.
+competing with the dock for the same job.
 
 ### Controls are decorative, and must be marked as such
 
@@ -291,10 +329,13 @@ that is the moment the component needs to become a React island.
 |---|---|---|---|
 | `title` | `string` | — | Shown in the title bar |
 | `icon` | `IconName` | — | 16px pixel icon at the left of the title bar |
-| `tone` | `"default" \| "accent"` | `"default"` | Accent tints the title bar |
 | `controls` | `boolean` | `true` | Decorative chrome on/off |
-| `floating` | `boolean` | `false` | Opts into desktop offset positioning |
-| `class` | `string` | — | Escape hatch for per-instance sizing |
+| `minimisable` | `boolean` | `false` | Turns minimise into a real button |
+| `palette` | `WindowPalette` | `'fallen-leaf'` | `'fallen-leaf'` or `'pumpkin'` |
+
+`tone` is gone: it tinted the bar `accent-sunk` for `Window.astro`. `chrome`
+(`period` / `soft` / `flat`) is gone too — the chrome is now modern in both
+stops, and the axis carries the palette instead.
 
 Position and size are **not** props. On a static component they would be
 inline styles that break the responsive model. They arrive with the React
@@ -318,87 +359,197 @@ imported directly into a `.astro` file. A `.astro` component cannot take
 
 ---
 
-## 5. The desktop and the taskbar
+## 5. The desktop and the dock
 
 ### The wallpaper
 
-`desktop` is a warm tan in light mode (`#bb9f7f`) and a warm near-black in dark.
-A window reads as sitting *on* something only when that something is a different
-material, and the original 1.5% lightness gap between `ground` and `surface` was
-not one.
+`oklch(80% 0.034 80)` (`#c9bca6`) in light — pale straw, the colour of a fallen
+leaf — and `oklch(16% 0.014 60)` (`#120c07`) in dark, carrying a grain overlay.
 
-**The two themes lightened by very different amounts, and that is a constraint
-rather than a preference.** Light went 50% → 72%. Dark went 11% → 13.5% only,
-because the dark theme's raised edge is carried by `bevel-light` at 54%, and a
-bevel near 50% clears 3:1 only while the wallpaper stays near-black. There is no
-mid-lightness dark wallpaper that works with this bevel system: `bevel-dark` sits
-at 8% and cannot carry the other side either. A genuinely light dark-mode
-wallpaper would need a dedicated outline token for the window edge, which is a
-larger change than retuning one value.
+**Muted per decision 15.** The chroma was halved from 0.06; lightness did not
+move. That distinction matters: the wallpaper has only five points of downward
+lightness headroom before `window-edge` falls under 3:1, but **chroma is nearly
+free** — dropping it from 0.060 to 0.014 moves `window-edge` by 0.01 and
+`desktop-ink` by 0.03, both upward. Muting a surface is therefore a safe
+operation in a way that darkening it is not.
 
-The dark wallpaper also stays *below* `sunk` (14%) deliberately. Between `sunk`
-and `surface` (21%) it would sit at almost the same luminance as both fills it
-has to be distinguished from.
+#### The grain
 
-Three layers, all CSS, no image request:
+Arc's technique, not a Windows one: an achromatic SVG noise tile blended with
+`overlay` rather than composited straight over the fill.
 
-1. **Base fill** — `desktop`.
-2. **Vignette** — a radial gradient lit from above, at 16% `bevel-light`. This is what stops a flat fill reading as "page background".
-3. **Weave** — the original 45° hatch, at 14% `bevel-dark`.
+- **`overlay`, because it scales against the base** instead of pulling toward
+  absolute black or white, so it spends less contrast. At equal strength a plain
+  composite drops `window-edge` to 3.28; overlay holds 3.52.
+- **`saturate 0`, because raw `feTurbulence` varies all four channels** and
+  tints the wallpaper with coloured speckle. Grain should vary lightness only.
+- **`stitchTiles='stitch'`**, or the 140px tile shows a seam where it repeats.
+- **Different strength per theme — 0.07 light, 0.10 dark.** Overlay is not
+  symmetric: its multiply branch compresses hard on a near-black base, so the
+  same value that reads as grain on pale straw is nearly invisible at 16%.
 
-`background-attachment: fixed` keeps the wallpaper still while the window
-scrolls, which is how a desktop behaves and how a page does not.
+**Both strengths hold their floors even if the blend mode is dropped.** A body
+background propagates to the canvas and whether `background-blend-mode` survives
+that could not be verified here, so the contrast floor does not rest on it.
+Dark at 0.22 looks better and breaks `window-edge` to 2.07 unblended; 0.10 holds
+3.15 either way.
 
-### Why the window's outer edge is a bevel
+Cost: **794 B raw, 241 B gzipped**, on every page. Its real cost is CPU — the
+filter rasterises once per tile size.
 
-Above the breakpoint the window frame switches from a 1px `border` to a 2px
-raised bevel. This is not period decoration — it is load-bearing.
+**The wallpaper carries no body text**, which is why it can sit at a lightness
+no text surface could. Shortcut labels are the only thing on it.
 
-`border` cannot reach 3:1 against the wallpaper at any wallpaper value that still
-reads as a wallpaper. A bevel can, because it has two edges and only needs one of
-them to clear.
+**It is the surface with the widest theme swing in the system**, 80% to 16%.
+Two consequences follow, and both were different under the previous dark-in-
+both-themes wallpaper:
 
-**Which edge does the work flips with the surround, and flipped when the
-wallpaper lightened.** On the old mid-dark wallpaper the light edge carried.
-On today's light wallpaper the *dark* edge carries and the light edge is
-invisible:
+- **`desktop-ink` flips.** Pale straw cannot carry light text: white on this
+  wallpaper is 1.82, dark text is 8.80. This is a pair to keep in sync.
+- **Selection still inverts to wallpaper-on-label** — `desktop-ink` fill,
+  `desktop` text. It needs no token of its own and cannot drift out of contrast
+  with the ground, because it *is* the ground. Win98 marked selection the same
+  way, so the constraint and the period behaviour agree.
 
-| Edge | Light theme | Dark theme |
+`accent` is now usable on the wallpaper (see §1's "Accent on the wallpaper"),
+where earlier schemes could not manage it. Selection does not use it, because inverting the
+label is both more period and more robust to a wallpaper change.
+
+| Pair | Light | Dark | Min | |
+|---|---|---|---|---|
+Measured at the grain's **extremes**, not its mean — a label or an edge falling
+on the darkest speck is the one that has to stay legible.
+
+| Pair | Light | Dark | Min | |
+|---|---|---|---|---|
+| `desktop-ink` on `desktop` (label) | 8.38 | 17.64 | 4.5 | ✅ |
+| `desktop` on `desktop-ink` (selected) | 8.38 | 17.64 | 4.5 | ✅ |
+| `accent` on `desktop` (marks) | 3.51 | 10.41 | 3.0 | ✅ |
+| window edge, carrying side | 5.09 (dark) | 4.14 (light) | 3.0 | ✅ |
+| `window-edge` on `desktop` | 3.47 | 3.97 | 3.0 | ✅ |
+
+### Why an edge flips with the theme
+
+The window no longer uses a bevel — it uses a 1px edge off its own ramp, which
+flips step for the same reason the bevel flipped side. The argument below is
+retained because it still governs the dock, the controls and the group box.
+
+`border` is tuned to sit on near-white panels and reaches only 1.87 against the
+pale wallpaper. A bevel does reach it, because it has two edges and only needs
+one of them to clear.
+
+**Which edge carries flips with the theme, because this wallpaper does:**
+
+| Edge | Light theme (80% wallpaper) | Dark theme (16% wallpaper) |
 |---|---|---|
-| `bevel-light` on `desktop` | 2.50 | **3.95** |
-| `bevel-dark` on `desktop` | **4.02** | 1.04 |
+| `bevel-light` on `desktop` | 1.88 | **4.18** |
+| `bevel-dark` on `desktop` | **5.34** | 1.07 |
 
-The rule is *at least one edge clears 3:1*, never *the lighter edge clears 3:1*.
-Assuming the latter is how the control bevels were wrong before, and it is how
-they would go wrong again after any retune of `desktop`.
+> The rule is **at least one edge clears 3:1**, never *the lighter edge clears
+> 3:1*. Both bevel tokens must stay real colours; neither is ever decorative.
 
-### Taskbar
+This has now flipped twice across three wallpapers, so treat it as a property to
+re-derive on every palette change rather than a fact to remember. It is the
+single most likely thing to regress silently, because a bevel with no contrast
+still *looks* like a border in a screenshot.
+
+The same rule governs controls and grooves, where the surround is a light panel
+rather than the wallpaper — there `bevel-dark` carries in light mode at 8.79 and
+`bevel-light` in dark at 4.28.
+
+### The two bars mark themselves with fill, not a border
+
+Both bars — the bottom dock and the top status bar — used to mark themselves
+against the wallpaper with a single flat `window-edge` border (47% light, 55%
+dark; `border` alone measures 1.87 on the pale wallpaper and cannot). They no
+longer carry a border at all: the fill itself is now the boundary, and it has
+to clear 3:1 against the wallpaper unaided in both themes.
+
+No single ramp step does that in both themes at once, so the fill runs
+**opposite the site theme** — dark in light mode, light in dark mode, via
+`Dock`'s `step` prop (`dock-variants.ts`). `step` names the light-mode ramp
+step; the dark-mode fill is that step's mirror across the 50–900 scale
+(`dockDarkStep`), always one step further from whichever wallpaper it sits
+near. Text and icons that sit directly on this inverted fill use the inverted
+tokens `--color-bar-ink-muted` / `--color-bar-accent`, not the ordinary
+`ink-muted` / `accent`, which assume a surface that matches the current theme.
+
+| Bar | `step` | Fill (light · dark) | vs wallpaper (light · dark) |
+|---|---|---|---|
+| Bottom dock | `900` (default) | `leaf-900` · `leaf-50` | 13.86 · 19.36 |
+| Top status bar | `800` | `leaf-800` · `leaf-100` | 11.65 · 14.58 |
+
+The dock is always the higher-contrast bar, one ramp step apart from the
+status bar, in both themes. `Dock` also takes a `size` prop
+(`compact` / `regular` / `spacious`) for the bar's padding; `regular` matches
+the old fixed `px-3 py-2`.
+
+Below the `lg` breakpoint the window fills the viewport and no wallpaper is
+visible, so this boundary is moot there.
+
+### Dock
 
 Screen chrome, not window chrome. It sits outside the window in the DOM,
 because it belongs to the desktop and outlives whatever page is open.
 
-| Region | Contents | Rationale |
+Three regions on a three-track grid — `1fr auto 1fr` — so the centre cluster is
+centred on the *bar*, not between its neighbours.
+
+| Bar | Regions | Contents |
 |---|---|---|
-| Start | The Start button and its menu | Carries the entire site navigation — see section 9 |
-| Task area | Empty | On a real taskbar this holds task buttons. With one window whose title bar is directly above, a task button would be a second label for the same thing |
-| Tray | Theme toggle, `©` year | A theme toggle *is* a system setting, which is what a tray holds |
+| Bottom dock | Cluster only | Navigation icons and the task button: the launcher, and the windows it has open |
+| Top status bar | `start` / `middle` / `end` | Section name; sundial and clock; theme toggle and `©` year — what a desktop puts in its top bar |
 
-The pinned strip is gone. CV, GitHub and Terminal were there; all navigation now
-sits in the Start menu, and Terminal moved to `/work` as a project entry
-(blueprint decision 9).
+**The regions are slots, not props** (`start`, `middle`, `end`). A dock that
+took a clock as a prop would have to know what a clock is. `middle` is only
+rendered on a `cluster="none"` bar; elsewhere that track is the cluster's.
 
-**Position.** Fixed above 64rem, static below it. On a desktop the bar is
-screen furniture and must be pinned; on a phone there is no visible desktop to
-pin it to, and a fixed bottom bar there fights browser chrome, the home
-indicator and `100vh`. Below the breakpoint the body is a flex column and the
-window takes the remaining height, so the bar still lands at the bottom of the
-first screen without being fixed.
+**Position.** `position="bottom" | "left" | "right"`, pinned from 64rem and a
+bottom bar in flow below it — on a phone there is no visible desktop to pin to.
+`sticky` then holds it at the bottom edge while the page scrolls under it.
+Sticky, not fixed: it keeps its height in flow, so it cannot cover the end of
+the page the way the old fixed bar would have.
+Vertical placements centre the cluster on the y-axis, put the sides at its ends,
+open the Start menu sideways and flip the tooltips to the side.
+`shortcutInset()` stands the desktop shortcut columns off a left-hand dock.
 
-`padding-bottom: env(safe-area-inset-bottom)` covers the one case where it *is*
-fixed on a device with a home indicator — a landscape tablet at exactly 1024px.
+**Edges.** No border — see "The two bars mark themselves with fill" above. The
+fill itself carries the 3:1 boundary against the wallpaper in both themes.
 
-**Clearance.** The desktop wrapper carries `lg:pb-24` so a full-height window's
-lower edge stays clear of the fixed bar rather than sliding under it.
+| Pair | Light | Dark | Min | |
+|---|---|---|---|---|
+| Dock fill (`leaf-900`/`leaf-50`) on `desktop` | 13.86 | 19.36 | 3.0 | ✅ |
+| Status bar fill (`leaf-800`/`leaf-100`) on `desktop` | 11.65 | 14.58 | 3.0 | ✅ |
+| `ink` on `surface` (tooltip text) | 16.47 | 14.42 | 4.5 | ✅ |
+| `bar-ink-muted` on dock fill (side regions, worst case) | 9.59 | 5.00 | 4.5 | ✅ |
+| `border` on dock fill (item boundary) | 5.69 | 5.35 | 3.0 | ✅ |
+
+**Icons only.** Cluster items are square targets around a native-size icon —
+no visible text. The words survive as the accessible name (`sr-only`), so the
+picture is never the only carrier.
+
+**Tooltips** (`Tooltip.astro`) supply the label on hover and on
+`:focus-visible`, CSS only. `aria-hidden`, because the accessible name already
+says it and a screen reader must not read it twice. Not the `title` attribute:
+unreachable by keyboard, unstyleable, inconsistent delay.
+
+| Prop | Values | |
+|---|---|---|
+| `label` | string | The words. Must match the trigger's accessible name |
+| `placement` | `top` (default), `bottom`, `left`, `right` | Sets `--tooltip-inset` / `--tooltip-shift` |
+
+The trigger is the anchor: the tooltip's parent, carrying `.tooltip-anchor`. A
+wrapper cannot do it — the Start button is a `<summary>` and must stay a direct
+child of `<details>`. Callers reposition it responsively by overriding the two
+custom properties rather than restating the styling; that is how a vertical
+dock flips the bubble sideways at `lg` instead of over its neighbour.
+
+**Magnification.** Items scale to 1.06 on hover, `(hover: hover)` only, and the
+scale is withdrawn under `prefers-reduced-motion` — the global rule shortens the
+transition but cannot undo the transform.
+
+**Clearance.** `--dock-clearance` keeps a bottom-anchored shortcut column and a
+full-height window clear of the bar.
 
 ### Rejected, and why
 
@@ -457,10 +608,10 @@ Above it, windows float on the desktop ground.
 
 | | Below 64rem | 64rem and up |
 |---|---|---|
-| Wallpaper | Not visible — the window covers it | Visible: fill, vignette and weave |
-| Window | Single, full-bleed, fills height above the taskbar | Inset, `max-w-4xl`, sized to content |
+| Wallpaper | Not visible — the window covers it | Visible: one flat fill |
+| Window | Single, full-bleed, fills height above the dock | Inset, `max-w-4xl`, sized to content |
 | Window edge | 1px `border`, top and bottom only | 2px raised bevel, all four sides |
-| Taskbar | Static, after the window in flow | Fixed to the bottom of the viewport |
+| Dock | Sticky to the bottom edge, in flow after the window | Pinned to the edge given by `position` |
 | Layout | One column | One column, centred, wallpaper either side |
 
 **Wallpaper margin is guaranteed**, not incidental: the outer wrapper carries
@@ -484,7 +635,7 @@ Deliberately absent, so their absence is a decision:
 - **A second accent hue.** The five underline hues are one family at one lightness, not competing accents.
 - **Animation**, beyond state transitions under 150ms. All of it sits behind `prefers-reduced-motion`.
 - **Draggable windows**, deferred in plan §9.
-- **A taskbar clock or task buttons** — see section 5.
+- **A clock.** The dock has a region for one; a live clock needs client JavaScript and a built one would be stale.
 - **Escape-to-close and click-outside-to-close** on the Start menu — both need JavaScript; see section 9.
 - **Icons outside the curated set.** The source library is 2393 files; only what is used is committed.
 
@@ -520,15 +671,15 @@ Both need JavaScript. The menu ships without them.
 │  │  🌐  GitHub            │
 └──┴────────────────────────┘
    ▲ branding gutter, reading bottom-to-top
-┌────────┐
-│ ▣ Start│  ← summary, raised bevel; pressed while open
-└────────┘
+┌────┐
+│ ▣  │  ← summary, raised bevel; pressed while open. Icon only,
+└────┘     named "Start" for assistive tech, tooltip on hover/focus
 ```
 
 - **Gutter.** `accent-sunk` fill, `accent-ink` text, `writing-mode: vertical-rl` plus a 180° rotation so it reads bottom-to-top as Win9x did. `aria-hidden` — it is the site name repeated, not information.
 - **Items.** 32px pixel icon, label, `accent-sunk` fill on hover and focus.
 - **Separator.** Groups places within this site from somewhere else entirely.
-- **Position.** `bottom: calc(100% + 0.375rem)` on the button, so it opens upward from the taskbar.
+- **Position.** `bottom: calc(100% + 0.375rem)` on the button, so it opens upward from a bottom dock; a vertical dock opens it sideways.
 
 ### Prominence, and why
 
@@ -539,14 +690,14 @@ because navigation nobody can find is bad design for every reader.
 ### Skip link
 
 "Skip to **navigation**", targeting the summary, not "skip to content". With
-nav in the taskbar, content already comes first in the DOM; the navigation is
+nav in the dock, content already comes first in the DOM; the navigation is
 what is far away.
 
 ### CV placement
 
 `/cv` sits **below the separator, beside GitHub**, in the group Win98 reserves
 for entries that are not places on this machine in the same sense as the pages
-above. It appears there and nowhere else: no taskbar shortcut, no desktop
+above. It appears there and nowhere else: no dock shortcut, no desktop
 shortcut, no home-page call to action. Reachable, not foregrounded — build
 plan §1.
 
@@ -614,10 +765,21 @@ before adding an icon — do not infer from the suffix.
 
 ## 11. The desktop
 
+### Files
+
+| File | Holds | Why there |
+|---|---|---|
+| `Desktop.tsx` | `DesktopShortcut`, `DesktopSection`, and `DesktopGroup` (default) | The React parts — the only React in the codebase |
+| `Desktop.astro` | `Desktop`: the skip link and both persisted groups | `transition:persist` is a template directive with no JSX equivalent |
+
+`BaseLayout` renders the whole desktop as `<Desktop currentPath={currentPath} />`.
+
+`DesktopGroup` pairs a section with its items so the caller passes navigation
+data rather than repeating the same `map` for each group.
+
 ### Shortcuts
 
-`DesktopShortcut.tsx` and `Desktop.tsx` — React, and the only React in the
-codebase.
+React, and the only React in the codebase.
 
 **They render without a `client:*` directive**, so React is an authoring API
 here and nothing hydrates. No `astro-island` elements are emitted and no page
@@ -652,7 +814,7 @@ native CSS, nothing measured at runtime, nothing hand-positioned.
 | Prop | Default | |
 |---|---|---|
 | `align` | `"left"` | Which edge the columns grow from |
-| `anchor` | `"top"` | Edge the group is pinned to; `"bottom"` clears the taskbar and fills upwards |
+| `anchor` | `"top"` | Edge the group is pinned to; `"bottom"` clears the dock and fills upwards |
 | `rows` | — | Items per column before wrapping; pass `desktopRows(items)` |
 | `gap` | `0.75` | Gap between shortcuts, rem |
 | `inset` | `1` | Distance from the viewport edges, rem |
@@ -684,9 +846,11 @@ cannot silently change what appears on the desk.
 ### Selection, not a focus ring
 
 Hover, focus and selection all invert the label — `ink` fill, `surface` text —
-rather than drawing an accent ring. Two reasons, and they agree: it is what
-Win98 does, and `accent` on the light wallpaper is 1.76:1, so an accent ring
-would be invisible in light mode.
+rather than drawing an accent ring. It is what Win98 does, and it is robust to a
+palette change: an inverted label cannot fall out of contrast with the wallpaper
+because it *is* the wallpaper. `accent` does now clear 3:1 on the wallpaper
+(3.68), so a ring would be legible — but it would have to be re-verified on
+every scheme, and inversion never does.
 
 ---
 
@@ -711,17 +875,28 @@ route, which is why minimise hides it rather than swapping it.
 
 | Element | Treatment | Why |
 |---|---|---|
-| Taskbar | `transition:persist="taskbar"` | Screen chrome. It outlives the document, and its listeners come with it. |
-| Desktop shortcuts | `transition:persist="desktop-top"` / `"desktop-bottom"` | Same, and the press handlers are bound to these exact elements. |
+| Dock | `transition:persist="dock"` | Screen chrome. It outlives the document, and its listeners come with it. |
+| Desktop shortcuts | `transition:persist="persist-desktop-top"` / `"persist-desktop-bottom"` | Same, and the press handlers are bound to these exact elements. |
 | Window frame | `transition:name="window"` | Morphs rather than cross-fades, so it reads as one window showing new content. Deliberately **not** persisted — it must arrive un-minimised. |
 | `<main>` | `transition:animate="fade"` | The content is what changed; it should be what visibly changes. |
 
 **Transition directives apply to elements, not component tags.** Putting
-`transition:persist` on `<Taskbar />` or `<Desktop />` silently does nothing —
-it must sit on the rendered element. The taskbar carries it on its own root;
-the two desktop groups are wrapped in a bare `<div>`, which is layout-neutral
-because `.desktop-shortcuts` is `display: none` below `xl` and `position: fixed`
-above it.
+`transition:persist` on `<Dock />` or `<Desktop />` silently does nothing —
+it must sit on the rendered element. The dock carries it on its own root;
+the two desktop groups are wrapped in a bare `<div>` inside `Desktop.astro`,
+which is layout-neutral because `.desktop-shortcuts` is `display: none` below
+`xl` and `position: fixed` above it.
+
+**This is why the desktop has an `.astro` file at all.** A React component
+cannot use the directive. It *could* emit `data-astro-transition-persist`
+directly — the router matches persisted elements with a plain
+`querySelectorAll('[data-astro-transition-persist]')`, so it never sees the
+directive and cannot tell who wrote the attribute. That was rejected: the
+attribute name is an internal constant, and if a future Astro renamed it the
+markup would still look correct while persistence silently stopped. This project
+has already lost persistence silently once, from the component-tag trap above.
+Using the directive keeps the compiler and the router on the same version by
+construction.
 
 **Persistence makes server-rendered state stale.** The chrome kept after a
 navigation is the *previous* page's markup, so `aria-current="page"` would keep
@@ -782,10 +957,10 @@ the real button while leaving it focusable, which is worse than either.
 ### Secondary windows are not built
 
 Windows that are *not* routes — an About box, a colophon, a properties dialog —
-are the natural extension, and there is no content for them yet. What exists
-already supports them: `Window.astro` takes the props a second window needs,
-and `TitleBar` gates the working control behind `minimisable`, so secondary
-windows keep decorative chrome until they have behaviour.
+are the natural extension, and there is no content for them yet. `WindowFrame.astro` is currently
+specific to the page window; a second window would generalise it, and `TitleBar`
+already gates the working control behind `minimisable`, so a secondary window
+keeps decorative chrome until it has behaviour.
 
 Adding one would need: a stable id per window so the tray can address more than
 one, `setMinimised` generalised from "the window" to "a window", and the tray
@@ -806,3 +981,116 @@ referenced by nothing, because no component is hydrated.
 **The honest claim is now "every page loads about 6 KB of JavaScript", not
 "zero JavaScript".** The zero-JS default was traded deliberately, per blueprint
 decision 14 and the standing "minimal, not forbidden" stance.
+
+---
+
+## 13. The group box
+
+How a page separates its sections, and the replacement for the inner
+`Window.astro`.
+
+**A window inside a window undermines the metaphor.** If a window means a page,
+it cannot also mean "a list of skills". Win9x had a device for exactly this job
+and it is not a window: the group box, an inset groove with its label breaking
+the top edge.
+
+### `<section>` and a heading, not `<fieldset>` and `<legend>`
+
+A group box is literally what a `<fieldset>` renders, and the HTML spec does
+permit fieldset for "other content". It is still the wrong element here:
+
+- Assistive technology announces a fieldset as a form **group**. Wrapped around
+  prose, achievements and a definition list, that is misleading.
+- `<fieldset>` carries a `min-width: min-content` default that breaks flex and
+  grid children — a well-known layout trap.
+- None of this content is form controls.
+
+So the groove is a **visual** treatment and a real heading carries the
+structure.
+
+### It fixes the heading outline
+
+This is not a like-for-like swap. The window titles it replaces were `<span>`s,
+so page sections were absent from the document outline entirely — `/cv` went
+from `<h1>CV` straight to `<h2>` on each role, with "skills", "experience",
+"education" and "certifications" represented nowhere.
+
+The group label is now an `h2`, and the roles inside `experience` moved to `h3`.
+Every page reads `h1 → h2 → h3` with no skipped levels.
+
+`level` is a prop (`2 | 3`) for sections whose own content already starts at h2.
+
+### Where it is not used
+
+- **`ProseLayout`.** Its label would have repeated the `<h1>` directly above it, and an article inside the page window does not need a second container. The prose renders bare.
+- **`work/index` and `blog/index`** kept a group box but relabelled off their `<h1>`: "projects" and "posts", not "work" and "blog".
+
+### Construction
+
+Two 1px rings, the inner offset by one pixel, in opposite bevel order — a
+carved channel rather than a doubled border. The label is absolutely positioned
+over the top edge with a `surface` background punching a gap in it.
+
+| Feature | Light | Dark | |
+|---|---|---|---|
+| Groove on `surface`, via dark edge | 10.04 | 1.17 | ✅ light |
+| Groove on `surface`, via light edge | 1.00 | 3.49 | ✅ dark |
+| `ink-muted` label on `surface` | 6.85 | 7.67 | ✅ both |
+
+The groove follows the same **one edge must clear 3:1** rule as every other
+bevelled feature, and like the controls it is the opposite edge in each theme.
+
+
+---
+
+## 14. Chrome variants
+
+James is undecided about how period the chrome should be, so it is a prop
+rather than a fixed decision. `src/lib/window-variants.ts` defines the axis with
+CVA; `WindowFrame` and `TitleBar` both take `chrome`.
+
+| Variant | Frame | Title bar | Controls |
+|---|---|---|---|
+| `period` *(default)* | Raised double-edged bevel above `lg` | Gradient, `titlebar-ink` | Bevelled, minimise bar bottom-aligned |
+| `soft` | Flat border, 2px radius | Solid `titlebar-from` | Flat border, controls centred |
+| `flat` | Flat border, 2px radius | Neutral `sunk` bar with `ink` text | Hairline `rule` border, centred |
+
+**One axis, not several.** Title-bar treatment, bevel depth and control style
+co-vary: a period bevel with a flat title bar is not a look anyone wants.
+Exposing them independently would offer nine combinations where three are
+coherent.
+
+`period` reproduces the previous chrome exactly, so switching is opt-in.
+
+### Every variant keeps a border
+
+On a dark wallpaper the window's `surface` measures close to 1:1 against
+`desktop` — the fill cannot mark the window's edge. Only `border` and the raised
+bevel can. `flat` therefore drops the bevel, never the border. Any future
+variant must keep one of the two.
+
+### The Tailwind / CSS boundary
+
+Utilities cover the frame borders and fills, the title-bar gradient, the control
+geometry and its bevel colours, the active state, and the minimise and restore
+glyph boxes.
+
+**One rule stays CSS:** `.title-glyph-close`. It is two bars rotated in opposite
+directions, needing `::before` and `::after` with different transforms.
+Expressible as utilities, but the class string runs longer than the rule and
+reads far worse.
+
+`cn()` (`src/lib/cn.ts`) combines `clsx` and `tailwind-merge` so a caller's
+`class` can override a variant class by intent rather than by source order.
+
+**None of this ships.** `cva`, `clsx` and `tailwind-merge` run at build time
+only — the components are `.astro` and render server-side, so the per-page
+payload is unchanged.
+
+### Comparing them
+
+`/styleguide` renders all three against real content, plus the palette
+candidates as swatches. It carries `noindex` and is filtered out of the sitemap
+in `astro.config.mjs`. It deliberately does not use `WindowFrame`, which owns
+`data-window-frame`, `id="main"` and `transition:name="window"` — all
+document-unique — and composes the variant classes onto plain markup instead.

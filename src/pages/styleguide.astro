@@ -1,0 +1,506 @@
+---
+import globalCss from '~/styles/global.css?raw';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { mainHues, tokenPairings, type MainHueKey } from '~/data/color-system';
+import LZString from 'lz-string';
+import { isInSrgbGamut, oklchToHex, parseThemedColorTokens, requireToken, type Oklch } from '~/lib/color-tokens';
+import { ResetColourTweaks } from '~/components/ui/ColourControl';
+import { TokenPairings } from '~/components/ui/TokenPairings';
+import { Wallpaper } from '~/components/ui/Wallpaper';
+
+/*
+ * A development surface for the colour system, not site content: `noindex`
+ * here, and excluded from the sitemap in `astro.config.mjs`. Everything below
+ * is parsed from `global.css` at build time (via Vite's `?raw` import).
+ */
+
+// Lightness scale of the live leaf and pumpkin ramps (global.css), in percent.
+const rampLightnessSteps = [
+  { step: 50, lightnessPercent: 99 },
+  { step: 100, lightnessPercent: 89.6 },
+  { step: 200, lightnessPercent: 80.1 },
+  { step: 300, lightnessPercent: 70.7 },
+  { step: 400, lightnessPercent: 61.2 },
+  { step: 500, lightnessPercent: 51.8 },
+  { step: 600, lightnessPercent: 42.3 },
+  { step: 700, lightnessPercent: 32.9 },
+  { step: 800, lightnessPercent: 23.4 },
+  { step: 900, lightnessPercent: 14 },
+];
+
+function nearestRampStep(lightnessPercent: number) {
+  return rampLightnessSteps.reduce((closest, candidate) =>
+    Math.abs(candidate.lightnessPercent - lightnessPercent) < Math.abs(closest.lightnessPercent - lightnessPercent)
+      ? candidate
+      : closest,
+  );
+}
+
+function maxChromaInGamut(lightness: number, hue: number, precision = 0.0005): number {
+  // Binary search: OKLCH's gamut boundary has no closed form.
+  let low = 0;
+  let high = 0.4;
+  while (high - low > precision) {
+    const mid = (low + high) / 2;
+    if (isInSrgbGamut({ l: lightness, c: mid, h: hue })) low = mid;
+    else high = mid;
+  }
+  return low;
+}
+
+// Default import: lz-string is CJS and Node's ESM loader only synthesises `default`.
+const { compressToEncodedURIComponent } = LZString;
+
+const huetoneTones = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
+
+function huetonePaletteUrl(name: string, hues: { name: string; colors: string[] }[]): string {
+  const palette = { name, hues, tones: huetoneTones };
+  return `https://huetone.ardov.me/?palette=${compressToEncodedURIComponent(JSON.stringify(palette))}`;
+}
+
+function oklchPaletteUrl(oklch: Oklch): string {
+  // oklch-palette seeds from a `#L,C,H,A` hash: L percent, A out of 100.
+  const lightnessPercent = (oklch.l * 100).toFixed(2);
+  const chroma = oklch.c.toFixed(3);
+  return `https://oklch-palette.vercel.app/#${lightnessPercent},${chroma},${oklch.h},100`;
+}
+
+const { light: lightTokens, dark: darkTokens } = parseThemedColorTokens(globalCss);
+
+const isLinkToken = (name: string) => name.startsWith('link-');
+const isRampToken = (name: string) => /^(leaf|pumpkin|umber|ash)-/.test(name);
+
+// ---------------------------------------------------------------------------
+// 2. Every colour used by any token
+// ---------------------------------------------------------------------------
+
+interface FamilyEntry {
+  name: string;
+  theme: 'light' | 'dark' | 'both';
+  oklch: Oklch;
+  hex: string;
+}
+
+function themeVariants(name: string): FamilyEntry[] {
+  const light = lightTokens[name];
+  const dark = darkTokens[name];
+  if (!light) return [];
+  const identical =
+    dark && light.oklch.l === dark.oklch.l && light.oklch.c === dark.oklch.c && light.oklch.h === dark.oklch.h && light.oklch.alpha === dark.oklch.alpha;
+  if (identical) return [{ name, theme: 'both', oklch: light.oklch, hex: light.hex }];
+  const entries: FamilyEntry[] = [{ name, theme: 'light', oklch: light.oklch, hex: light.hex }];
+  if (dark) entries.push({ name, theme: 'dark', oklch: dark.oklch, hex: dark.hex });
+  return entries;
+}
+
+const semanticEntries: FamilyEntry[] = Object.keys(lightTokens)
+  .filter((name) => !isLinkToken(name) && !isRampToken(name))
+  .flatMap(themeVariants);
+
+const NEUTRAL_CHROMA = 0.04;
+const ONE_JND = 0.02;
+
+const signedHueDelta = (a: number, b: number) => ((a - b + 540) % 360) - 180;
+
+
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle]! : (sorted[middle - 1]! + sorted[middle]!) / 2;
+}
+
+function definedRamp(name: string): Oklch[] {
+  return rampLightnessSteps.map(({ step }) => requireToken(lightTokens, `${name}-${step}`).oklch);
+}
+
+const MAX_RAMP_DISTANCE = 0.05;
+
+function oklabDistance(a: Oklch, b: Oklch): number {
+  const toRadians = Math.PI / 180;
+  return Math.hypot(
+    a.l - b.l,
+    a.c * Math.cos(a.h * toRadians) - b.c * Math.cos(b.h * toRadians),
+    a.c * Math.sin(a.h * toRadians) - b.c * Math.sin(b.h * toRadians),
+  );
+}
+
+const rampFamilies = mainHues.flatMap((family) => (family.liveRamp ? [{ key: family.key, ramp: definedRamp(family.liveRamp) }] : []));
+
+function rampAt(ramp: Oklch[], lightness: number): Oklch {
+  // Ramp colour at an arbitrary lightness, so a token between (or beyond) steps is judged on chroma and hue only.
+  const sorted = [...ramp].sort((a, b) => b.l - a.l);
+  if (lightness >= sorted[0]!.l) return { ...sorted[0]!, l: lightness };
+  if (lightness <= sorted.at(-1)!.l) return { ...sorted.at(-1)!, l: lightness };
+  const upper = sorted.findLast((step) => step.l >= lightness)!;
+  const lower = sorted.find((step) => step.l < lightness)!;
+  const t = (upper.l - lightness) / (upper.l - lower.l);
+  return { l: lightness, c: upper.c + (lower.c - upper.c) * t, h: upper.h + (lower.h - upper.h) * t };
+}
+
+function familyOf(entry: FamilyEntry): MainHueKey {
+  if (entry.name.startsWith('accent') || entry.name === 'title-bar') return 'accent';
+  const nearest = rampFamilies
+    .map(({ key, ramp }) => ({ key, distance: oklabDistance(entry.oklch, rampAt(ramp, entry.oklch.l)) }))
+    .reduce((best, candidate) => (candidate.distance < best.distance ? candidate : best));
+  return nearest.distance > MAX_RAMP_DISTANCE ? 'accent' : nearest.key;
+}
+
+function sharedLightnessRamp(members: FamilyEntry[]): Oklch[] {
+  const h = Math.round(median(members.map((member) => member.oklch.h)));
+  const c = Number(median(members.map((member) => member.oklch.c)).toFixed(3));
+  return rampLightnessSteps.map(({ lightnessPercent }) => ({ l: lightnessPercent / 100, c, h }));
+}
+
+const signed = (value: number, digits: number) => `${value < 0 ? '−' : '+'}${Math.abs(value).toFixed(digits)}`;
+const isTranslucent = ({ alpha = 1 }: Oklch) => alpha < 1;
+const formatLch = (oklch: Oklch) =>
+  `L${Number((oklch.l * 100).toFixed(1))} C${oklch.c.toFixed(3)} H${Math.round(oklch.h)}${isTranslucent(oklch) ? ` A${oklch.alpha}` : ''}`;
+const cssOklch = (oklch: Oklch) =>
+  `oklch(${Number((oklch.l * 100).toFixed(1))}% ${oklch.c.toFixed(3)} ${Math.round(oklch.h)}${isTranslucent(oklch) ? ` / ${oklch.alpha}` : ''})`;
+const themeLabel = (entry: FamilyEntry) =>
+  `${entry.theme === 'both' ? entry.name : `${entry.name} (${entry.theme})`}${isTranslucent(entry.oklch) ? ` A${entry.oklch.alpha}` : ''}`;
+const swatchStyle = (oklch: Oklch, hex: string) => `--swatch:${isTranslucent(oklch) ? cssOklch(oklch) : hex}`;
+
+function deviationExplanation(entry: FamilyEntry, reference: Oklch, deltaL: number, deltaC: number, deltaH: number): string {
+  const sentences: string[] = [];
+  if (Math.abs(deltaL) >= 0.5) {
+    sentences.push(`It is ${Math.abs(deltaL).toFixed(1)} points ${deltaL < 0 ? 'darker' : 'lighter'} than the step.`);
+  }
+  if (Math.abs(deltaC) >= 0.005) {
+    sentences.push(`It carries ${Math.abs(deltaC).toFixed(3)} ${deltaC < 0 ? 'less' : 'more'} chroma than the step.`);
+  }
+  let chromaHeadroomGained = false;
+  if (Math.abs(deltaH) >= 1 && entry.oklch.c >= NEUTRAL_CHROMA) {
+    const capAtOwnHue = maxChromaInGamut(entry.oklch.l, entry.oklch.h);
+    const capAtReferenceHue = maxChromaInGamut(entry.oklch.l, reference.h);
+    chromaHeadroomGained = capAtOwnHue > capAtReferenceHue;
+    sentences.push(
+      `At L ${(entry.oklch.l * 100).toFixed(1)}%, hue ${Math.round(entry.oklch.h)} allows ${capAtOwnHue.toFixed(3)} chroma, against ${capAtReferenceHue.toFixed(3)} at hue ${Math.round(reference.h)}.`,
+    );
+  }
+  sentences.push('The reason for the deviation is not recorded.');
+  if (chromaHeadroomGained) sentences.push('Guess: the hue shift buys chroma headroom, so the colour stays vivid instead of turning brown.');
+  else if (Math.abs(deltaL) >= 2) sentences.push('Guess: the lightness was moved to meet the contrast target of a pairing in §4.');
+  return sentences.join(' ');
+}
+
+const familyCaptions: Record<MainHueKey, string> = {
+  pumpkin: 'Defined ramp in global.css.',
+  leaf: 'Defined ramp in global.css. Used only by the unused `fallen-leaf` window variant.',
+  umber: 'Warm neutral — chroma rises as it darkens.',
+  ash: 'Grey neutral — flat chroma.',
+  accent: 'Accent and title-bar tokens, and any token > 0.05 ΔE from every ramp. Reference: shared lightness scale at the median token hue and chroma.',
+};
+
+const familyRows = mainHues.map((family) => {
+  const members = semanticEntries.filter((entry) => familyOf(entry) === family.key);
+  const referenceRamp = family.liveRamp ? definedRamp(family.liveRamp) : sharedLightnessRamp(members);
+
+  const steps = rampLightnessSteps.map(({ step }, index) => {
+    const reference = referenceRamp[index]!;
+    const clean: FamilyEntry[] = [];
+    const deviations: (FamilyEntry & { delta: string; info: string })[] = [];
+
+    for (const entry of members) {
+      if (nearestRampStep(entry.oklch.l * 100).step !== step) continue;
+      const deltaL = (entry.oklch.l - reference.l) * 100;
+      const deltaC = entry.oklch.c - reference.c;
+      const deltaH = signedHueDelta(entry.oklch.h, reference.h);
+      const hueDistance = 2 * Math.sqrt(entry.oklch.c * reference.c) * Math.sin((deltaH * Math.PI) / 360);
+      const distance = Math.hypot(deltaL / 100, deltaC, hueDistance);
+      if (distance < ONE_JND) {
+        clean.push(entry);
+        continue;
+      }
+      deviations.push({
+        ...entry,
+        delta: `Δ L ${signed(deltaL, 1)} · C ${signed(deltaC, 3)} · H ${signed(deltaH, 0)}°`,
+        info: `${themeLabel(entry)}\n${cssOklch(entry.oklch)}\n${entry.hex}\n\n${deviationExplanation(entry, reference, deltaL, deltaC, deltaH)}`,
+      });
+    }
+
+    return { step, reference, referenceHex: oklchToHex(reference), clean, deviations, unused: !clean.length && !deviations.length };
+  });
+
+  return {
+    key: family.key,
+    name: family.name,
+    caption: familyCaptions[family.key],
+    steps,
+    huetoneUrl: huetonePaletteUrl(family.name, [{ name: family.name, colors: steps.map((s) => s.referenceHex) }]),
+    oklchPaletteHref: oklchPaletteUrl(steps.find((s) => s.step === 500)!.reference),
+  };
+});
+
+const combinedHuetoneUrl = huetonePaletteUrl(
+  'techytimms',
+  familyRows.map((row) => ({ name: row.name, colors: row.steps.map((s) => s.referenceHex) })),
+);
+
+function copyAttrs(oklch: Oklch, hex: string, info?: string) {
+  const text = cssOklch(oklch);
+  return { 'data-copy-oklch': text, 'data-swatch-info': info ?? `${text}\n${hex}` };
+}
+
+// ---------------------------------------------------------------------------
+// 3. Tokens in use
+// ---------------------------------------------------------------------------
+
+const pairedTokens = new Set(tokenPairings.flatMap((row) => [row.background, ...row.foregrounds.map((pairing) => pairing.token)]));
+const otherTokens = Object.keys(lightTokens).filter(
+  (name) => !isLinkToken(name) && !isRampToken(name) && !pairedTokens.has(name),
+);
+
+const tokenValues = Object.fromEntries(
+  [...pairedTokens, ...otherTokens].map((name) => [
+    name,
+    { light: requireToken(lightTokens, name).oklch, dark: requireToken(darkTokens, name).oklch },
+  ]),
+);
+
+const lightThemeCss = `.theme-light{${Object.entries(lightTokens)
+  .map(([name, token]) => `--color-${name}:oklch(${token.oklchText})`)
+  .join(';')}}`;
+---
+
+<BaseLayout title="Styleguide" description="The colour system." noindex>
+  <h1 class="text-2xl font-semibold tracking-tight">Colour system</h1>
+  <p class="mt-3 max-w-prose text-ink-muted">
+    Figures are parsed from <code class="text-ink">global.css</code> at build time. Hover a
+    swatch for details; click to copy. Click a token chip in §3 to tweak it live on this page
+    only — nothing is saved.
+  </p>
+
+  {/* ===================================================================
+      1. Goals and dials
+      =================================================================== */}
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold tracking-tight">1. Goals and dials</h2>
+    <div class="mt-4 overflow-x-auto">
+      <table class="w-full min-w-[32rem] border-collapse text-sm">
+        <tbody>
+          <tr class="border-t border-rule">
+            <td class="py-2 pr-4 font-medium text-ink-muted">Priority</td>
+            <td class="py-2 text-ink">Contrast first — the APCA pair fixes lightness before chroma or hue move.</td>
+          </tr>
+          <tr class="border-t border-rule">
+            <td class="py-2 pr-4 font-medium text-ink-muted">Order</td>
+            <td class="py-2 text-ink">L → C → H, always in that order.</td>
+          </tr>
+          <tr class="border-t border-rule">
+            <td class="py-2 pr-4 font-medium text-ink-muted">1 JND</td>
+            <td class="py-2 text-ink">0.02 in OKLCH — CSS Color 4's own gamut-mapping threshold.</td>
+          </tr>
+          <tr class="border-t border-rule">
+            <td class="py-2 pr-4 font-medium text-ink-muted">Chroma</td>
+            <td class="py-2 text-ink">Capped by the gamut; peaks at each hue's own cusp lightness, not at a fixed L.</td>
+          </tr>
+          <tr class="border-t border-rule">
+            <td class="py-2 pr-4 font-medium text-ink-muted">Hue</td>
+            <td class="py-2 text-ink">Only visible in proportion to chroma — hue drift at low chroma is inert.</td>
+          </tr>
+          <tr class="border-t border-rule">
+            <td class="py-2 pr-4 font-medium text-ink-muted">Hue drift</td>
+            <td class="py-2 text-ink">Stays inside the colour family it started in.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  {/* ===================================================================
+      2. Every colour used by any token
+      =================================================================== */}
+  <section class="mt-14 border-t border-rule pt-8">
+    <h2 class="text-xl font-semibold tracking-tight">2. Every colour used by any token</h2>
+    <p class="mt-2 max-w-prose text-sm text-ink-muted">
+      One row per family. Top swatch: reference step. Tokens within a JND are listed under it;
+      the rest get their own swatch — hover for why.
+      <a href={combinedHuetoneUrl} class="link link-3 ml-1">All families in huetone →</a>
+    </p>
+
+    <div class="mt-6 flex flex-col gap-10">
+      {
+        familyRows.map((row) => (
+          <div>
+            <h3 class="flex flex-wrap items-baseline gap-x-2 text-sm font-semibold">
+              <span class="uppercase tracking-wide text-ink-faint">{row.name}</span>
+              <span class="ml-auto flex gap-3 text-xs font-normal normal-case tracking-normal">
+                <a href={row.huetoneUrl} class="link link-3">huetone →</a>
+                <a href={row.oklchPaletteHref} class="link link-3">oklch-palette (500) →</a>
+              </span>
+            </h3>
+            <p class="mt-1 max-w-prose text-xs text-ink-faint">{row.caption}</p>
+
+            <div class="mt-2 flex flex-wrap gap-2">
+              {row.steps.map((step) => (
+                <div class:list={['w-36 shrink-0 border p-1 text-center', step.unused ? 'border-dashed border-rule' : 'border-rule']}>
+                  <div class:list={[step.unused && '[&>div]:opacity-50']}>
+                    <button
+                      type="button"
+                      class="copy-swatch relative block h-9 w-full border border-border"
+                      style={`background-color:${step.referenceHex}`}
+                      aria-label={`Copy step ${step.step} oklch value`}
+                      {...copyAttrs(step.reference, step.referenceHex)}
+                    >
+                      <span class="copy-feedback pointer-events-none absolute inset-0 flex items-center justify-center bg-surface text-[0.55rem] font-semibold text-ink opacity-0">
+                        Copied
+                      </span>
+                    </button>
+                    <div class="mt-1 font-mono text-[0.6rem] text-ink-faint">{step.step}</div>
+                    <div class="font-mono text-[0.55rem] text-ink-faint">{formatLch(step.reference)}</div>
+                  </div>
+                  {step.unused && <div class="mt-0.5 text-[0.55rem] uppercase tracking-wide text-ink-faint">unused</div>}
+
+                  {step.clean.length > 0 && (
+                    <ul class="mt-0.5 flex flex-col gap-0.5">
+                      {step.clean.map((entry) => (
+                        <li class="truncate text-[0.58rem] leading-tight text-ink-muted" title={themeLabel(entry)}>
+                          {themeLabel(entry)}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {step.deviations.map((entry) => (
+                    <div class="mt-1 border border-accent bg-accent-sunk p-1 text-left">
+                      <button
+                        type="button"
+                        class:list={['copy-swatch relative block h-5 w-full border border-border bg-(--swatch)', isTranslucent(entry.oklch) && 'checkered']}
+                        style={swatchStyle(entry.oklch, entry.hex)}
+                        aria-label={`Copy ${entry.name} oklch value`}
+                        {...copyAttrs(entry.oklch, entry.hex, entry.info)}
+                      >
+                        <span class="copy-feedback pointer-events-none absolute inset-0 flex items-center justify-center bg-surface text-[0.5rem] font-semibold text-ink opacity-0">
+                          Copied
+                        </span>
+                      </button>
+                      <div class="mt-0.5 truncate text-[0.58rem] font-semibold text-accent-ink" title={themeLabel(entry)}>
+                        {themeLabel(entry)}
+                      </div>
+                      <div class="whitespace-nowrap text-[0.5rem] text-ink-muted">{entry.delta}</div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  {/* ===================================================================
+      3. Tokens in use
+      =================================================================== */}
+  <section class="mt-14 border-t border-rule pt-8">
+    <h2 class="text-xl font-semibold tracking-tight">3. Tokens in use</h2>
+    <p class="mt-2 max-w-prose text-sm text-ink-muted">
+      Light and dark side by side. Click a chip to edit; APCA follows live.
+    </p>
+    <div class="mt-3"><ResetColourTweaks client:load /></div>
+    <style is:inline set:html={lightThemeCss} />
+    <Wallpaper selector=".light-ground" darkSelector=".never-dark" />
+
+    <div class="mt-4 grid gap-4 md:grid-cols-2">
+      {
+        (['light', 'dark'] as const).map((theme) => (
+          <div class={theme === 'dark' ? 'dark' : 'theme-light'}>
+            <div class="flex h-80 flex-col border border-border">
+              <div class="flex items-center gap-2 border-b border-elevation-1-edge bg-elevation-1 backdrop-blur-sm px-2 py-1 text-xs text-ink">
+                <span class="text-accent">●</span>
+                <span>James Timms</span>
+                <span class="ml-auto">12:00</span>
+              </div>
+              <div class:list={[theme === 'dark' ? 'desktop-ground' : 'light-ground', 'relative flex-1 overflow-hidden']}>
+                <div class="absolute left-3 top-3 flex w-16 flex-col items-center gap-1">
+                  <span class="block h-8 w-8 border border-window-edge bg-surface" />
+                  <span class="text-[0.65rem] text-desktop-ink">About</span>
+                </div>
+                <div class="absolute left-24 right-4 top-4 border border-window-edge bg-surface">
+                  <div class="flex items-center justify-between bg-title-bar px-2 py-0.5 text-xs text-title-bar-ink">
+                    <span>about.txt</span>
+                    <span>×</span>
+                  </div>
+                  <div class="p-3 text-xs">
+                    <p class="text-ink">Body text on the window face.</p>
+                    <p class="mt-1 text-ink-muted">
+                      Secondary text with <a href="#" class="text-accent-ink underline decoration-2 underline-offset-2">a link</a>.
+                    </p>
+                    <div class="mt-2 border border-border bg-sunk p-2 text-ink-faint">12 Sep 2026</div>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center justify-center gap-4 border-t border-elevation-2-edge bg-elevation-2 shadow-[inset_0_1px_0_var(--color-elevation-2-highlight)] backdrop-blur-md px-2 py-1 text-xs text-ink">
+                <span><span class="text-accent">●</span> Home</span>
+                <span>Work</span>
+                <span>Writing</span>
+              </div>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+
+    <div class="mt-6">
+      <TokenPairings client:load values={tokenValues} rows={tokenPairings} otherTokens={otherTokens} />
+    </div>
+  </section>
+
+  <script is:inline>
+    // Click-to-copy for /styleguide's colour swatches: event delegation, one
+    // listener for the whole page, so it survives however many swatches the
+    // build produces. The only JavaScript this page ships.
+    document.addEventListener('click', function (event) {
+      var target = event.target;
+      var swatch = target && target.closest ? target.closest('[data-copy-oklch]') : null;
+      if (!swatch || !navigator.clipboard) return;
+      navigator.clipboard.writeText(swatch.getAttribute('data-copy-oklch')).then(function () {
+        swatch.setAttribute('data-copied', 'true');
+        setTimeout(function () {
+          swatch.removeAttribute('data-copied');
+        }, 1200);
+      });
+    });
+  </script>
+
+  <style is:global>
+    .copy-swatch {
+      cursor: pointer;
+    }
+    .checkered {
+      background-image:
+        linear-gradient(var(--swatch), var(--swatch)),
+        repeating-conic-gradient(var(--color-border) 0 25%, var(--color-surface) 0 50%);
+      background-size: auto, 8px 8px;
+    }
+    [data-swatch-info]::after {
+      content: attr(data-swatch-info);
+      position: absolute;
+      bottom: calc(100% + 4px);
+      left: 50%;
+      z-index: 30;
+      transform: translateX(-50%);
+      padding: 0.25rem 0.4rem;
+      border: 1px solid var(--color-border);
+      background-color: var(--color-surface);
+      color: var(--color-ink);
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 0.65rem;
+      line-height: 1.3;
+      text-align: left;
+      width: max-content;
+      max-width: 16rem;
+      white-space: pre-line;
+      pointer-events: none;
+      opacity: 0;
+    }
+    [data-swatch-info]:hover::after,
+    [data-swatch-info]:focus-visible::after {
+      opacity: 1;
+    }
+    .copy-swatch[data-copied='true'] .copy-feedback {
+      opacity: 1;
+    }
+  </style>
+</BaseLayout>

@@ -1,0 +1,54 @@
+---
+import {
+  BarRegion,
+  DockCluster,
+  DockItem,
+  DockNav,
+  DockSeparator,
+  WindowTaskButton,
+  bar,
+  type BarPosition,
+  type BarSize,
+} from '~/components/ui/Bar.tsx';
+import { isCurrent, primaryNav, secondaryNav } from '~/lib/navigation';
+
+interface Props {
+  currentPath: string;
+  windowTitle: string;
+  position?: BarPosition;
+  sticky?: boolean;
+  size?: BarSize;
+}
+
+const {
+  currentPath,
+  windowTitle,
+  position = 'bottom',
+  sticky = false,
+  size = 'regular',
+} = Astro.props;
+
+const hasMiddle = Astro.slots.has('middle');
+---
+
+<div
+  transition:persist="dock"
+  transition:name="dock"
+  transition:animate="none"
+  data-position={position}
+  class={bar({ position, purpose: 'dock', middle: true, sticky, size })}
+>
+  <BarRegion position={position} region="start"><slot name="start" /></BarRegion>
+  {hasMiddle && <BarRegion position={position} region="middle"><slot name="middle" /></BarRegion>}
+
+  <DockCluster position={position}>
+    <DockNav position={position}>
+      {primaryNav.map((item) => <DockItem {...item} current={isCurrent(item, currentPath)} />)}
+      <DockSeparator position={position} />
+      {secondaryNav.map((item) => <DockItem {...item} current={isCurrent(item, currentPath)} />)}
+    </DockNav>
+    <WindowTaskButton windowTitle={windowTitle} />
+  </DockCluster>
+
+  <BarRegion position={position} region="end"><slot name="end" /></BarRegion>
+</div>

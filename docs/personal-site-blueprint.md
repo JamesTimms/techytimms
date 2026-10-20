@@ -367,6 +367,31 @@ default, not a prohibition — where JavaScript genuinely buys better
 functionality, propose it with what it costs and James will decide. Do not
 silently add an island; do not contort a design to avoid a few lines either.
 
+**Screen bars.** `Dock.astro` renders every bar on the page. `position` is
+`top` | `bottom` | `left` | `right`; `cluster` places the icon cluster at
+`left` | `middle` | `right`, or `none` for a bar without one. `persist` names
+the persisted element and must be unique per page. `sticky` holds a bar against
+its edge below `lg`, where it is otherwise static; sticky, not fixed, so it
+keeps its height in flow and cannot cover the end of the page. The regions are
+slots — the bar never learns what a clock or a section name is, the call site
+composes them. `start` and `end` always; `middle` only on a `cluster="none"`
+bar, where it takes the track the cluster left empty. Only a bar with a cluster
+carries the Start menu and the task button, so exactly one bar per page may
+have one.
+
+`BaseLayout.astro` runs two. The bottom dock is navigation only, and `sticky`.
+The clusterless top bar carries the session: section name at the left,
+`SunDial` and `Clock` (`src/components/Time.tsx`) in the middle, theme toggle
+and `©` year at the right.
+
+**The clock is the one exception to zero JS.** A build-time render of the time
+is permanently wrong, so `src/lib/time-chrome.ts` corrects both on
+`astro:page-load` and then on the minute. It rides the bundle the desktop
+chrome already loads — no extra request, +669 bytes gzipped. Solar elevation
+is approximated in `src/lib/solar.ts` (declination from day of year, hour angle
+from mean solar time) and tested there; the dial is decorative and carries its
+elevation as a text alternative, and the clock is not a live region.
+
 **Testing.** Vitest, with a deliberately small suite on the things that would actually hurt if they broke:
 
 - Collection filtering and sorting (draft exclusion, date ordering) — a bug here silently publishes a draft
@@ -435,6 +460,8 @@ Placeholders are fine for all of the above while building. The two that genuinel
 ## 9. Out of scope (maybe later)
 
 Explicitly descoped. Recorded so each is a decision, not an omission.
+
+Draggable/resizable windows shipped (`WindowFrame.astro`, `src/lib/window-interact.ts`) and are no longer out of scope — the row below is now stale.
 
 | Idea                                                                       | Why it is parked                                                                                                                                        | Revisit when                                                                                  |
 | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |

@@ -1,0 +1,39 @@
+---
+import { BarRegion, bar, type BarPosition, type BarSize } from '~/components/ui/Bar.tsx';
+import { Clock, SunDial } from '~/components/ui/Bar.time.tsx';
+import { ThemeToggle } from '~/components/ui/Bar.ThemeToggle.tsx';
+import { sectionLabel } from '~/lib/navigation';
+
+interface Props {
+  currentPath: string;
+  position?: BarPosition;
+  size?: BarSize;
+}
+
+const { currentPath, position = 'top', size = 'compact' } = Astro.props;
+
+// The build's instant, stale by definition — enableClock() (src/lib/clock.ts) corrects it client-side; rendering it anyway keeps the bar sized right before that runs.
+const renderedAt = new Date();
+---
+
+<div
+  transition:persist="status-bar"
+  transition:name="status-bar"
+  transition:animate="none"
+  data-position={position}
+  class={bar({ position, purpose: 'menu', middle: true, size })}
+>
+  <BarRegion position={position} region="start">
+    <span data-dock-section class="truncate">{sectionLabel(currentPath)}</span>
+  </BarRegion>
+
+  <BarRegion position={position} region="middle">
+    <SunDial now={renderedAt} />
+    <Clock now={renderedAt} />
+  </BarRegion>
+
+  <BarRegion position={position} region="end">
+    <ThemeToggle />
+    <span class="hidden sm:inline">&copy; {new Date().getFullYear()}</span>
+  </BarRegion>
+</div>

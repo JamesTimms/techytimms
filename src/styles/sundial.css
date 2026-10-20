@@ -1,0 +1,49 @@
+/* Own file: React output has no Astro scope attribute for a scoped <style>. */
+
+.sundial {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 1.5x the 16-unit grid; uneven pixel edges read as pixel art. */
+.sundial-sky {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* --sky-height: 0 at horizon, 1 at zenith. 9 viewBox units centre the body on the horizon at 0; px on an SVG <g> resolves in user units, so it scales with the icon. */
+.sky-body {
+  transform: translateY(calc((1 - var(--sky-height, 0.5)) * 9px));
+  transition: transform 600ms ease-out;
+}
+
+.sky-sun {
+  fill: var(--color-accent);
+}
+
+.sky-moon {
+  fill: var(--color-ink-muted);
+}
+
+.sky-stars {
+  fill: var(--color-ink-muted);
+}
+
+.sky-horizon {
+  fill: var(--color-border);
+}
+
+.sundial[data-body='sun'] .sky-moon,
+.sundial[data-body='sun'] .sky-stars {
+  display: none;
+}
+
+.sundial[data-body='moon'] .sky-sun {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sky-body {
+    transition: none;
+  }
+}

@@ -8,8 +8,7 @@ export const site = {
   locale: "en-GB",
   socials: {
     github: "https://github.com/JamesTimms",
-    // PLACEHOLDER: confirm before publishing.
-    linkedin: "",
+    linkedin: "", // PLACEHOLDER: confirm before publishing.
     email: "",
   },
   projects: {

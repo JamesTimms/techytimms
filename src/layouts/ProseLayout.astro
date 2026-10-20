@@ -1,6 +1,5 @@
 ---
 import BaseLayout from "~/layouts/BaseLayout.astro";
-import Window from "~/components/Window.astro";
 
 interface Props {
   title: string;
@@ -25,11 +24,9 @@ const { title, summary, meta } = Astro.props;
       }
     </header>
 
-    <Window title={title} class="mt-8">
-      <div class="prose-content max-w-prose">
-        <slot />
-      </div>
-    </Window>
+    <div class="prose-content mt-8 max-w-prose">
+      <slot />
+    </div>
   </article>
 </BaseLayout>
 

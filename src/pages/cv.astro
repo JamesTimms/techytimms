@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '~/layouts/BaseLayout.astro';
-import Window from '~/components/Window.astro';
+import GroupBox from '~/components/GroupBox.astro';
 import { cv } from '~/data/cv';
 ---
 
@@ -10,7 +10,7 @@ import { cv } from '~/data/cv';
 >
   <h1 class="text-3xl font-semibold tracking-tight">CV</h1>
 
-  <Window title="skills" class="mt-8">
+  <GroupBox label="skills">
     <dl class="flex flex-col gap-4">
       {cv.skills.map((group) => (
         <div>
@@ -21,15 +21,15 @@ import { cv } from '~/data/cv';
         </div>
       ))}
     </dl>
-  </Window>
+  </GroupBox>
 
-  <Window title="experience" class="mt-8">
+  <GroupBox label="experience">
     <ol class="flex flex-col gap-7">
       {cv.experience.map((role) => (
         <li class="border-b border-rule pb-7 last:border-0 last:pb-0">
-          <h2 class="font-medium">
+          <h3 class="font-medium">
             {role.role} <span class="text-ink-muted">· {role.company}</span>
-          </h2>
+          </h3>
           <p class="font-mono text-xs uppercase tracking-widest text-ink-faint">
             {role.period} · {role.location}
           </p>
@@ -41,10 +41,10 @@ import { cv } from '~/data/cv';
         </li>
       ))}
     </ol>
-  </Window>
+  </GroupBox>
 
   <div class="mt-8 grid gap-8 sm:grid-cols-2">
-    <Window title="education">
+    <GroupBox label="education">
       <ul class="flex flex-col gap-3">
         {cv.education.map((entry) => (
           <li>
@@ -55,9 +55,9 @@ import { cv } from '~/data/cv';
           </li>
         ))}
       </ul>
-    </Window>
+    </GroupBox>
 
-    <Window title="certifications">
+    <GroupBox label="certifications">
       <ul class="flex flex-col gap-2 text-sm">
         {cv.certifications.map((cert) => (
           <li class="flex items-baseline justify-between gap-3">
@@ -66,6 +66,6 @@ import { cv } from '~/data/cv';
           </li>
         ))}
       </ul>
-    </Window>
+    </GroupBox>
   </div>
 </BaseLayout>

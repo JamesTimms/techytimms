@@ -12,5 +12,13 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
   },
-  integrations: [mdx(), sitemap(), react()],
+  integrations: [
+    mdx(),
+    // Development surfaces, not site content. They also carry noindex; this
+    // keeps them out of the sitemap as well.
+    sitemap({
+      filter: (page) => !page.endsWith('/styleguide/'),
+    }),
+    react(),
+  ],
 });

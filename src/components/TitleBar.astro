@@ -1,71 +1,51 @@
 ---
 import Icon from "~/components/Icon.astro";
+import {
+  CloseButton,
+  MaximiseButton,
+  MinimiseButton,
+  TitleBar,
+  TitleBarLabel,
+  TitleControls,
+  type WindowPalette,
+} from "~/components/ui/Window";
 import { type IconName } from "~/lib/icons";
 
 interface Props {
   title: string;
-  tone?: "default" | "accent";
   controls?: boolean;
   icon?: IconName;
-  /* Only the window that owns the page can be put away; secondary windows keep
-   * decorative controls until there is something for them to do. */
   minimisable?: boolean;
+  maximisable?: boolean;
+  closable?: boolean;
+  palette?: WindowPalette;
+  draggable?: boolean;
 }
 
 const {
   title,
-  tone = "default",
   controls = true,
   icon,
   minimisable = false,
+  maximisable = false,
+  closable = false,
+  palette = "fallen-leaf",
+  draggable = false,
 } = Astro.props;
-
-const toneClass = tone === "accent" ? "bg-accent-sunk" : "bg-sunk";
 ---
 
-<div
-  class:list={[
-    "flex items-center justify-between gap-3 border-b border-border px-2 py-1.5",
-    toneClass,
-  ]}
->
-  <span class="flex min-w-0 items-center gap-2">
+<TitleBar palette={palette} draggable={draggable}>
+  <TitleBarLabel draggable={draggable}>
     {icon && <Icon name={icon} />}
-    <span class="truncate font-mono text-xs uppercase tracking-widest text-ink">
-      {title}
-    </span>
-  </span>
-
+    <span class="truncate text-xs font-semibold tracking-wide" data-window-title>{title}</span>
+  </TitleBarLabel>
   {
-    /*
-     * Maximise and close stay decorative: there is nothing to maximise to and
-     * nowhere to close to, and a focusable control that does nothing announces
-     * an action that never happens. The container must not be aria-hidden —
-     * that would hide the real minimise button while leaving it focusable.
-     */
     controls && (
-      <span class="flex shrink-0 items-center gap-1">
-        {minimisable ? (
-          <button
-            type="button"
-            class="title-control"
-            data-window-minimise
-            aria-label="Minimise window"
-          >
-            <span aria-hidden="true">–</span>
-          </button>
-        ) : (
-          <span aria-hidden="true" class="title-control">
-            –
-          </span>
-        )}
-        <span aria-hidden="true" class="title-control">
-          □
-        </span>
-        <span aria-hidden="true" class="title-control">
-          ×
-        </span>
-      </span>
+      <TitleControls>
+        <MinimiseButton palette={palette} decorative={!minimisable} />
+        <MaximiseButton palette={palette} decorative={!maximisable} />
+        <CloseButton palette={palette} decorative={!closable} />
+      </TitleControls>
     )
   }
-</div>
+</TitleBar>

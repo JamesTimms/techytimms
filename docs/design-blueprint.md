@@ -219,6 +219,39 @@ Explicitly parked, so they are not forgotten.
 | **Annual redesign, past versions kept live** (Lynn Fisher) | Year two, if the site is still fun |
 | **A screensaver** — idle-triggered, over the desktop ground | Once the desktop metaphor is settled and the chrome is stable |
 
+### The 2000s web and gaming pool
+
+Added 20 Sep 2026. Raw material for texture, copy, iconography and easter eggs —
+**not** a licence to pastiche any of them.
+
+| Reference | What it offers |
+|---|---|
+| **MySpace, Bebo** | Profile customisation as self-expression — the era's answer to "this is my space" |
+| **Photobucket, DeviantArt** | Image hosting and hotlinking; the amateur-gallery aesthetic |
+| **MSN Messenger** | Status messages, nudges, the contact list as a social object |
+| **Newgrounds** | Flash games and animation; the loading bar as an art form |
+| **LimeWire** | P2P file lists, transfer progress, the queue |
+| **Early YouTube** | The pre-polish video page: star ratings, embed codes |
+| **RuneScape** | Low-poly browser MMO; skill levels, XP bars, bank inventory |
+| **Early World of Warcraft** | Quest logs, tooltips, item rarity colours |
+| **WarCraft III and its community mods** | Custom-map culture — DotA, Tower Defense — as user-made worlds |
+| **Clippy** | The unbidden assistant. Universally recognised, affectionate now |
+| **PlayStation and early console games** | Disc cases, memory cards, boot sequences |
+
+**The through-line:** these are the *social and creative web of the same era as
+the desktop metaphor*, so they sit inside the world already chosen rather than
+opening a second one. Several map onto sections already planned:
+
+- **DeviantArt / Photobucket** → the polaroid-framed hobby photos.
+- **PlayStation** → the games half of the digital bookshelf, already decided as disc cases.
+- **RuneScape / WoW / WC3** → the same shelf, and a natural home for skill-bar or item-rarity visual cues.
+- **MSN** → a contact affordance with more personality than a mailto link.
+- **Clippy** → the obvious easter egg, and the natural companion to the screensaver idea.
+
+**Discipline:** pick two or three to execute properly. Eleven references sprayed
+across one site reads as a mood board, not a point of view — the same trap
+already noted for Lain.
+
 ### On the screensaver
 
 The most natural flourish the desktop metaphor offers, and the one place where
@@ -267,6 +300,8 @@ Resolved from the open questions.
    wearing our colours.
 8. **The Start menu is the site navigation.** All navigation leaves the window
    chrome. The window shows content only.
+   *Superseded, 21 Sep 2026: the menu is gone — every destination is now its own
+   dock icon, laid out left to right. Navigation still leaves the window.*
 9. **`terminal.techytimms.com` moves out of the taskbar** and becomes a project
    entry on `/work`, until James decides what the taskbar should carry instead.
 10. **Windows 98 icons** from [win98icons.alexmeub.com](https://win98icons.alexmeub.com/),
@@ -288,6 +323,23 @@ Resolved from the open questions.
    technology alike) and a true multi-window SPA (several routes open at once
    means fetching and injecting documents, and owning the cache, history and
    focus model).
+
+15. **Correction, 20 Sep 2026: the style has been pushed too far.** James:
+   *"The style should invoke nostalgia but not distract too much from the
+   content of the website. Tania's website does a great job of leading with
+   function over style. I think we've now leant too much into the style and
+   it's not feeling quite right."*
+
+   The desktop metaphor stays. What changes is its **volume**: the background
+   is muted and recedes, the palette drops chroma so content carries the eye,
+   and the chrome stops competing with what sits inside it. Grain replaces the
+   patterned options — closer to Arc's design language than to a Windows
+   texture.
+
+   This revises emphasis, not architecture. Decisions 1–14 stand. Where a
+   choice trades legibility of content against fidelity of the metaphor, the
+   content now wins — which is the reader order in the build plan applied to
+   visual weight rather than information architecture.
 
 ### Fidelity: the resolution question, answered
 

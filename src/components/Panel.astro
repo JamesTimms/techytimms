@@ -7,12 +7,12 @@ interface Props {
 const { tone = "default", class: className = "" } = Astro.props;
 
 const toneClass = {
-  default: "",
-  sunk: "panel-sunk",
-  accent: "panel-accent",
+  default: "bg-surface",
+  sunk: "bg-sunk",
+  accent: "border-accent bg-accent-sunk",
 }[tone];
 ---
 
-<div class:list={["panel", toneClass, className]}>
+<div class:list={["rounded-panel border border-border", toneClass, className]}>
   <slot />
 </div>

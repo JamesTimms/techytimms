@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "~/layouts/BaseLayout.astro";
-import Window from "~/components/Window.astro";
+import GroupBox from "~/components/GroupBox.astro";
 import Panel from "~/components/Panel.astro";
 import Icon from "~/components/Icon.astro";
 import { getCollection } from "astro:content";
@@ -13,7 +13,7 @@ const projects = featuredFirst(excludeDrafts(await getCollection("work")));
 <BaseLayout title="Work" description="Projects and case studies by James Timms.">
   <h1 class="text-3xl font-semibold tracking-tight">Work</h1>
 
-  <Window title="work" class="mt-8">
+  <GroupBox label="projects">
     {
       projects.length === 0 ? (
         <Panel tone="sunk" class="px-4 py-6 text-sm text-ink-muted">
@@ -40,20 +40,24 @@ const projects = featuredFirst(excludeDrafts(await getCollection("work")));
                       <a
                         href={project.data.url}
                         rel="noopener"
+                        target="_blank"
                         class:list={[linkClass(project.data.url), "inline-flex items-center gap-1.5"]}
                       >
                         <Icon name="external" />
                         Visit
+                        <span class="sr-only"> (opens in a new tab)</span>
                       </a>
                     )}
                     {project.data.repo && (
                       <a
                         href={project.data.repo}
                         rel="noopener"
+                        target="_blank"
                         class:list={[linkClass(project.data.repo), "inline-flex items-center gap-1.5"]}
                       >
                         <Icon name="external" />
                         Source
+                        <span class="sr-only"> (opens in a new tab)</span>
                       </a>
                     )}
                   </p>
@@ -64,5 +68,5 @@ const projects = featuredFirst(excludeDrafts(await getCollection("work")));
         </ul>
       )
     }
-  </Window>
+  </GroupBox>
 </BaseLayout>

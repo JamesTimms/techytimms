@@ -2,11 +2,13 @@
 import '~/styles/global.css';
 import { ClientRouter } from 'astro:transitions';
 import { site } from '~/data/site';
-import TitleBar from '~/components/TitleBar.astro';
-import Taskbar from '~/components/Taskbar.astro';
-import Desktop from '~/components/Desktop.tsx';
-import DesktopShortcut from '~/components/DesktopShortcut.tsx';
-import { desktopRows, desktopShortcuts, isCurrent, secondaryNav } from '~/lib/navigation';
+import Dock from '~/components/Dock.astro';
+import StatusBar from '~/components/StatusBar.astro';
+import WindowFrame from '~/components/WindowFrame.astro';
+import { Wallpaper } from '~/components/ui/Wallpaper';
+import { DesktopSection, DesktopShortcut } from '~/components/ui/Desktop.tsx';
+import { primaryShortcuts, secondaryShortcuts, desktopRows, isCurrent } from '~/lib/navigation';
+import { type BarPosition } from '~/components/ui/Bar.tsx';
 
 interface Props {
   title?: string;
@@ -22,12 +24,12 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? site.url);
 const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 
 const windowTitle = `${canonical.host}${currentPath === '/' ? '' : currentPath}`;
+
+const dockPosition: BarPosition = 'bottom';
+const statusPosition: BarPosition = 'top';
 ---
 
-{/*
-  transition:animate="none" turns off Astro's page-wide default fade to avoid flickering.
-  Elements that should animate opt in explicitly.
-*/}
+{/* Page-wide fade off to avoid flicker; elements opt in. */}
 <html lang="en-GB" transition:animate="none">
   <head>
     <meta charset="utf-8" />
@@ -50,8 +52,9 @@ const windowTitle = `${canonical.host}${currentPath === '/' ? '' : currentPath}`
 
     <ClientRouter />
 
+    <Wallpaper />
+
     <script is:inline>
-      // Must be inline and in <head> to run before first paint.
       (() => {
         function applyTheme() {
           const stored = localStorage.getItem('theme');
@@ -62,79 +65,108 @@ const windowTitle = `${canonical.host}${currentPath === '/' ? '' : currentPath}`
           );
         }
 
-        applyTheme();
+        function applyWindowRect() {
+          // Unclamped copy of applyRect in ~/lib/window; the bars don't exist yet, so it re-clamps on astro:page-load.
+          const html = document.documentElement;
+          if (!window.matchMedia('(min-width: 64rem)').matches) return;
+          let rect = null;
+          try {
+            rect = JSON.parse(sessionStorage.getItem('window-rect'));
+          } catch {}
+          if (
+            !rect ||
+            typeof rect.left !== 'number' ||
+            typeof rect.top !== 'number' ||
+            typeof rect.width !== 'number' ||
+            typeof rect.height !== 'number'
+          ) {
+            return;
+          }
+          html.dataset.positioned = 'true';
+          html.style.setProperty('--window-left', `${rect.left}px`);
+          html.style.setProperty('--window-top', `${rect.top}px`);
+          html.style.setProperty('--window-width', `${rect.width}px`);
+          html.style.setProperty('--window-height', `${rect.height}px`);
+        }
 
-        if (!window.themeSwapBound) {
-          // The router swaps the root element's attributes, which drops the class.
-          // after-swap is the last moment before the new page paints.
-          window.themeSwapBound = true;
-          document.addEventListener('astro:after-swap', applyTheme);
+        applyTheme();
+        applyWindowRect();
+
+        if (!window.preRenderSwapBound) {
+          // The router swaps root attributes, dropping the theme class and window rect.
+          window.preRenderSwapBound = true;
+          document.addEventListener('astro:after-swap', () => {
+            applyTheme();
+            applyWindowRect();
+          });
         }
       })();
     </script>
   </head>
 
-  <body class="desktop-ground flex min-h-screen flex-col font-sans antialiased">
+  <body class="desktop-ground flex min-h-dvh flex-col font-sans antialiased">
     <a
-      href="#start-menu"
+      href="#dock-nav"
       class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-30 focus:border focus:border-border focus:bg-surface focus:px-3 focus:py-2"
     >
       Skip to navigation
     </a>
-    {/* The desktop outlives whatever document is open, so it is kept rather than
-        rebuilt — which also keeps the press handlers bound to it. The wrapper
-        exists because transition directives apply to elements, not component
-        tags; it is layout-neutral because the shortcuts are fixed or hidden. */}
-    <div transition:persist="desktop-top">
-      <Desktop rows={desktopRows(desktopShortcuts)}>
-        {desktopShortcuts.map((item) => (
-          <DesktopShortcut
-            icon={item.icon}
-            label={item.label}
-            href={item.href}
-            external={item.external}
-            selected={isCurrent(item, currentPath)}
-          />
-        ))}
-      </Desktop>
-    </div>
+    <StatusBar currentPath={currentPath} position={statusPosition} />
 
-    <div transition:persist="desktop-bottom">
-      <Desktop anchor="bottom" rows={desktopRows(secondaryNav)} label="More desktop shortcuts">
-        {secondaryNav.map((item) => (
-          <DesktopShortcut
-            icon={item.icon}
-            label={item.label}
-            href={item.href}
-            external={item.external}
-            selected={isCurrent(item, currentPath)}
-          />
-        ))}
-      </Desktop>
-    </div>
-
-    {/* Spans the viewport to centre the window, so it would otherwise sit over the desktop shortcuts and swallow their clicks. */}
-    <div class="pointer-events-none relative z-10 flex flex-1 flex-col lg:px-10 lg:py-12 lg:pb-24">
-      {/* Named rather than persisted: the frame should read as one window
-          showing new content, and it must arrive un-minimised. */}
-      <div
-        transition:name="window"
-        data-window-frame
-        class="window-frame pointer-events-auto mx-auto flex w-full max-w-4xl flex-1 flex-col lg:flex-none"
-      >
-        <TitleBar title={windowTitle} icon="document" minimisable />
-
-        <main id="main" transition:animate="fade" class="flex-1 px-4 py-8 sm:px-6">
-          <slot />
-        </main>
+    {primaryShortcuts.length > 0 && (
+      <div transition:persist="persist-desktop-top">
+        <DesktopSection rows={desktopRows(primaryShortcuts)}>
+          {primaryShortcuts.map((item) => (
+            <DesktopShortcut
+              icon={item.icon}
+              label={item.label}
+              href={item.href}
+              external={item.external}
+              selected={isCurrent(item, currentPath)}
+            />
+          ))}
+        </DesktopSection>
       </div>
-    </div>
+    )}
 
-    <Taskbar currentPath={currentPath} windowTitle={windowTitle} />
+    {secondaryShortcuts.length > 0 && (
+      <div transition:persist="persist-desktop-bottom">
+        <DesktopSection
+          anchor="bottom"
+          rows={desktopRows(secondaryShortcuts)}
+          label="More desktop shortcuts"
+        >
+          {secondaryShortcuts.map((item) => (
+            <DesktopShortcut
+              icon={item.icon}
+              label={item.label}
+              href={item.href}
+              external={item.external}
+              selected={isCurrent(item, currentPath)}
+            />
+          ))}
+        </DesktopSection>
+      </div>
+    )}
+
+    <WindowFrame title={windowTitle} palette="pumpkin">
+      <slot />
+    </WindowFrame>
+
+    <Dock
+      currentPath={currentPath}
+      windowTitle={windowTitle}
+      position={dockPosition}
+      sticky
+    />
 
     <script>
-      import { enableDesktopChrome } from '~/lib/desktop-chrome';
-      enableDesktopChrome();
+      import { enableDesktop } from '~/lib/desktop';
+      import { enableClock } from '~/lib/clock';
+      import { enableWindowInteract } from '~/lib/window';
+      enableDesktop();
+      enableClock();
+      enableWindowInteract();
     </script>
   </body>
 </html>

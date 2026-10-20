@@ -1,79 +1,136 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/*
- * Warm neutrals and amber accent, both at hue 70 — the neutrals are the accent
- * hue at very low chroma, which is what makes the greys read as warm paper.
- * Retune the palette by changing the hue angle, not individual values.
- *
- * Every value here is contrast-verified in both themes; see docs/design-system.md
- * for the full table. The tightest pair is ink-faint on ground at 4.56:1, so
- * recheck that one before darkening the ground.
- */
+/* Set on <html> so the head script and runtime module share one source. */
+@custom-variant positioned (html[data-positioned=true] &);
+
+/* PALETTE — Pumpkin. Swap everything between the PALETTE markers to retheme; APCA checks in docs/design-system.md §1. */
 @theme {
-  --color-ground: oklch(98.5% 0.006 70);
-  --color-surface: oklch(100% 0 70);
-  --color-sunk: oklch(96% 0.01 70);
-  --color-rule: oklch(88.5% 0.014 70);
-  --color-border: oklch(63% 0.016 70);
-  --color-ink-faint: oklch(55.5% 0.022 70);
-  --color-ink-muted: oklch(47% 0.026 70);
-  --color-ink: oklch(24% 0.028 70);
+  --color-ground: oklch(98.5% 0.006 55);
+  --color-surface: oklch(98.5% 0.008 55);
+  --color-sunk: oklch(95.5% 0.014 55);
+  --color-rule: oklch(88.5% 0.018 55);
+  --color-border: oklch(63% 0.02 55);
+  --color-ink-faint: oklch(55.5% 0.024 55);
+  --color-ink-muted: oklch(44.9% 0.028 55);
+  --color-ink: oklch(24% 0.03 55);
 
-  --color-accent: oklch(58% 0.13 70);
-  --color-accent-ink: oklch(45% 0.11 70);
-  --color-accent-sunk: oklch(95% 0.03 70);
+  /* Hue drifts with lightness: clamp(38, 60, 40 + 0.3 * (L% - 40)). */
+  --color-accent: oklch(52% 0.125 44);
+  --color-accent-ink: oklch(38% 0.105 39);
+  --color-accent-sunk: oklch(95.5% 0.024 57);
 
-  /* The wallpaper the window sits on. Deliberately not `ground`: ground is the
-     contrast baseline every text pair is measured against, and the wallpaper is
-     a surface that never carries text. Keeping them separate means retuning the
-     wallpaper cannot invalidate the text contrast table. */
-  --color-desktop: oklch(72% 0.055 70);
+  /* Window ramps, 50 (lightest) to 900. Absolute colours; roles pick steps. Only fallen-leaf reads them directly. */
+  --color-leaf-50: oklch(99% 0.008 80);
+  --color-leaf-100: oklch(89.6% 0.0285 80);
+  --color-leaf-200: oklch(80.1% 0.06 80);
+  --color-leaf-300: oklch(70.7% 0.057 80);
+  --color-leaf-400: oklch(61.2% 0.0537 80);
+  --color-leaf-500: oklch(51.8% 0.0506 80);
+  --color-leaf-600: oklch(42.3% 0.0461 80);
+  --color-leaf-700: oklch(32.9% 0.0415 80);
+  --color-leaf-800: oklch(23.4% 0.0338 80);
+  --color-leaf-900: oklch(14% 0.025 80);
 
-  /* Raised-edge pair. A raised object needs only ONE of its two edges to clear
-     3:1 against what surrounds it, and which one does flips with the surround:
-     on this light wallpaper the dark edge carries at 4.02 while the light edge
-     is 2.50, and on a near-white panel it is the other way round. Do not assume
-     the lighter edge is the one doing the work. */
-  --color-bevel-light: oklch(100% 0 70);
-  --color-bevel-dark: oklch(38% 0.02 70);
+  --color-pumpkin-50: oklch(99% 0.0055 55);
+  --color-pumpkin-100: oklch(89.6% 0.041 55);
+  --color-pumpkin-200: oklch(80.1% 0.07 55);
+  --color-pumpkin-300: oklch(70.7% 0.098 55);
+  --color-pumpkin-400: oklch(61.2% 0.096 55);
+  --color-pumpkin-500: oklch(51.8% 0.091 55);
+  --color-pumpkin-600: oklch(42.3% 0.0746 55);
+  --color-pumpkin-700: oklch(32.9% 0.0558 55);
+  --color-pumpkin-800: oklch(23.4% 0.0418 55);
+  --color-pumpkin-900: oklch(14% 0.03 55);
 
-  /* Underline hues for links. Colour varies; the underline itself never does,
-     so colour is never the only signal that something is navigable. */
+  /* Warm neutral: light-theme text and surfaces. */
+  --color-umber-50: oklch(99% 0.006 55);
+  --color-umber-100: oklch(89.6% 0.009 55);
+  --color-umber-200: oklch(80.1% 0.012 55);
+  --color-umber-300: oklch(70.7% 0.015 55);
+  --color-umber-400: oklch(61.2% 0.018 55);
+  --color-umber-500: oklch(51.8% 0.021 55);
+  --color-umber-600: oklch(42.3% 0.024 55);
+  --color-umber-700: oklch(32.9% 0.027 55);
+  --color-umber-800: oklch(23.4% 0.030 55);
+  --color-umber-900: oklch(14% 0.033 55);
+
+  /* Grey neutral: lines everywhere, dark-theme surfaces and text. */
+  --color-ash-50: oklch(99% 0.008 55);
+  --color-ash-100: oklch(89.6% 0.016 55);
+  --color-ash-200: oklch(80.1% 0.020 55);
+  --color-ash-300: oklch(70.7% 0.020 55);
+  --color-ash-400: oklch(61.2% 0.020 55);
+  --color-ash-500: oklch(51.8% 0.019 55);
+  --color-ash-600: oklch(42.3% 0.018 55);
+  --color-ash-700: oklch(32.9% 0.018 55);
+  --color-ash-800: oklch(23.4% 0.016 55);
+  --color-ash-900: oklch(14% 0.012 55);
+
+  /* Title bar: the accent family's own rust, off-ramp. */
+  --color-title-bar: oklch(56% 0.142 53);
+  --color-title-bar-ink: oklch(99% 0.01 60);
+
+  /* Elevation: 0 desktop, 1 top bar, 2 dock, 3 window (surface); each lighter, more opaque, blurrier. */
+  --color-elevation-1: oklch(97% 0.012 60 / 0.6);
+  --color-elevation-1-edge: oklch(79% 0.03 58);
+  --color-elevation-2: oklch(99% 0.006 60 / 0.85);
+  --color-elevation-2-edge: oklch(40% 0.02 55 / 0.28);
+  --color-elevation-2-highlight: oklch(100% 0 60 / 0.9);
+
+  /* Wallpaper, separate from ground so retuning it cannot invalidate text contrast. */
+  --color-desktop: oklch(94% 0.02 60);
+
+  /* Flips with theme; shortcut labels are the only text on the wallpaper. */
+  --color-desktop-ink: oklch(24% 0.03 55);
+
+  /* Window frame border; `border` is tuned for panels and fails 3:1 on the wallpaper. */
+  --color-window-edge: oklch(47% 0.018 55);
+
+  /* Raised edges: only one needs 3:1 against the surround, and which one flips with theme. */
+  --color-bevel-light: oklch(100% 0 55);
+  --color-bevel-dark: oklch(38% 0.02 55);
+
+  /* Underline hue only; the underline itself is constant. */
   --color-link-1: oklch(55% 0.13 25);
   --color-link-2: oklch(55% 0.13 45);
   --color-link-3: oklch(55% 0.13 70);
   --color-link-4: oklch(55% 0.13 95);
   --color-link-5: oklch(55% 0.13 125);
-
-  --radius-panel: 0px;
-  --radius-control: 2px;
 }
 
 .dark {
-  --color-ground: oklch(17% 0.012 70);
-  --color-surface: oklch(21% 0.014 70);
-  --color-sunk: oklch(14% 0.01 70);
-  --color-rule: oklch(32% 0.018 70);
-  --color-border: oklch(52% 0.018 70);
-  --color-ink-faint: oklch(62% 0.02 70);
-  --color-ink-muted: oklch(74% 0.02 70);
-  --color-ink: oklch(93% 0.014 70);
+  --color-ground: oklch(17% 0.014 55);
+  --color-surface: oklch(23% 0.016 55);
+  --color-sunk: oklch(14% 0.012 55);
+  --color-rule: oklch(47% 0.018 55);
+  --color-border: oklch(78% 0.02 55);
+  /* Brighter than light's mirror: dark surfaces read lower contrast. */
+  --color-ink-faint: oklch(78% 0.02 55);
+  --color-ink-muted: oklch(86% 0.02 55);
+  --color-ink: oklch(94% 0.014 55);
 
-  --color-accent: oklch(78% 0.11 70);
-  --color-accent-ink: oklch(80% 0.105 70);
-  --color-accent-sunk: oklch(24% 0.035 70);
+  --color-accent: oklch(86.5% 0.1 52);
+  --color-accent-ink: oklch(94.9% 0.078 54);
+  --color-accent-sunk: oklch(25% 0.032 36);
 
-  /* Stays below `sunk` (14%) on purpose. The dark theme's raised edge is carried
-     by `bevel-light`, and a bevel near 50% only clears 3:1 while the wallpaper
-     is near-black — so a mid-lightness dark wallpaper would need a dedicated
-     outline token rather than a bevel. See the design system, §5. */
-  --color-desktop: oklch(13.5% 0.018 70);
-  /* 49% is the bare minimum against the wallpaper above; 54% buys headroom and
-     also lifts the control edge on `sunk` from 3.04 to 3.92. */
-  --color-bevel-light: oklch(54% 0.02 70);
-  --color-bevel-dark: oklch(8% 0.01 70);
+  --color-title-bar: oklch(56% 0.142 53);
+  --color-title-bar-ink: oklch(99% 0.01 60);
+
+  --color-elevation-1: oklch(30% 0.012 55 / 0.6);
+  --color-elevation-1-edge: oklch(52% 0.03 50);
+  --color-elevation-2: oklch(33% 0.014 55 / 0.85);
+  --color-elevation-2-edge: oklch(90% 0.01 60 / 0.25);
+  --color-elevation-2-highlight: oklch(100% 0 60 / 0.1);
+
+  --color-desktop: oklch(21% 0.014 60);
+  --color-desktop-ink: oklch(97% 0.008 45);
+
+  --color-window-edge: oklch(68% 0.018 55);
+
+  --color-bevel-light: oklch(62% 0.02 55);
+  --color-bevel-dark: oklch(8% 0.01 55);
 
   --color-link-1: oklch(76% 0.11 25);
   --color-link-2: oklch(76% 0.11 45);
@@ -81,10 +138,31 @@
   --color-link-4: oklch(76% 0.11 95);
   --color-link-5: oklch(76% 0.11 125);
 }
+/* sRGB fallback above; P3 chroma where available. */
+@media (color-gamut: p3) {
+  :root,
+  :root.dark {
+    --color-title-bar: oklch(56% 0.162 53);
+  }
+}
+/* =========================== end PALETTE — Pumpkin ======================== */
+
+@theme {
+  --radius-panel: 0px;
+  --radius-control: 2px;
+  /* Only rounded object: the window, from lg up. */
+  --radius-window: 6px;
+  /* Frame radius less its 1px border. */
+  --radius-window-inner: 5px;
+}
 
 @layer base {
   html {
+    /* Hidden so scrollbar width does not shift the centred window. */
+    scrollbar-width: none;
     color-scheme: light;
+    /* Hidden tooltips overflow the viewport; body carries the clip since root overflow propagates. */
+    overflow-x: hidden;
   }
 
   html.dark {
@@ -95,6 +173,7 @@
     background-color: var(--color-desktop);
     color: var(--color-ink);
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 
   :focus-visible {
@@ -103,169 +182,246 @@
   }
 }
 
+@utility pixel-icon {
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+@utility tooltip-anchor {
+  position: relative;
+
+  &:hover > .tooltip,
+  &:focus-visible > .tooltip,
+  &:has(:focus-visible) > .tooltip {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+@utility tooltip {
+  position: absolute;
+  inset: var(--tooltip-inset, auto auto calc(100% + 0.5rem) 50%);
+  transform: var(--tooltip-shift, translateX(-50%));
+  z-index: 30;
+  width: max-content;
+  max-width: 12rem;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.12s ease-out,
+    visibility 0.12s;
+}
+
+@utility theme-toggle {
+  --toggle-hover-ink: var(--color-ink);
+  transition: background-color 0.15s ease-in-out;
+
+
+  &:hover,
+  &:focus-visible,
+  &:active {
+    background-color: color-mix(in oklab, var(--toggle-hover-ink) 12%, transparent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  &:hover .theme-toggle-icon {
+    fill: var(--toggle-hover-ink);
+  }
+
+  &:focus-visible .theme-toggle-sun,
+  &:active .theme-toggle-sun {
+    fill: var(--color-accent);
+  }
+
+  &:focus-visible .theme-toggle-moon,
+  &:active .theme-toggle-moon {
+    fill: var(--color-ink);
+  }
+}
+
+@utility theme-toggle-icon {
+  transition: fill 0.15s ease-in-out;
+}
+
+@utility theme-toggle-sun {
+  fill: var(--color-accent);
+}
+
+@utility theme-toggle-moon {
+  fill: var(--color-ink-muted);
+}
+
+@utility link {
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+  transition:
+    color 120ms ease,
+    text-decoration-thickness 120ms ease;
+
+  &:hover {
+    color: var(--color-accent-ink);
+    text-decoration-thickness: 3px;
+  }
+}
+
+@utility link-1 {
+  text-decoration-color: var(--color-link-1);
+}
+@utility link-2 {
+  text-decoration-color: var(--color-link-2);
+}
+@utility link-3 {
+  text-decoration-color: var(--color-link-3);
+}
+@utility link-4 {
+  text-decoration-color: var(--color-link-4);
+}
+@utility link-5 {
+  text-decoration-color: var(--color-link-5);
+}
+
 @layer components {
-  /*
-   * One primitive. Cards, callouts, buttons and window frames are all variants.
-   * Square corners and hard borders throughout — depth comes from the bevel,
-   * never from a shadow.
-   */
-  .panel {
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-panel);
-    background-color: var(--color-surface);
-  }
-
-  .panel-sunk {
-    background-color: var(--color-sunk);
-  }
-
-  .panel-accent {
-    border-color: var(--color-accent);
-    background-color: var(--color-accent-sunk);
-  }
-
-  /*
-   * Windows 9x raised controls by painting the top and left edges light and the
-   * bottom and right edges dark. It reads as three-dimensional without a shadow,
-   * which is the constraint this design already has.
-   *
-   * The edges use the bevel tokens rather than surface/ink-faint. Those two
-   * invert in dark mode — ink-faint is lighter than surface there — which put
-   * the lit edge on the bottom right and made every control read as pressed.
-   *
-   * Two rings, not one: Win9x raised buttons are a 2px double bevel, outer
-   * light over inner light on the top left. The pseudo-element carries the
-   * inner ring so this stays a border effect rather than an inset shadow.
-   */
-  .panel-bevel {
+  /* Close glyph: two rotated bars, 1.5px to match minimise. */
+  .title-glyph-close {
+    display: block;
     position: relative;
-    border-radius: var(--radius-control);
-    border-top-color: var(--color-bevel-light);
-    border-left-color: var(--color-bevel-light);
-    border-bottom-color: var(--color-bevel-dark);
-    border-right-color: var(--color-bevel-dark);
-    background-color: var(--color-sunk);
+    width: 9px;
+    height: 9px;
+    background-color: transparent;
   }
 
-  .panel-bevel::before {
-    content: "";
+  .title-glyph-close::before,
+  .title-glyph-close::after {
+    content: '';
     position: absolute;
-    inset: 0;
-    pointer-events: none;
-    border: 1px solid transparent;
-    border-top-color: var(--color-surface);
-    border-left-color: var(--color-surface);
-    border-bottom-color: var(--color-border);
-    border-right-color: var(--color-border);
+    inset-inline: 0;
+    top: 50%;
+    height: 1.5px;
+    margin-top: -0.75px;
+    background-color: currentColor;
   }
 
-  .panel-bevel:active {
-    border-top-color: var(--color-bevel-dark);
-    border-left-color: var(--color-bevel-dark);
-    border-bottom-color: var(--color-bevel-light);
+  .title-glyph-close::before {
+    transform: rotate(45deg);
+  }
+
+  .title-glyph-close::after {
+    transform: rotate(-45deg);
+  }
+
+  /* Win9x group box: groove with the label breaking the top edge. */
+  .group-box {
+    position: relative;
+    margin-top: 2rem;
+    padding: 1.5rem 1rem 1.25rem;
+    border: 1px solid var(--color-bevel-dark);
     border-right-color: var(--color-bevel-light);
-  }
-
-  .panel-bevel:active::before {
-    border-top-color: var(--color-border);
-    border-left-color: var(--color-border);
-    border-bottom-color: var(--color-surface);
-    border-right-color: var(--color-surface);
-  }
-
-  /*
-   * Icons are pixel art at 16, 32 or 48px. Smoothing them on scale-up is what
-   * makes period chrome look like a screenshot of itself.
-   */
-  .pixel-icon {
-    image-rendering: pixelated;
-    flex-shrink: 0;
-  }
-
-  /*
-   * Title-bar controls. Win98 sized these to the bar rather than to their glyph,
-   * which is why they read as a set.
-   */
-  .title-control {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.125rem;
-    height: 1.125rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-control);
-    border-top-color: var(--color-bevel-light);
-    border-left-color: var(--color-bevel-light);
-    border-bottom-color: var(--color-bevel-dark);
-    border-right-color: var(--color-bevel-dark);
-    background-color: var(--color-sunk);
-    font-size: 0.6rem;
-    line-height: 1;
-    color: var(--color-ink-muted);
-    /* Minimise renders as a <button>; the rest are spans. */
-    padding: 0;
-    font-family: inherit;
-  }
-
-  button.title-control {
-    cursor: pointer;
-  }
-
-  button.title-control:active {
-    border-top-color: var(--color-bevel-dark);
-    border-left-color: var(--color-bevel-dark);
     border-bottom-color: var(--color-bevel-light);
-    border-right-color: var(--color-bevel-light);
   }
 
-  /*
-   * The desktop wallpaper. A gradient rather than an image so it costs no
-   * request. The vignette lights it from above, which is what stops a flat fill
-   * reading as "page background" instead of "a surface with something on it".
-   */
-  .desktop-ground {
-    background-color: var(--color-desktop);
-    background-image:
-      radial-gradient(
-        ellipse 130% 95% at 50% -10%,
-        color-mix(in oklch, var(--color-bevel-light) 16%, transparent),
-        transparent 72%
-      ),
-      repeating-linear-gradient(
-        45deg,
-        transparent 0 6px,
-        color-mix(in oklch, var(--color-bevel-dark) 14%, transparent) 6px 7px
-      );
-    background-attachment: fixed;
-  }
-
-  /*
-   * Desktop shortcuts. Hidden below `xl`: at `lg` the window leaves roughly 24px
-   * of wallpaper either side, which cannot hold a 32px icon and a label, so they
-   * would overlap the window or clip. The Start menu is the navigation below
-   * that width, and these are additive rather than the only route anywhere.
-   */
-  .desktop-shortcuts {
-    display: none;
-    /* The taskbar's height plus a margin, for shortcuts pinned to the bottom edge. */
-    --taskbar-clearance: calc(3rem + env(safe-area-inset-bottom, 0px));
-  }
-
-  @media (min-width: 80rem) {
-    .desktop-shortcuts {
-      position: fixed;
-      z-index: 0;
-      display: grid;
-      grid-auto-flow: column;
-      justify-items: center;
+  @media (min-width: 40rem) {
+    .group-box {
+      padding-inline: 1.5rem;
     }
   }
 
-  /* A grid only fills downwards, so a bottom-anchored group is flipped and each
-     shortcut flipped back. Rows then fill up from the taskbar, and a short last
-     column sits at the bottom instead of the top. */
-  .desktop-shortcuts[data-anchor="bottom"],
-  .desktop-shortcuts[data-anchor="bottom"] > * {
+  /* Inner groove ring, offset 1px. */
+  .group-box::before {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    pointer-events: none;
+    border: 1px solid var(--color-bevel-light);
+    border-right-color: var(--color-bevel-dark);
+    border-bottom-color: var(--color-bevel-dark);
+  }
+
+  /* Label paints over the top edge, avoiding <fieldset> layout. */
+  .group-box-label {
+    position: absolute;
+    top: 0;
+    left: 0.75rem;
+    transform: translateY(-50%);
+    z-index: 1;
+    padding-inline: 0.4rem;
+    background-color: var(--color-surface);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-ink-muted);
+  }
+
+  /* Desktop pattern candidates; see docs/background-exploration.md. */
+  .desktop-ground {
+    --pattern-lift: color-mix(in oklab, white 35%, var(--color-desktop));
+    /* Light mode is near the window-edge 3:1 limit. */
+    --pattern-drop: color-mix(in oklab, black 5%, var(--color-desktop));
+  }
+
+  .dark .desktop-ground {
+    --pattern-lift: color-mix(in oklab, white 8%, var(--color-desktop));
+    --pattern-drop: color-mix(in oklab, black 30%, var(--color-desktop));
+  }
+
+  /* Live background: greyscale noise with overlay blend (costs less contrast than source-over); dark needs more strength. */
+  .desktop-grain {
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.16'/%3E%3C/svg%3E"),
+      var(--desktop-gradient);
+    background-blend-mode: overlay, normal;
+    background-attachment: scroll, fixed;
+  }
+
+  .dark .desktop-grain {
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.22'/%3E%3C/svg%3E"),
+      var(--desktop-gradient);
+  }
+
+  /* Hidden below xl: no room beside the window. */
+  .desktop-shortcuts {
+    --edge-inset: 1rem;
+    --dock-clearance: calc(3rem + env(safe-area-inset-bottom, 0px));
+    --status-clearance: calc(2.5rem + env(safe-area-inset-top, 0px));
+  }
+
+  @media (min-width: 80rem) {
+    .desktop-shortcuts[data-align='left'] {
+      left: var(--edge-inset);
+    }
+
+    .desktop-shortcuts[data-align='right'] {
+      right: var(--edge-inset);
+    }
+
+    .desktop-shortcuts[data-anchor='top'] {
+      top: calc(var(--edge-inset) + var(--status-clearance));
+    }
+
+    .desktop-shortcuts[data-anchor='bottom'] {
+      bottom: calc(var(--edge-inset) + var(--dock-clearance));
+    }
+  }
+
+  /* Flipped so rows fill up from the bottom; children flip back. */
+  .desktop-shortcuts[data-anchor='bottom'],
+  .desktop-shortcuts[data-anchor='bottom'] > * {
     transform: scaleY(-1);
   }
 
@@ -277,12 +433,9 @@
     gap: 0.35rem;
     padding: 0.35rem 0.25rem;
     text-align: center;
-    /* `ink`, not `accent`: the amber accent and the wallpaper are both hue 70,
-       so accent-on-wallpaper measures 1.76 in light mode. */
-    color: var(--color-ink);
+    /* desktop-ink flips with theme; ink is tuned against ground. */
+    color: var(--color-desktop-ink);
     text-decoration: none;
-    /* The press state below replaces the browser's grey tap flash, and
-       `manipulation` drops the double-tap-to-zoom delay on touch. */
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
@@ -293,16 +446,14 @@
       filter 120ms ease-out;
   }
 
-  /* Hover only where a pointer can hover, or a tapped icon on a tablet stays
-     lifted after the finger has gone. */
+  /* Hover-capable pointers only, so taps do not stick. */
   @media (hover: hover) {
     .desktop-shortcut:hover .pixel-icon {
       transform: translateY(-2px);
     }
   }
 
-  /* `is-pressed` is set by script because iOS Safari does not reliably apply
-     `:active` to a link; `:active` is kept for when the script has not run. */
+  /* Script-set because iOS Safari skips :active on links. */
   .desktop-shortcut:active .pixel-icon,
   .desktop-shortcut.is-pressed .pixel-icon {
     transform: translateY(1px) scale(0.92);
@@ -324,97 +475,130 @@
     max-width: 100%;
   }
 
-  /* Win98 marks the selected item by inverting its label rather than by drawing
-     a ring, which is also how this stays legible on any wallpaper. */
+  /* Win98 inverts the label for selection. */
   .desktop-shortcut:hover .shortcut-label,
   .desktop-shortcut:focus-visible .shortcut-label,
   .desktop-shortcut.is-selected .shortcut-label {
-    background-color: var(--color-ink);
-    color: var(--color-surface);
+    background-color: var(--color-desktop-ink);
+    color: var(--color-desktop);
   }
 
   .desktop-shortcut:focus-visible {
-    outline: 2px solid var(--color-ink);
+    outline: 2px solid var(--color-desktop-ink);
     outline-offset: 1px;
   }
 
-  /*
-   * The window's outer edge. Below the breakpoint it is full-bleed with no side
-   * borders; above it, it becomes a raised bevel against the wallpaper.
-   *
-   * The bevel is doing real work, not period decoration: `border` sits at a
-   * luminance close to the wallpaper's and cannot reach 3:1 against it, whereas
-   * a bevel is identified by its lighter edge and clears 3:1 in both themes.
-   */
-  .window-frame {
-    border: 1px solid var(--color-border);
-    border-left-width: 0;
-    border-right-width: 0;
-    background-color: var(--color-surface);
-  }
-
-  @media (min-width: 64rem) {
-    .window-frame {
-      border-width: 2px;
-      border-top-color: var(--color-bevel-light);
-      border-left-color: var(--color-bevel-light);
-      border-right-color: var(--color-bevel-dark);
-      border-bottom-color: var(--color-bevel-dark);
-    }
-  }
-
-  /*
-   * Screen chrome, not window chrome — it sits outside the window and outlives
-   * whatever page is open. Raised top edge for the same reason as the window.
-   */
-  .taskbar {
-    background-color: var(--color-sunk);
-    border-top: 2px solid var(--color-bevel-light);
+  /* Screen bars outlive the open page; a window-edge line marks the wallpaper side (see Bar.tsx). */
+  .dock {
+    position: relative;
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  /*
-   * The Start menu: a native <details> disclosure wearing Win98 chrome.
-   * No JavaScript, so it opens, closes, takes focus and announces its state for
-   * free. It does not close on Escape or on an outside click — both need JS,
-   * and that trade is the blueprint's call.
-   */
-  .start {
-    position: relative;
+  /* Top bar mirrors the bottom: wallpaper edge and safe-area inset swap sides. */
+  .dock[data-position='top'] {
+    padding-bottom: 0;
+    padding-top: env(safe-area-inset-top, 0px);
   }
 
-  .start-button {
+  /* Top-bar tooltips hang downward at every width. */
+  .dock[data-position='top'] .tooltip[data-placement] {
+    --tooltip-inset: calc(100% + 0.5rem) auto auto 50%;
+    --tooltip-shift: translateX(-50%);
+  }
+
+  /* Vertical placements from lg; below, always a static bottom bar. */
+  @media (min-width: 64rem) {
+    .dock[data-position='left'],
+    .dock[data-position='right'] {
+      padding-bottom: 0;
+    }
+
+    /* Side-bar tooltips sit beside their icon, not over the neighbour. */
+    .dock[data-position='left'] .tooltip[data-placement] {
+      --tooltip-inset: 50% auto auto calc(100% + 0.5rem);
+      --tooltip-shift: translateY(-50%);
+    }
+
+    .dock[data-position='right'] .tooltip[data-placement] {
+      --tooltip-inset: 50% calc(100% + 0.5rem) auto auto;
+      --tooltip-shift: translateY(-50%);
+    }
+
+    /* Label hidden visually, kept for the accessible name. */
+    .dock[data-position='left'] .dock-item-label,
+    .dock[data-position='right'] .dock-item-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+
+  /* Items scale on hover; works on vertical docks too. */
+  .dock-cluster .dock-item,
+  .dock-cluster .task-button {
+    transition: transform 120ms ease-out;
+  }
+
+  /* Hover-capable pointers only. */
+  @media (hover: hover) {
+    .dock-cluster .dock-item:hover,
+    .dock-cluster .task-button:hover {
+      transform: scale(1.06);
+    }
+  }
+
+  /* Withdraw the scale; last so it wins. */
+  @media (prefers-reduced-motion: reduce) {
+    .dock-cluster .dock-item:hover,
+    .dock-cluster .task-button:hover {
+      transform: none;
+    }
+  }
+
+  /* Dock destination: flat until pointed at, Win98 toolbar style. */
+  .dock-item {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    height: 100%;
-    padding-inline: 0.6rem;
-    border: 1px solid var(--color-border);
+    justify-content: center;
+    min-width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid transparent;
     border-radius: var(--radius-control);
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+
+  /* Raised on hover, pressed for current page; bevel-dark 8.79 light, bevel-light 4.28 dark. */
+  .dock-item:hover,
+  .dock-item:focus-visible {
+    border-color: var(--color-border);
     border-top-color: var(--color-bevel-light);
     border-left-color: var(--color-bevel-light);
     border-bottom-color: var(--color-bevel-dark);
     border-right-color: var(--color-bevel-dark);
-    background-color: var(--color-sunk);
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    color: var(--color-ink);
-    cursor: pointer;
-    list-style: none;
   }
 
-  /*
-   * The handle back to a minimised window. Pressed-in by default, because the
-   * only time it is visible is when its window is put away.
-   */
+  .dock-item[aria-current='page'] {
+    border-color: var(--color-border);
+    border-top-color: var(--color-bevel-dark);
+    border-left-color: var(--color-bevel-dark);
+    border-bottom-color: var(--color-bevel-light);
+    border-right-color: var(--color-bevel-light);
+    background-color: var(--color-accent-sunk);
+  }
+
+  /* Pressed in: only visible while its window is minimised. */
   .task-button {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    min-width: 0;
+    justify-content: center;
+    min-width: 2.75rem;
     max-width: 16rem;
-    height: 100%;
-    padding-inline: 0.6rem;
+    height: 2.75rem;
+    padding-inline: 0.625rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-control);
     border-top-color: var(--color-bevel-dark);
@@ -425,117 +609,6 @@
     font-size: 0.75rem;
     color: var(--color-ink);
     cursor: pointer;
-  }
-
-  /* Both spellings are needed: WebKit still ships the shadow-DOM marker. */
-  .start-button::-webkit-details-marker {
-    display: none;
-  }
-
-  .start-button::marker {
-    content: "";
-  }
-
-  .start[open] > .start-button {
-    border-top-color: var(--color-bevel-dark);
-    border-left-color: var(--color-bevel-dark);
-    border-bottom-color: var(--color-bevel-light);
-    border-right-color: var(--color-bevel-light);
-  }
-
-  .start-panel {
-    position: absolute;
-    bottom: calc(100% + 0.375rem);
-    left: 0;
-    z-index: 30;
-    display: flex;
-    min-width: 13rem;
-    border: 2px solid var(--color-border);
-    border-top-color: var(--color-bevel-light);
-    border-left-color: var(--color-bevel-light);
-    border-bottom-color: var(--color-bevel-dark);
-    border-right-color: var(--color-bevel-dark);
-    background-color: var(--color-sunk);
-  }
-
-  /* The branding gutter, reading bottom-to-top as Win9x did. */
-  .start-gutter {
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    padding-block: 0.75rem;
-    width: 1.75rem;
-    background-color: var(--color-accent-sunk);
-    border-right: 1px solid var(--color-border);
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    color: var(--color-accent-ink);
-    white-space: nowrap;
-  }
-
-  .start-items {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    padding: 0.25rem;
-  }
-
-  .start-item {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
-    color: var(--color-ink);
-    text-decoration: none;
-  }
-
-  .start-item:hover,
-  .start-item:focus-visible {
-    background-color: var(--color-accent-sunk);
-    color: var(--color-ink);
-  }
-
-  .start-item[aria-current="page"] {
-    font-weight: 700;
-  }
-
-  .start-separator {
-    margin: 0.25rem 0.5rem;
-    border: 0;
-    border-top: 1px solid var(--color-rule);
-  }
-
-  .link {
-    text-decoration-line: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 0.2em;
-    transition: color 120ms ease, text-decoration-thickness 120ms ease;
-  }
-
-  .link:hover {
-    color: var(--color-accent-ink);
-    text-decoration-thickness: 3px;
-  }
-
-  .link-1 {
-    text-decoration-color: var(--color-link-1);
-  }
-  .link-2 {
-    text-decoration-color: var(--color-link-2);
-  }
-  .link-3 {
-    text-decoration-color: var(--color-link-3);
-  }
-  .link-4 {
-    text-decoration-color: var(--color-link-4);
-  }
-  .link-5 {
-    text-decoration-color: var(--color-link-5);
   }
 }
 
@@ -548,4 +621,18 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Named dock/status-bar groups stop the window painting over them mid-transition; unlayered to outrank @layer astro. */
+::view-transition-group(dock),
+::view-transition-group(status-bar) {
+  z-index: 1;
+}
+
+::view-transition-group(window) {
+  z-index: 0;
+}
+
+html::-webkit-scrollbar {
+  display: none;
 }

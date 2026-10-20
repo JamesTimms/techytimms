@@ -1,0 +1,17 @@
+---
+/* Win9x group box: an inset groove with the label breaking its top edge. <section> + heading, not <fieldset>, for outline and layout. */
+interface Props {
+  label: string;
+  level?: 2 | 3;  // Shift down where the section's own content already starts at h2.
+  class?: string;
+}
+
+const { label, level = 2, class: className = "" } = Astro.props;
+
+const Heading = `h${level}` as "h2" | "h3";
+---
+
+<section class:list={["group-box", className]}>
+  <Heading class="group-box-label">{label}</Heading>
+  <slot />
+</section>
