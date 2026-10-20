@@ -60,8 +60,7 @@ describe('describeSky', () => {
   it('raises the visible body as the sun gets further from the horizon', () => {
     expect(describeSky(0).height).toBe(0);
     expect(describeSky(31).height).toBeCloseTo(0.5, 1);
-    // Either body, so a deep midwinter midnight lifts the moon rather than
-    // burying it.
+    // Either body, so a deep midwinter midnight lifts the moon rather than burying it.
     expect(describeSky(-31).height).toBeCloseTo(0.5, 1);
     expect(describeSky(85).height).toBe(1);
   });

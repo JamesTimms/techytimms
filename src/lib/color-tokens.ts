@@ -7,8 +7,8 @@ export interface Oklch {
   alpha?: number; // 0–1, absent when opaque
 }
 
-// OKLab → linear sRGB (Ottosson's matrices), unclamped so `isInSrgbGamut` sees out-of-range channels.
 function oklchToLinearSrgbUnclamped({ l, c, h }: Oklch): [number, number, number] {
+  // OKLab → linear sRGB (Ottosson's matrices), unclamped so `isInSrgbGamut` sees out-of-range channels.
   const hueRadians = (h * Math.PI) / 180;
   const a = c * Math.cos(hueRadians);
   const b = c * Math.sin(hueRadians);
@@ -30,8 +30,8 @@ export function oklchToLinearSrgb(oklch: Oklch): [number, number, number] {
   ) as [number, number, number];
 }
 
-// Renders without channel clipping.
 export function isInSrgbGamut(oklch: Oklch, epsilon = 1e-4): boolean {
+  // Renders without channel clipping.
   return oklchToLinearSrgbUnclamped(oklch).every(
     (channel) => channel >= -epsilon && channel <= 1 + epsilon,
   );
@@ -42,8 +42,8 @@ export function linearToGammaSrgb(channel: number): number {
   return clamped <= 0.0031308 ? clamped * 12.92 : 1.055 * clamped ** (1 / 2.4) - 0.055;
 }
 
-// Inverse of oklchToHex's byte step: `#rrggbb` to gamma sRGB 0–1.
 function hexToRgb01(hex: string): [number, number, number] {
+  // Inverse of oklchToHex's byte step: `#rrggbb` to gamma sRGB 0–1.
   const match = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
   if (!match) throw new Error(`not a #rrggbb hex colour: ${hex}`);
   const [r, g, b] = [match[1]!, match[2]!, match[3]!];
@@ -98,8 +98,8 @@ function parseColorTokens(css: string): Record<string, ColorToken> {
   );
 }
 
-/** Brace-balanced block extraction, so a nested rule inside `@theme` or `.dark` can't truncate the match. */
 export function cssBlock(css: string, header: string, from = 0): string {
+  // Brace-balanced block extraction, so a nested rule inside `@theme` or `.dark` can't truncate the match.
   const open = css.indexOf('{', css.indexOf(header, from));
   let depth = 0;
   for (let i = open; i < css.length; i += 1) {
@@ -109,8 +109,8 @@ export function cssBlock(css: string, header: string, from = 0): string {
   throw new Error(`unbalanced block: ${header}`);
 }
 
-/** Throws rather than returning `undefined` — a missing token here is a typo in the caller, not a state worth rendering around. */
 export function requireToken(tokens: Record<string, ColorToken>, name: string): ColorToken {
+  // Throws rather than returning `undefined` — a missing token here is a typo in the caller, not a state worth rendering around.
   const token = tokens[name];
   if (!token) throw new Error(`no --color-${name} token found in global.css`);
   return token;
@@ -121,8 +121,8 @@ export interface ThemedColorTokens {
   dark: Record<string, ColorToken>;
 }
 
-// Ramps don't flip in `.dark`, so dark starts from all light tokens plus the overrides.
 export function parseThemedColorTokens(css: string): ThemedColorTokens {
+  // Ramps don't flip in `.dark`, so dark starts from all light tokens plus the overrides.
   const light = parseColorTokens(cssBlock(css, '@theme'));
   const dark = { ...light, ...parseColorTokens(cssBlock(css, '.dark', css.indexOf('@theme'))) };
   return { light, dark };

@@ -1,5 +1,5 @@
-import { clsx } from 'clsx';
 import { cva } from 'class-variance-authority';
+import { clsx } from 'clsx';
 import { type ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
 
@@ -11,9 +11,9 @@ function cn(...inputs: Parameters<typeof clsx>): string {
   return twMerge(clsx(inputs));
 }
 
-// Below lg the frame fills the viewport, so the side borders and radius drop away.
 const windowFrameVariants = cva(
-  'pointer-events-auto mx-auto flex w-full flex-1 flex-col border border-x-0 lg:relative lg:max-w-4xl lg:flex-none lg:rounded-window lg:border-x lg:positioned:fixed lg:positioned:m-0 lg:positioned:h-(--window-height) lg:positioned:w-(--window-width) lg:positioned:max-w-none lg:positioned:min-w-80 lg:positioned:top-(--window-top) lg:positioned:left-(--window-left)',
+  // Below lg the frame fills the viewport, so the side borders and radius drop away.
+  'pointer-events-auto mx-auto flex w-full flex-1 flex-col border border-x-0 lg:relative lg:max-h-[100%] lg:max-w-4xl lg:flex-none lg:rounded-window lg:border-x lg:positioned:fixed lg:positioned:m-0 lg:positioned:h-(--window-height) lg:positioned:w-(--window-width) lg:positioned:max-w-none lg:positioned:min-w-80 lg:positioned:top-(--window-top) lg:positioned:left-(--window-left)',
   {
     variants: {
       palette: {
@@ -74,8 +74,8 @@ interface WindowProps {
   children?: ReactNode;
 }
 
-// Classes, not a component: the page-owning frame's `transition:name` must sit on an element the .astro file renders.
 export function windowFrameClasses(palette?: WindowPalette): string {
+  // Classes, not a component: the page-owning frame's `transition:name` must sit on an element the .astro file renders.
   return cn(windowFrameVariants({ palette }));
 }
 
@@ -177,9 +177,18 @@ export function CloseButton(props: ControlProps) {
 
 const resizeHandles: Record<HandleDirection, { edge: string; className: string }> = {
   n: { edge: 'top edge', className: 'inset-x-3 top-0 h-2 w-[calc(100%-1.5rem)] cursor-ns-resize' },
-  s: { edge: 'bottom edge', className: 'inset-x-3 bottom-0 h-2 w-[calc(100%-1.5rem)] cursor-ns-resize' },
-  w: { edge: 'left edge', className: 'inset-y-3 left-0 h-[calc(100%-1.5rem)] w-2 cursor-ew-resize' },
-  e: { edge: 'right edge', className: 'inset-y-3 right-0 h-[calc(100%-1.5rem)] w-2 cursor-ew-resize' },
+  s: {
+    edge: 'bottom edge',
+    className: 'inset-x-3 bottom-0 h-2 w-[calc(100%-1.5rem)] cursor-ns-resize',
+  },
+  w: {
+    edge: 'left edge',
+    className: 'inset-y-3 left-0 h-[calc(100%-1.5rem)] w-2 cursor-ew-resize',
+  },
+  e: {
+    edge: 'right edge',
+    className: 'inset-y-3 right-0 h-[calc(100%-1.5rem)] w-2 cursor-ew-resize',
+  },
   nw: { edge: 'top-left corner', className: 'left-0 top-0 size-3 cursor-nwse-resize' },
   ne: { edge: 'top-right corner', className: 'right-0 top-0 size-3 cursor-nesw-resize' },
   sw: { edge: 'bottom-left corner', className: 'bottom-0 left-0 size-3 cursor-nesw-resize' },

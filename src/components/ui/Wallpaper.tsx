@@ -1,12 +1,10 @@
 export interface WallpaperNoise {
   type: 'turbulence' | 'fractalNoise';
-  /** One value, or an x/y pair for stretched grain. */
-  frequency: number | [number, number];
+  frequency: number | [number, number];  // One value, or an x/y pair for stretched grain.
   octaves: number;
   seed: number;
   stitch: boolean;
-  /** Tile edge in px, or a width/height pair. */
-  tile: number | [number, number];
+  tile: number | [number, number];  // Tile edge in px, or a width/height pair.
   opacity: number;
   /** Drains colour from the filter output; 0 is achromatic, 1 leaves it untouched. */
   saturation: number;
@@ -27,8 +25,7 @@ export interface WallpaperNoise {
 export interface WallpaperGradient {
   type: 'linear' | 'radial' | 'conic';
   angle: number;
-  /** `#hex` or `#hex 40%` — the stop is written through untouched. */
-  stops: string[];
+  stops: string[];  // `#hex` or `#hex 40%` — the stop is written through untouched.
   blend: string;
   size: string;
   repeat: string;
@@ -44,14 +41,12 @@ export interface WallpaperTheme {
 
 export interface WallpaperCssOptions {
   selector: string;
-  /** Cascade layer to emit into, or `false` for unlayered. */
-  layer: string | false;
+  layer: string | false;  // Cascade layer to emit into, or `false` for unlayered.
   /** Custom property the gradient is published as, for other rules to reuse. */
   gradientProperty: string;
   light: WallpaperTheme;
   dark: WallpaperTheme;
-  /** Selector prefix the dark rule is nested under. */
-  darkSelector: string;
+  darkSelector: string;  // Selector prefix the dark rule is nested under.
 }
 
 const pair = (value: number | [number, number]): [number, number] =>

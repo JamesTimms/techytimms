@@ -36,8 +36,8 @@ function nearestRampStep(lightnessPercent: number) {
   );
 }
 
-// Binary search: OKLCH's gamut boundary has no closed form.
 function maxChromaInGamut(lightness: number, hue: number, precision = 0.0005): number {
+  // Binary search: OKLCH's gamut boundary has no closed form.
   let low = 0;
   let high = 0.4;
   while (high - low > precision) {
@@ -58,8 +58,8 @@ function huetonePaletteUrl(name: string, hues: { name: string; colors: string[] 
   return `https://huetone.ardov.me/?palette=${compressToEncodedURIComponent(JSON.stringify(palette))}`;
 }
 
-// oklch-palette seeds from a `#L,C,H,A` hash: L percent, A out of 100.
 function oklchPaletteUrl(oklch: Oklch): string {
+  // oklch-palette seeds from a `#L,C,H,A` hash: L percent, A out of 100.
   const lightnessPercent = (oklch.l * 100).toFixed(2);
   const chroma = oklch.c.toFixed(3);
   return `https://oklch-palette.vercel.app/#${lightnessPercent},${chroma},${oklch.h},100`;
@@ -126,8 +126,8 @@ function oklabDistance(a: Oklch, b: Oklch): number {
 
 const rampFamilies = mainHues.flatMap((family) => (family.liveRamp ? [{ key: family.key, ramp: definedRamp(family.liveRamp) }] : []));
 
-// Ramp colour at an arbitrary lightness, so a token between (or beyond) steps is judged on chroma and hue only.
 function rampAt(ramp: Oklch[], lightness: number): Oklch {
+  // Ramp colour at an arbitrary lightness, so a token between (or beyond) steps is judged on chroma and hue only.
   const sorted = [...ramp].sort((a, b) => b.l - a.l);
   if (lightness >= sorted[0]!.l) return { ...sorted[0]!, l: lightness };
   if (lightness <= sorted.at(-1)!.l) return { ...sorted.at(-1)!, l: lightness };

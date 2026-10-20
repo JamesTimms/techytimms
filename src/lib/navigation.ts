@@ -42,8 +42,8 @@ export function isCurrent(item: NavItem, currentPath: string): boolean {
   return !item.external && item.href === currentPath;
 }
 
-/* Trailing slashes differ between server render and `location.pathname`. */
 export function normalisePath(pathname: string): string {
+  // Trailing slashes differ between server render and `location.pathname`.
   return pathname.replace(/\/+$/, '') || '/';
 }
 
@@ -52,8 +52,8 @@ export type Press = Pick<
   'pointerType' | 'button' | 'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey'
 >;
 
-/* Mouse-down opens, like a desktop icon; touch/pen and modified or non-primary presses keep the ordinary click. */
 export function opensOnPress(press: Press): boolean {
+  // Mouse-down opens, like a desktop icon; touch/pen and modified or non-primary presses keep the ordinary click.
   return (
     press.pointerType === 'mouse' &&
     press.button === 0 &&
@@ -64,8 +64,8 @@ export function opensOnPress(press: Press): boolean {
   );
 }
 
-/* The section, not the page: `/blog/hello` is Blog. Unknown paths fall back to their own segment. */
 export function sectionLabel(currentPath: string): string {
+  // The section, not the page: `/blog/hello` is Blog. Unknown paths fall back to their own segment.
   const [segment = ''] = normalisePath(currentPath).slice(1).split('/');
   const entry = [...primaryNav, ...secondaryNav].find(
     (item) => !item.external && item.href === `/${segment}`,

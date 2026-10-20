@@ -18,6 +18,8 @@ Directives do not exist in `.tsx`, and they silently do nothing on a component t
 
 **Code lives as close to its use as possible.** Declare a function where it is used; extract it only once a second caller exists. A helper used by one component belongs in that component's file, not in `src/lib/`.
 
+**Extract a variable only once it is used three or more times.** A value used once or twice stays inline, CVA variant maps included. When refactoring, search for variables, types and exports the change made unused or single-use, and inline or delete them.
+
 Within a file, a style definition or helper sits **immediately above the component that uses it**. Only things used by several components in the file go at the top.
 
 Tests sit beside the file under test: `Bar.test.ts` next to `Bar.tsx`. No `__tests__/` directories.
@@ -52,7 +54,19 @@ One plain word where one will do, and a name you can say aloud in conversation. 
 
 **Self-documenting code first.** Before writing a comment, make the code explain itself: better names, a smaller function, an extracted variable.
 
-Comment only what is still unintuitive after that, and keep it **extremely brief, even at the cost of accuracy**. One line beats three. A comment restating the code is worse than none.
+Comment only what is still unintuitive after that, and keep it **extremely brief, even at the cost of accuracy**. One line beats three. **A comment that fits on one line within 100 characters (indent included) is one line.** The limit is Prettier's `printWidth: 100` in `.prettierrc.mjs`, which covers every language here; Prettier never reflows comments, so wrapping is on the author.
+
+**A comment lives inside what it describes**, so a refactor can't strand it:
+
+- Function, component or class: first line of the body, not above the declaration.
+- Field, prop or property: trailing `//` on the same line (`rows: number; // Items per column before wrapping.`).
+
+```tsx
+export function DesktopSection({ rows }: DesktopSectionProps) {
+  // Hidden below `xl`, where there is no room beside the window.
+  …
+}
+``` A comment restating the code is worse than none.
 
 ## Styling
 

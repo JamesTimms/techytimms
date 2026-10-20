@@ -41,8 +41,8 @@ function taskButton(): HTMLButtonElement | null {
   return document.querySelector<HTMLButtonElement>('[data-window-task]');
 }
 
-// Persisted bars would otherwise keep stating the previous page's aria-current/selected as fact.
 export function syncCurrentPage(pathname: string, root: ParentNode = document): void {
+  // Persisted bars would otherwise keep stating the previous page's aria-current/selected as fact.
   const currentPath = normalisePath(pathname);
 
   for (const link of root.querySelectorAll<HTMLAnchorElement>('.dock-item, .desktop-shortcut')) {
@@ -63,8 +63,8 @@ export function syncCurrentPage(pathname: string, root: ParentNode = document): 
   }
 }
 
-// hidden, not offscreen — a minimised window must leave the accessibility tree too.
 function setMinimised(minimised: boolean, moveFocus: boolean): void {
+  // hidden, not offscreen — a minimised window must leave the accessibility tree too.
   const frame = windowFrame();
   const task = taskButton();
   if (!frame || !task) return;
@@ -78,8 +78,8 @@ function setMinimised(minimised: boolean, moveFocus: boolean): void {
   else frame.querySelector<HTMLButtonElement>('[data-window-minimise]')?.focus();
 }
 
-// Closing hides the whole frame (no task button to reopen it) and clears the stored rect, since the frame isn't persisted and rebuilds open by default anyway.
 function setClosed(closed: boolean): void {
+  // Closing hides the whole frame (no task button to reopen it) and clears the stored rect, since the frame isn't persisted and rebuilds open by default anyway.
   const frame = windowFrame();
   if (!frame) return;
   if (closed) {
@@ -123,8 +123,8 @@ export function enableWindowControls(root: ParentNode = document): void {
 
 let themeToggleWired = false;
 
-// Delegated: survives both a persisted toggle and this module re-running.
 export function enableThemeToggle(): void {
+  // Delegated: survives both a persisted toggle and this module re-running.
   if (themeToggleWired) return;
   themeToggleWired = true;
 

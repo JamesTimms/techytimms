@@ -18,16 +18,16 @@ function pad(value: number): string {
   return String(value).padStart(2, '0');
 }
 
-/** A local date-time for `<time datetime>`, which has no offset to state. */
 export function clockDateTime(when: Date): string {
+  // A local date-time for `<time datetime>`, which has no offset to state.
   const date = `${when.getFullYear()}-${pad(when.getMonth() + 1)}-${pad(when.getDate())}`;
   return `${date}T${pad(when.getHours())}:${pad(when.getMinutes())}`;
 }
 
 const minute = 60_000;
 
-// Re-queries the DOM each tick rather than caching refs — the bars persist across navigation, the rest doesn't.
 function render(): void {
+  // Re-queries the DOM each tick rather than caching refs — the bars persist across navigation, the rest doesn't.
   const now = new Date();
 
   for (const clock of document.querySelectorAll<HTMLTimeElement>('[data-clock]')) {

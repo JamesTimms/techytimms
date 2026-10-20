@@ -396,17 +396,26 @@
 
   /* Hidden below xl: no room beside the window. */
   .desktop-shortcuts {
+    --edge-inset: 1rem;
     --dock-clearance: calc(3rem + env(safe-area-inset-bottom, 0px));
     --status-clearance: calc(2.5rem + env(safe-area-inset-top, 0px));
   }
 
   @media (min-width: 80rem) {
+    .desktop-shortcuts[data-align='left'] {
+      left: var(--edge-inset);
+    }
+
+    .desktop-shortcuts[data-align='right'] {
+      right: var(--edge-inset);
+    }
+
     .desktop-shortcuts[data-anchor='top'] {
-      top: calc(1rem + var(--status-clearance));
+      top: calc(var(--edge-inset) + var(--status-clearance));
     }
 
     .desktop-shortcuts[data-anchor='bottom'] {
-      bottom: calc(1rem + var(--dock-clearance));
+      bottom: calc(var(--edge-inset) + var(--dock-clearance));
     }
   }
 
@@ -504,6 +513,17 @@
       padding-bottom: 0;
     }
 
+    /* Side-bar tooltips sit beside their icon, not over the neighbour. */
+    .dock[data-position='left'] .tooltip[data-placement] {
+      --tooltip-inset: 50% auto auto calc(100% + 0.5rem);
+      --tooltip-shift: translateY(-50%);
+    }
+
+    .dock[data-position='right'] .tooltip[data-placement] {
+      --tooltip-inset: 50% calc(100% + 0.5rem) auto auto;
+      --tooltip-shift: translateY(-50%);
+    }
+
     /* Label hidden visually, kept for the accessible name. */
     .dock[data-position='left'] .dock-item-label,
     .dock[data-position='right'] .dock-item-label {
@@ -574,11 +594,11 @@
   .task-button {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    min-width: 0;
+    justify-content: center;
+    min-width: 2.75rem;
     max-width: 16rem;
-    height: 100%;
-    padding-inline: 0.6rem;
+    height: 2.75rem;
+    padding-inline: 0.625rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-control);
     border-top-color: var(--color-bevel-dark);

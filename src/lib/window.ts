@@ -101,8 +101,8 @@ export function clampRect(
   return { left, top, width, height };
 }
 
-// Unlike clampSize, ignores constraints — maximise means all available area, not the largest allowed size.
 export function maximisedRect(viewport: Viewport, barClearance: BarClearance): Rect {
+  // Unlike clampSize, ignores constraints — maximise means all available area, not the largest allowed size.
   return {
     left: 0,
     top: barClearance.top,
@@ -163,6 +163,7 @@ export function resizeRect(
 // Duplicated as literals in BaseLayout.astro's pre-paint script (which can't import this) — keep in sync by hand.
 const DESKTOP_QUERY = '(min-width: 64rem)';
 const STORAGE_KEY = 'window-rect';
+const MAXIMISED_KEY = 'window-maximised'; // Holds the pre-maximise rect; empty if the window was in flow.
 const MOVE_STEP = 16;
 const MOVE_STEP_LARGE = 64;
 const RESIZE_STEP = 16;
@@ -183,8 +184,8 @@ function viewportSize(): Viewport {
   return { width: window.innerWidth, height: window.innerHeight };
 }
 
-// Read live, not cached — a bar's height can change (e.g. a label wrapping), and this runs once per drag/keypress, not per frame.
 function currentBarClearance(): BarClearance {
+  // Read live, not cached — a bar's height can change (e.g. a label wrapping), and this runs once per drag/keypress, not per frame.
   const top = document.querySelector<HTMLElement>('.dock[data-position="top"]');
   const bottom = document.querySelector<HTMLElement>('.dock[data-position="bottom"]');
   return {
@@ -197,14 +198,12 @@ function readStoredRect(): Rect | null {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const parsed: unknown = JSON.parse(raw);
+    const parsed = JSON.parse(raw) as Partial<Rect> | null;
     if (
-      typeof parsed === 'object' &&
-      parsed !== null &&
-      typeof (parsed as Rect).left === 'number' &&
-      typeof (parsed as Rect).top === 'number' &&
-      typeof (parsed as Rect).width === 'number' &&
-      typeof (parsed as Rect).height === 'number'
+      typeof parsed?.left === 'number' &&
+      typeof parsed.top === 'number' &&
+      typeof parsed.width === 'number' &&
+      typeof parsed.height === 'number'
     ) {
       return parsed as Rect;
     }
@@ -230,13 +229,37 @@ function clearStoredRect(): void {
   }
 }
 
+function readStoredMaximise(): string | null {
+  try {
+    return sessionStorage.getItem(MAXIMISED_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredMaximise(preMaximiseRect: string | undefined): void {
+  try {
+    sessionStorage.setItem(MAXIMISED_KEY, preMaximiseRect ?? '');
+  } catch {
+    // Private browsing: the window arrives un-maximised next navigation.
+  }
+}
+
+function clearStoredMaximise(): void {
+  try {
+    sessionStorage.removeItem(MAXIMISED_KEY);
+  } catch {
+    // Private browsing: nothing was persisted to begin with.
+  }
+}
+
 function currentRect(frame: HTMLElement): Rect {
   const box = frame.getBoundingClientRect();
   return { left: box.left, top: box.top, width: box.width, height: box.height };
 }
 
-// Geometry lives on <html> (data-positioned + --window-* vars, consumed by the positioned: variant in global.css) — the same mechanism BaseLayout's pre-paint script uses before the frame exists.
 function applyRect(rect: Rect): void {
+  // On <html>, not the frame, so BaseLayout's pre-paint script can apply it before the frame exists.
   const root = document.documentElement;
   root.dataset.positioned = 'true';
   root.style.setProperty('--window-left', `${rect.left}px`);
@@ -249,12 +272,23 @@ function maximiseButton(frame: HTMLElement): HTMLButtonElement | null {
   return frame.querySelector<HTMLButtonElement>('[data-window-maximise]');
 }
 
-// Any drag/resize invalidates an existing maximise — otherwise restore would snap back to a size the user has since abandoned.
-function exitMaximised(frame: HTMLElement): void {
-  if (frame.dataset.maximised !== 'true') return;
+function markMaximised(frame: HTMLElement, preMaximiseRect: string | undefined): void {
+  frame.dataset.maximised = 'true';
+  if (preMaximiseRect) frame.dataset.preMaximiseRect = preMaximiseRect;
+  maximiseButton(frame)?.setAttribute('aria-label', 'Restore window');
+}
+
+function unmarkMaximised(frame: HTMLElement): void {
   delete frame.dataset.maximised;
   delete frame.dataset.preMaximiseRect;
   maximiseButton(frame)?.setAttribute('aria-label', 'Maximise window');
+}
+
+function exitMaximised(frame: HTMLElement): void {
+  // Any drag/resize invalidates an existing maximise — otherwise restore would snap back to a size the user has since abandoned.
+  if (frame.dataset.maximised !== 'true') return;
+  unmarkMaximised(frame);
+  clearStoredMaximise();
 }
 
 function resetRect(frame: HTMLElement): void {
@@ -264,24 +298,24 @@ function resetRect(frame: HTMLElement): void {
   root.style.removeProperty('--window-top');
   root.style.removeProperty('--window-width');
   root.style.removeProperty('--window-height');
-  exitMaximised(frame);
+  unmarkMaximised(frame);
 }
 
-// Double-click on the title bar: unlike Windows, always returns to flow rather than toggling maximise — also clears the persisted rect.
 export function resetWindow(frame: HTMLElement): void {
   resetRect(frame);
   clearStoredRect();
+  clearStoredMaximise();
 }
 
 const DRAG_START_THRESHOLD = 3;
 
-// Shared by drag and resize: locks the frame into a stable base rect, captures one pointer, and disables the transition for the duration.
 function beginPointerInteraction(
   frame: HTMLElement,
   target: HTMLElement,
   event: PointerEvent,
   compute: (dx: number, dy: number, base: Rect) => Rect,
 ): void {
+  // Shared by drag and resize: locks the frame into a stable base rect, captures one pointer, and disables the transition for the duration.
   if (event.pointerType === 'mouse' && event.button !== 0) return;
   event.preventDefault();
 
@@ -343,11 +377,10 @@ function wireDrag(frame: HTMLElement): void {
       );
     });
 
-    // Each click already ran its own harmless no-op drag; dblclick fires last and resets on top of that.
     surface.addEventListener('dblclick', (event) => {
       if (isTitleControl(event.target)) return;
       event.preventDefault();
-      resetWindow(frame);
+      maximiseButton(frame)?.click();
     });
   }
 
@@ -361,7 +394,6 @@ function wireDrag(frame: HTMLElement): void {
       const step = event.shiftKey ? MOVE_STEP_LARGE : MOVE_STEP;
       exitMaximised(frame);
       const base = currentRect(frame);
-      applyRect(base);
       const next = clampRect(
         {
           left: base.left + delta[0] * step,
@@ -397,7 +429,6 @@ function wireResize(frame: HTMLElement): void {
       const step = event.shiftKey ? RESIZE_STEP_LARGE : RESIZE_STEP;
       exitMaximised(frame);
       const base = currentRect(frame);
-      applyRect(base);
       const next = resizeRect(
         base,
         direction,
@@ -424,8 +455,8 @@ function animateRect(frame: HTMLElement, rect: Rect): void {
   }, MAXIMISE_TRANSITION_MS + 20);
 }
 
-// Remembers the pre-maximise rect only if one existed (otherwise restore is resetRect); never touches sessionStorage — a maximised frame always arrives un-maximised.
 function wireMaximise(frame: HTMLElement): void {
+  // Restore returns to the pre-maximise rect, or to flow if the window was never positioned.
   const button = maximiseButton(frame);
   if (!button || button.dataset.wired) return;
   button.dataset.wired = 'true';
@@ -433,25 +464,29 @@ function wireMaximise(frame: HTMLElement): void {
   button.addEventListener('click', () => {
     if (frame.dataset.maximised === 'true') {
       const preMaximiseRect = frame.dataset.preMaximiseRect;
-      delete frame.dataset.maximised;
-      delete frame.dataset.preMaximiseRect;
-      button.setAttribute('aria-label', 'Maximise window');
-      if (preMaximiseRect) animateRect(frame, JSON.parse(preMaximiseRect) as Rect);
-      else resetRect(frame);
+      unmarkMaximised(frame);
+      clearStoredMaximise();
+      if (!preMaximiseRect) return resetWindow(frame);
+      const restored = JSON.parse(preMaximiseRect) as Rect;
+      animateRect(frame, restored);
+      writeStoredRect(restored);
       return;
     }
 
-    if (document.documentElement.dataset.positioned === 'true') {
-      frame.dataset.preMaximiseRect = JSON.stringify(currentRect(frame));
-    }
-    frame.dataset.maximised = 'true';
-    animateRect(frame, maximisedRect(viewportSize(), currentBarClearance()));
-    button.setAttribute('aria-label', 'Restore window');
+    const preMaximiseRect =
+      document.documentElement.dataset.positioned === 'true'
+        ? JSON.stringify(currentRect(frame))
+        : undefined;
+    markMaximised(frame, preMaximiseRect);
+    writeStoredMaximise(preMaximiseRect);
+    const maximised = maximisedRect(viewportSize(), currentBarClearance());
+    animateRect(frame, maximised);
+    writeStoredRect(maximised); // Lets the pre-paint script show it maximised on the next page.
   });
 }
 
-// Called once at module init (see BaseLayout.astro); re-wiring happens inside the astro:page-load handler since the frame rebuilds every navigation.
 export function enableWindowInteract(): void {
+  // Called once at module init (see BaseLayout.astro); re-wiring happens inside the astro:page-load handler since the frame rebuilds every navigation.
   const desktop = window.matchMedia(DESKTOP_QUERY);
 
   function sync(): void {
@@ -473,6 +508,14 @@ export function enableWindowInteract(): void {
       writeStoredRect(clamped);
     }
 
+    const storedMaximise = readStoredMaximise();
+    if (storedMaximise !== null) {
+      markMaximised(frame, storedMaximise || undefined);
+      const maximised = maximisedRect(viewportSize(), currentBarClearance());
+      applyRect(maximised);
+      writeStoredRect(maximised);
+    }
+
     wireDrag(frame);
     wireResize(frame);
   }
@@ -485,7 +528,9 @@ export function enableWindowInteract(): void {
     const frame = frameElement();
     if (!frame) return;
     if (frame.dataset.maximised === 'true') {
-      applyRect(maximisedRect(viewportSize(), currentBarClearance()));
+      const maximised = maximisedRect(viewportSize(), currentBarClearance());
+      applyRect(maximised);
+      writeStoredRect(maximised);
       return;
     }
     if (document.documentElement.dataset.positioned !== 'true') return;

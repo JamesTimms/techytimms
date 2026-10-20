@@ -2,12 +2,12 @@ type Draftable = { data: { draft: boolean } };
 type Dated = { data: { publishedAt: Date } };
 type Ordered = { data: { order: number; featured: boolean } };
 
-// Drafts are visible while developing so they can be previewed, and dropped
-// from production builds so they cannot leak.
 export function excludeDrafts<T extends Draftable>(
   entries: T[],
   isProduction = import.meta.env.PROD,
 ): T[] {
+  // Drafts are visible while developing so they can be previewed, and dropped
+  // from production builds so they cannot leak.
   return isProduction ? entries.filter((entry) => !entry.data.draft) : entries;
 }
 

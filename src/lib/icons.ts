@@ -30,8 +30,8 @@ export type IconAttributes = {
   decorative: boolean;
 };
 
-// Shared by Icon.astro and DesktopShortcut so sizing and the alt/aria rule cannot drift between them.
 export function iconAttributes(name: IconName, alt = ''): IconAttributes {
+  // Shared by Icon.astro and DesktopShortcut so sizing and the alt/aria rule cannot drift between them.
   const { src, width, height } = icons[name];
   return { src, width, height, alt, decorative: alt === '' };
 }

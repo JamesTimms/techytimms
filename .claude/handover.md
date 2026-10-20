@@ -8,7 +8,7 @@ Agent-facing: kept out of `docs/`, which is for James.
 
 A working Astro site with a fictional-desktop UI: a framed window holding the page, an
 icon dock at the bottom, a status bar at the top, desktop shortcuts, and client-side
-routing. Windows drag, resize, minimise, maximise, close, and reset on title double-click.
+routing. Windows drag, resize, minimise, maximise (button or title double-click; persists across pages), and close.
 
 Build passes, 92 tests, ~9.1 KB gzipped JS per page.
 

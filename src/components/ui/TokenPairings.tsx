@@ -24,8 +24,8 @@ const SCALE = 1.14;
 const LOW_CONTRAST_CLIP = 0.1;
 const OFFSET = 0.027;
 
-// Per spec, the power curve is applied to the gamma-encoded channel.
 function apcaLuminanceFromGamma([r, g, b]: [number, number, number]): number {
+  // Per spec, the power curve is applied to the gamma-encoded channel.
   return r ** GAMMA * RED_WEIGHT + g ** GAMMA * GREEN_WEIGHT + b ** GAMMA * BLUE_WEIGHT;
 }
 
@@ -37,8 +37,8 @@ function clampNearBlack(y: number): number {
   return y > BLACK_CLAMP_THRESHOLD ? y : y + (BLACK_CLAMP_THRESHOLD - y) ** BLACK_CLAMP_EXPONENT;
 }
 
-// Positive: dark on light; negative: light on dark (different exponents).
 function apcaContrastFromLuminance(textY: number, backgroundY: number): number {
+  // Positive: dark on light; negative: light on dark (different exponents).
   if (Math.abs(backgroundY - textY) < MIN_DISCERNIBLE_DELTA) return 0;
 
   if (backgroundY > textY) {

@@ -57,35 +57,28 @@ export function DesktopShortcut({
   );
 }
 
-// The distance from the align edge, and the baseline before an anchored bar's own clearance (added in global.css, keyed off data-anchor).
-const EDGE_INSET = 1;
-
 export interface DesktopSectionProps {
   children: ReactNode;
-  /** Which edge the columns grow from. */
-  align?: 'left' | 'right';
-  /** Which edge the group is pinned to, and which fixed bar it clears. */
-  anchor?: 'top' | 'bottom' | undefined;
-  /** Items per column before wrapping into the next one. Count the items with `desktopRows`. */
-  rows: number;
-  /** Gap between shortcuts, in rem. */
-  gap?: number | undefined;
+  align?: 'left' | 'right'; // The edge the columns grow from.
+  anchor?: 'top' | 'bottom' | undefined; // The edge the group is pinned to, clearing its bar.
+  rows: number; // Items per column before wrapping; see `desktopRows`.
+  gapRem?: number | undefined;
   label?: string | undefined;
 }
 
-// Placement for a group of shortcuts. Only shows on large screens.
 export function DesktopSection({
   children,
   align = 'left',
   anchor = 'top',
   rows,
-  gap = 0.75,
+  gapRem = 0.75,
   label = 'Desktop shortcuts',
 }: DesktopSectionProps) {
+  /** Hidden below `xl`, where there is no room beside the window. */
+
   const style: CSSProperties = {
     gridTemplateRows: `repeat(${rows}, min-content)`,
-    gap: `${gap}rem`,
-    [align]: `${EDGE_INSET}rem`,
+    gap: `${gapRem}rem`,
   };
 
   return (
@@ -93,6 +86,7 @@ export function DesktopSection({
       aria-label={label}
       className="desktop-shortcuts hidden xl:fixed xl:z-0 xl:grid xl:grid-flow-col xl:justify-items-center"
       data-anchor={anchor}
+      data-align={align}
       style={style}
     >
       {children}

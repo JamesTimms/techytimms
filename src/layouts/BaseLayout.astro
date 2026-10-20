@@ -65,8 +65,8 @@ const statusPosition: BarPosition = 'top';
           );
         }
 
-        // Unclamped copy of applyRect in ~/lib/window; the bars don't exist yet, so it re-clamps on astro:page-load.
         function applyWindowRect() {
+          // Unclamped copy of applyRect in ~/lib/window; the bars don't exist yet, so it re-clamps on astro:page-load.
           const html = document.documentElement;
           if (!window.matchMedia('(min-width: 64rem)').matches) return;
           let rect = null;

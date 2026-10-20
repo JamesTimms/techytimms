@@ -59,7 +59,7 @@ Prettier is configured (`.prettierrc.mjs`) but is not wired into a script and ha
 - **Documents and reports are extremely concise, even at the cost of accuracy.** State conclusions, not reasoning. No "considered but rejected", no restating the brief, no narration. Tables over prose. A design note is a reference, not a transcript.
 - **One element at a time.** Iterate on a single component per task rather than making sweeping changes across the site.
 - **No i18n.** Decided and closed; do not add scaffolding for it.
-- **Self-documenting code first, comments last.** Before writing a comment, make the code explain itself: better names, a smaller function, an extracted variable. Comment only what is still unintuitive after that, and keep it **extremely brief, even at the cost of accuracy**. One line beats three; a comment restating the code is worse than none.
+- **Self-documenting code first, comments last.** Before writing a comment, make the code explain itself: better names, a smaller function, an extracted variable. Comment only what is still unintuitive after that, and keep it **extremely brief, even at the cost of accuracy**. One line beats three; a comment restating the code is worse than none. A comment that fits on one line within 100 chars (Prettier `printWidth`) is one line. Comments live inside what they describe: a function's or class's comment is the first line of its body; a field's is a trailing `//` on its line.
 - **Compose React components with the children pattern.** Container components take `children`; the call site does the mapping:
   ```tsx
   <DesktopSection rows={n}>
@@ -68,6 +68,7 @@ Prettier is configured (`.prettierrc.mjs`) but is not wired into a script and ha
   ```
   Not a wrapper that takes the data and maps internally (`<DesktopGroup items={items} />`). This avoids prop drilling and global state, and keeps the composition readable in one file. Do not introduce a data-prop wrapper to shorten a call site.
 - **`key` is not a prop in `.astro` templates.** Astro has no reconciliation, so `key` is passed through as an unknown prop and fails type checking. Omit it when mapping inside `.astro` files; it is only meaningful inside `.tsx`.
+- **Extract a variable only at three or more uses**; otherwise inline it (CVA variant maps included). When refactoring, inline or delete whatever the change left unused or single-use.
 - **Names carry their use without abbreviation or padding**: `publishedPosts`, not `pp`, not `postsFilteredByPublishedStatus`. A name needing a comment is the wrong name.
 - **Tests stay deliberately small** — draft exclusion, ordering, the CV schema rejecting bad data, date and slug formatting. Do not add coverage for thin templates, or for colour tooling (a design question, not a coding one). Contrast: APCA Lc is the authority, WCAG AA advisory.
 - **Subagents** use the **cheapest model that will still do the job** (Haiku for mechanical edits, Sonnet for scoped fixes and refactors, Opus only for judgement-heavy work), or the model James names. Never fork; give a minimal, self-contained brief that tells the agent to be brief, run one verification pass and not loop. Agents may run in parallel only when their file sets are disjoint; sequence any that share a file. Verify the result.

@@ -10,19 +10,7 @@ export type BarPosition = (typeof barPositions)[number];
 export const barSizes = ['compact', 'regular', 'spacious'] as const;
 export type BarSize = (typeof barSizes)[number];
 
-const barSizeClasses: Record<BarSize, string> = {
-  compact: 'px-2 py-1',
-  regular: 'px-3 py-2',
-  spacious: 'px-4 py-3',
-};
-
 export const barPurposes = ['menu', 'dock'] as const;
-export type BarPurpose = (typeof barPurposes)[number];
-
-const barVariantClasses: Record<BarPurpose, string> = {
-  menu: 'bg-elevation-1 border-elevation-1-edge backdrop-blur-sm',
-  dock: 'bg-elevation-2 border-elevation-2-edge shadow-[inset_0_1px_0_var(--color-elevation-2-highlight)] backdrop-blur-md',
-};
 
 export const bar = cva('dock z-20 grid items-center gap-3', {
   variants: {
@@ -32,10 +20,17 @@ export const bar = cva('dock z-20 grid items-center gap-3', {
       left: 'border-r lg:fixed lg:inset-y-0 lg:left-0 lg:grid-cols-none lg:px-2 lg:py-3',
       right: 'border-l lg:fixed lg:inset-y-0 lg:right-0 lg:grid-cols-none lg:px-2 lg:py-3',
     },
-    purpose: barVariantClasses,
+    purpose: {
+      menu: 'bg-elevation-1 border-elevation-1-edge backdrop-blur-sm',
+      dock: 'bg-elevation-2 border-elevation-2-edge shadow-[inset_0_1px_0_var(--color-elevation-2-highlight)] backdrop-blur-md',
+    },
     middle: { true: 'grid-cols-[1fr_auto_1fr]', false: 'grid-cols-[1fr_auto]' },
     sticky: { true: 'fixed', false: '' },
-    size: barSizeClasses,
+    size: {
+      compact: 'px-2 py-1',
+      regular: 'px-3 py-2',
+      spacious: 'px-4 py-3',
+    },
   },
   compoundVariants: [
     { position: ['left', 'right'], middle: true, class: 'lg:grid-rows-[1fr_auto_1fr]' },
@@ -79,6 +74,17 @@ export function DockItem({ href, label, icon, external = false, current }: DockI
       </span>
       <Tooltip label={label} />
     </a>
+  );
+}
+
+export function DockSeparator({ position }: { position: BarPosition }) {
+  // `border`, not `rule`: rule vanishes on the dock fill.
+  const vertical = position === 'left' || position === 'right';
+  return (
+    <span
+      aria-hidden="true"
+      className={`h-7 w-px flex-none self-center bg-border mx-1 ${vertical ? 'lg:mx-0 lg:my-1 lg:h-px lg:w-7' : ''}`}
+    />
   );
 }
 

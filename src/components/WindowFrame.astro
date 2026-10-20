@@ -11,7 +11,7 @@ interface Props {
 const { title, palette = 'fallen-leaf' } = Astro.props;
 ---
 
-<div class="pointer-events-none relative z-10 flex flex-1 flex-col pb-15 lg:px-10 lg:pt-[6vh] lg:pb-24">
+<div class="pointer-events-none relative z-10 flex flex-1 flex-col pb-15 lg:h-dvh lg:flex-none lg:px-10 lg:pt-[6vh] lg:pb-24">
   <div transition:name="window" data-window-frame class={windowFrameClasses(palette)}>
     <TitleBar
       title={title}
@@ -23,11 +23,11 @@ const { title, palette = 'fallen-leaf' } = Astro.props;
       palette={palette}
     />
 
-    {/* min-h-0 lets overflow-y-auto work once the frame has fixed geometry. */}
+    {/* min-h-0 lets main scroll once the frame reaches its height cap. */}
     <main
       id="main"
       transition:animate="fade"
-      class="min-w-0 flex-1 px-4 py-8 sm:px-6 lg:mx-auto lg:w-full lg:max-w-4xl lg:positioned:min-h-0 lg:positioned:overflow-y-auto"
+      class="min-w-0 flex-1 px-4 py-8 sm:px-6 lg:mx-auto lg:w-full lg:max-w-4xl lg:min-h-0 lg:overflow-y-auto"
     >
       <slot />
     </main>

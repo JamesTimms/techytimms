@@ -4,8 +4,7 @@ export type MainHueKey = 'leaf' | 'pumpkin' | 'umber' | 'ash' | 'accent';
 
 export interface MainHueDefinition {
   key: MainHueKey;
-  /** Display name for the ramp row and the huetone hue label. */
-  name: string;
+  name: string;  // Display name for the ramp row and the huetone hue label.
   hue: number;
   /** Which live 50–900 ramp in global.css this reads verbatim, or null for a derived comparison ramp. */
   liveRamp: 'leaf' | 'pumpkin' | 'umber' | 'ash' | null;
@@ -38,8 +37,7 @@ export interface ForegroundPairing {
   token: string;
   kind: 'text' | 'link' | 'mark' | 'boundary';
   sample?: string;
-  /** Overrides the token's default target for this background. */
-  target?: number;
+  target?: number;  // Overrides the token's default target for this background.
   use: string;
 }
 

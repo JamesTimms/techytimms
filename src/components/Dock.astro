@@ -4,6 +4,7 @@ import {
   DockCluster,
   DockItem,
   DockNav,
+  DockSeparator,
   WindowTaskButton,
   bar,
   type BarPosition,
@@ -43,7 +44,7 @@ const hasMiddle = Astro.slots.has('middle');
   <DockCluster position={position}>
     <DockNav position={position}>
       {primaryNav.map((item) => <DockItem {...item} current={isCurrent(item, currentPath)} />)}
-      <span class="dock-separator" aria-hidden="true"></span>
+      <DockSeparator position={position} />
       {secondaryNav.map((item) => <DockItem {...item} current={isCurrent(item, currentPath)} />)}
     </DockNav>
     <WindowTaskButton windowTitle={windowTitle} />
@@ -51,45 +52,3 @@ const hasMiddle = Astro.slots.has('middle');
 
   <BarRegion position={position} region="end"><slot name="end" /></BarRegion>
 </div>
-
-<style>
-  /* Square icon target; unlayered, so it beats `@layer components`. `:global` because Bar.tsx renders `.dock-cluster`. */
-  :global(.dock-cluster .task-button) {
-    justify-content: center;
-    gap: 0;
-    min-width: 2.75rem;
-    height: 2.75rem;
-    padding-inline: 0.625rem;
-  }
-
-  /* `border`, not `rule`: rule vanishes on the dock fill. */
-  .dock-separator {
-    align-self: center;
-    flex: none;
-    width: 1px;
-    height: 1.75rem;
-    margin-inline: 0.25rem;
-    background-color: var(--color-border);
-  }
-
-  /* Side bars flip the tooltip so it doesn't cover neighbours; `[data-placement]` adds specificity over the tooltip default. */
-  @media (min-width: 64rem) {
-    .dock[data-position='left'] .dock-separator,
-    .dock[data-position='right'] .dock-separator {
-      width: 1.75rem;
-      height: 1px;
-      margin-inline: 0;
-      margin-block: 0.25rem;
-    }
-
-    .dock[data-position='left'] :global(.tooltip[data-placement]) {
-      --tooltip-inset: 50% auto auto calc(100% + 0.5rem);
-      --tooltip-shift: translateY(-50%);
-    }
-
-    .dock[data-position='right'] :global(.tooltip[data-placement]) {
-      --tooltip-inset: 50% calc(100% + 0.5rem) auto auto;
-      --tooltip-shift: translateY(-50%);
-    }
-  }
-</style>
