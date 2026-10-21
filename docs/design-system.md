@@ -74,32 +74,14 @@ draft — see `/styleguide` §3 for the method.
 
 ### Open issues
 
-- **Fixed — `accent` hue now drifts with lightness on purpose**: one curve,
-  hue(L) = clamp(38, 60, 40 + 0.3·(L% − 40)), ≈57 at the palest step down to
-  ≈39 at the darkest, both themes read off it. Verified against APCA
-  (`src/components/ui/TokenPairings.tsx`), not WCAG — see the table below.
-- **Fixed — `accent-ink` is now darker than `accent`** in light mode (38%
-  vs. 52%).
-- **Fixed — chrome (title bar, menu bar, dock, window face/edge) now uses
-  semantic tokens** (`title-bar`, `title-bar-ink`, `menu-bar`, `dock`,
-  `surface`, `window-edge`), not raw `leaf-*`/`pumpkin-*` ramp steps — the
-  live title bar previously had no `dark:` override at all, so light mode
-  silently wore dark mode's near-black fill. `window-edge` (0 uses) is now
-  the live window frame's border; `ground` remains unused.
-- **The accent-on-wallpaper 3:1 margin below was measured against a flat
-  `--color-desktop` fill.** The live wallpaper is now `Wallpaper.tsx`'s
-  gradient-plus-noise-plus-lighting composite; the two gradient stops in each
-  theme are now individually APCA-checked against `accent` and `desktop-ink`
-  (both ≥ Lc 30 / 75), but the grain overlay's extremes are not.
-- **Neutral hue moved from 85 to 55** (pumpkin's own hue) so the window face
-  and every ordinary surface read as pumpkin-tinted, not just the accent.
-- **Dark-mode `surface` darkened (21% → 18%) and `border` raised (52% → 60%
-  Lc, was −23, now −34)**: the live dark window face previously rendered
-  `pumpkin-700` (32.9%) instead of `surface`, well past where `ink`/
-  `ink-muted`/`ink-faint` were actually contrast-checked.
-- **Dark wallpaper lightened** (`#491304 → #080200` to `#581e00 → #140200`);
-  `window-edge`/`bevel-light` raised (55%/56% → 63%/62%) to hold their margin
-  against it.
+| Issue | Note |
+|---|---|
+| `link-1`…`link-5` | To be removed |
+| `leaf` ramp, `ground` token | Unused; removal candidates |
+| Dark window face (23%) below wallpaper's top-left (28%) | Edge and title bar carry its elevation |
+| Dock highlight is an inset `box-shadow` | Breaks "no shadows"; swap for a pseudo-element border if kept literal |
+| Translucent pairs scored over flat `desktop` | Noise extremes unmeasured |
+| §5 (inverted, borderless bars) and §9 (Start menu) | Stale; superseded by elevation tokens and the dock |
 
 ### Accent on the wallpaper is a lightness problem
 

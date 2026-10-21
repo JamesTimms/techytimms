@@ -461,7 +461,7 @@ Placeholders are fine for all of the above while building. The two that genuinel
 
 Explicitly descoped. Recorded so each is a decision, not an omission.
 
-Draggable/resizable windows shipped (`WindowFrame.astro`, `src/lib/window-interact.ts`) and are no longer out of scope — the row below is now stale.
+Draggable/resizable windows shipped (`WindowFrame.astro`, `src/lib/window.ts`) and are no longer out of scope — the row below is now stale.
 
 | Idea                                                                       | Why it is parked                                                                                                                                        | Revisit when                                                                                  |
 | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |

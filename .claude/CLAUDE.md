@@ -42,7 +42,7 @@ Prettier is configured (`.prettierrc.mjs`) but is not wired into a script and ha
 
 **Theme** is applied by a blocking `is:inline` script in `<head>` (`src/layouts/BaseLayout.astro`) reading `localStorage` then `prefers-color-scheme`. It must stay inline and in `<head>` — bundling it runs it after first paint and the theme flashes.
 
-**Colour** is semantic OKLCH tokens in `src/styles/global.css` (Pumpkin palette): warm neutrals at hue 85, rust/pumpkin accent at hue 40–55, leaf and pumpkin ramps 50–900. `/styleguide` and `docs/design-system.md` §1 hold the reasons and open issues. Use the tokens rather than raw ramp steps or Tailwind palette colours. `--color-accent` is for marks, borders and rings; `--color-accent-ink` is meant to be the darker, text-safe variant.
+**Colour** is semantic OKLCH tokens in `src/styles/global.css`: `pumpkin`, `leaf`, `umber` and `ash` ramps (50–900, one lightness scale), semantic tokens on top, elevation levels `desktop` < `elevation-1` < `elevation-2` < `surface`, and a P3 brand `title-bar` with an sRGB fallback. Contrast is APCA (targets in `src/data/color-system.ts`), kept roughly equal across themes. `/styleguide` is the workbench for any colour change: live editors and live APCA. Use the tokens, never raw ramp steps or Tailwind palette colours. `--color-accent` is for marks, borders and rings; `--color-accent-ink` is the darker, text-safe variant.
 
 ## Gotchas
 
@@ -92,16 +92,16 @@ Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root, created lazi
 
 ## Status
 
-Working desktop-metaphor UI: framed window, icon dock, status bar, desktop shortcuts,
-client-side routing, draggable/resizable windows. Build passes, 92 tests, ~9.1 KB gz JS.
+Working desktop-metaphor UI: framed window, dock, translucent top bar, desktop shortcuts,
+client-side routing, draggable/resizable windows. Build passes, 82 tests, ~9.7 KB gz JS on
+content pages. CI runs `pnpm test` on every push and PR.
 
 `.claude/handover.md` is the current-state summary — read it first. `docs/personal-site-blueprint.md`
 §6 tracks the todo list and §9 what is out of scope; `docs/design-blueprint.md` holds the
 numbered design decisions. The two items blocking a launch are the home-page pitch and a
 contact route.
 
-**Nothing has been verified in a browser.** Contrast is computed and markup asserted;
-appearance is not.
+Appearance is checked in headless Chrome (both themes); see the handover for how.
 
 ## Notes from James
 

@@ -81,11 +81,9 @@ Colour comes from semantic tokens, never raw palette values. Contrast is carried
 ```bash
 pnpm build              # astro check && astro build
 pnpm test
-pnpm check:invariants   # after build
-pnpm contrast
 ```
 
-`check:invariants` and `contrast` exist because two classes of bug fail at **runtime**, not build: a renamed selector breaks a delegated handler silently, and an undefined `--color-*` token is valid CSS that resolves to nothing. Use them instead of hand-rolled greps or a one-off colour converter.
+Two classes of bug fail at **runtime**, not build: a renamed selector breaks a delegated handler silently, and an undefined `--color-*` token is valid CSS that resolves to nothing. Check the built HTML for the hooks client code uses (`data-window-*`, `id="dock-nav"`, `#theme-toggle`) and check colour in `/styleguide` or headless Chrome (see the handover).
 
 ## Accessibility
 
